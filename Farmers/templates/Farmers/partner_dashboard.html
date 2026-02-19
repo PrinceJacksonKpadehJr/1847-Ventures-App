@@ -1,0 +1,9 @@
+@login_required
+def partner_dashboard(request):
+    if request.user.profile.role != 'investor':
+        return HttpResponseForbidden("Access Denied")
+    return render(request, "Farmers/partner_dashboard.html")
+
+
+
+    

@@ -1,0 +1,5 @@
+@login_required
+def agent_dashboard(request):
+    if request.user.profile.role != 'field_agent':
+        return HttpResponseForbidden("Access Denied")
+    return render(request, "Farmers/agent_dashboard.html")

@@ -1,0 +1,5 @@
+@login_required
+def farmer_dashboard(request):
+    if request.user.profile.role != 'farmer':
+        return HttpResponseForbidden("Access Denied")
+    return render(request, "Farmers/farmer_dashboard.html")
