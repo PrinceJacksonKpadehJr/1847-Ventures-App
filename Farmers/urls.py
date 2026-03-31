@@ -7,6 +7,8 @@ from .views import (
     farmer_dashboard,
     agent_dashboard,
     partner_dashboard,
+    create_farmer,
+    create_farm_activity,
 )
 
 router = DefaultRouter()
@@ -21,6 +23,11 @@ urlpatterns = [
     path('agent/dashboard/', agent_dashboard, name='agent_dashboard'),
     path('partner/dashboard/', partner_dashboard, name='partner_dashboard'),
 
+    # Field agent actions
+    path('agent/create-farmer/', create_farmer, name='create_farmer'),
+    path('agent/create-activity/', create_farm_activity, name='create_farm_activity'),
+
     # API routes
     path('', include(router.urls)),
 ]
+

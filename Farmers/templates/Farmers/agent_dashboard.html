@@ -1,5 +1,203 @@
-@login_required
-def agent_dashboard(request):
-    if request.user.profile.role != 'field_agent':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Field Agent Dashboard - 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar {
+            background: #2e7d32; color: white; padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 16px; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #2e7d32; }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 28px;
+        }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: bold; margin-bottom: 4px; }
+        input[type=text], input[type=email], input[type=password],
+        input[type=date], input[type=number], select, textarea {
+            width: 100%; padding: 9px; border: 1px solid #ccc;
+            border-radius: 4px; box-sizing: border-box;
+        }
+        .btn {
+            padding: 10px 22px; background: #2e7d32; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 15px;
+        }
+        .btn:hover { background: #1b5e20; }
+        .messages { margin-bottom: 20px; }
+        .msg-success {
+            background: #c8e6c9; color: #1b5e20; padding: 10px 16px;
+            border-radius: 4px; margin-bottom: 8px;
+        }
+        .msg-error {
+            background: #ffcdd2; color: #b71c1c; padding: 10px 16px;
+            border-radius: 4px; margin-bottom: 8px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        th { background: #f1f8e9; color: #2e7d32; }
+        .badge-pending {
+            background: #fff9c4; color: #f57f17;
+            padding: 2px 8px; border-radius: 12px; font-size: 12px;
+        }
+        .badge-approved {
+            background: #c8e6c9; color: #2e7d32;
+            padding: 2px 8px; border-radius: 12px; font-size: 12px;
+        }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures — Field Agent Portal</strong>
+    <div>
+        Logged in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="{% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="two-col">
+
+        <!-- Create Farmer Profile -->
+        <div class="card">
+            <h2>➕ Create Farmer Profile</h2>
+            <p>Register a new farmer. They will require admin approval before they can log in.</p>
+            <form method="POST" action="{% url 'create_farmer' %}">
+                {% csrf_token %}
+                {% for field in farmer_form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <span style="color:red; font-size:13px;">{{ error }}</span>
+                            {% endfor %}
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small style="color:#666;">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn">Create Farmer</button>
+            </form>
+        </div>
+
+        <!-- Record Farm Activity -->
+        <div class="card">
+            <h2>📋 Record Farm Activity</h2>
+            <p>Log a farm activity for a farmer in your area.</p>
+            <form method="POST" action="{% url 'create_farm_activity' %}">
+                {% csrf_token %}
+                {% for field in activity_form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <span style="color:red; font-size:13px;">{{ error }}</span>
+                            {% endfor %}
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small style="color:#666;">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn">Save Activity</button>
+            </form>
+        </div>
+
+    </div><!-- .two-col -->
+
+    <!-- Recent Farmers -->
+    <div class="card">
+        <h2>👥 Recently Registered Farmers</h2>
+        {% if recent_farmers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Phone</th>
+                    <th>Registered</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farmer in recent_farmers %}
+                <tr>
+                    <td>{{ farmer.username }}</td>
+                    <td>{{ farmer.get_full_name|default:"—" }}</td>
+                    <td>{{ farmer.phone_number|default:"—" }}</td>
+                    <td>{{ farmer.registration_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if farmer.profile.is_approved %}
+                            <span class="badge-approved">Approved</span>
+                        {% else %}
+                            <span class="badge-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No farmers registered yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="card">
+        <h2>🌱 Recent Farm Activities (Recorded by You)</h2>
+        {% if recent_activities %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Farmer</th>
+                    <th>Activity</th>
+                    <th>Location</th>
+                    <th>Crop</th>
+                    <th>Date</th>
+                    <th>Seeds (kg)</th>
+                    <th>Exp. Yield (kg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for act in recent_activities %}
+                <tr>
+                    <td>{{ act.farmer.username }}</td>
+                    <td>{{ act.get_activity_type_display }}</td>
+                    <td>{{ act.farm_location|default:"—" }}</td>
+                    <td>{{ act.crop_type|default:"—" }}</td>
+                    <td>{{ act.date|date:"M d, Y" }}</td>
+                    <td>{{ act.seeds_planted_kg|default:"—" }}</td>
+                    <td>{{ act.expected_yield_kg|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No activities recorded yet.</p>
+        {% endif %}
+    </div>
+
+</div><!-- .container -->
+</body>
+</html>

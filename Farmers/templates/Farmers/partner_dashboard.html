@@ -1,9 +1,107 @@
-@login_required
-def partner_dashboard(request):
-    if request.user.profile.role != 'investor':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/partner_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Partner Dashboard - 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar {
+            background: #1565c0; color: white; padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 16px; }
+        .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #1565c0; }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 28px;
+        }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat { background: #e3f2fd; padding: 16px; border-radius: 6px; }
+        .stat strong { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+        .stat span { font-size: 22px; font-weight: bold; color: #1565c0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        th { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
 
+<div class="navbar">
+    <strong>1847 Ventures — Partner/Investor Portal</strong>
+    <div>
+        Logged in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
 
+<div class="container">
 
-    
+    <div class="card">
+        <h2>Investment Overview</h2>
+        <div class="stat-grid">
+            <div class="stat">
+                <strong>Total Invested</strong>
+                <span>${{ total_invested }}</span>
+            </div>
+            <div class="stat">
+                <strong>Active Investments</strong>
+                <span>{{ investments.count }}</span>
+            </div>
+            <div class="stat">
+                <strong>Role</strong>
+                <span>{{ request.user.profile.role|title }}</span>
+            </div>
+            <div class="stat">
+                <strong>Account Status</strong>
+                <span>{% if request.user.profile.is_approved %}Approved{% else %}Pending{% endif %}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>My Investments</h2>
+        {% if investments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Farm</th>
+                    <th>Amount ($)</th>
+                    <th>Expected Return (%)</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in investments %}
+                <tr>
+                    <td>{{ inv.farm.name|default:"—" }}</td>
+                    <td>{{ inv.amount }}</td>
+                    <td>{{ inv.expected_return_percentage|default:"—" }}</td>
+                    <td>{{ inv.invested_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No investments yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Announcements</h2>
+        {% if announcements %}
+            {% for ann in announcements %}
+                <div style="border-left: 4px solid #1565c0; padding: 10px 16px; margin-bottom: 12px; background: #f8f9fa;">
+                    <strong>{{ ann.title }}</strong>
+                    <p style="margin:6px 0 0;">{{ ann.message }}</p>
+                    <small style="color:#888;">{{ ann.created_at|date:"M d, Y" }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No announcements right now.</p>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>

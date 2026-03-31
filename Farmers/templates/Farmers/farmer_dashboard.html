@@ -1,5 +1,96 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farmer Dashboard - 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar {
+            background: #388e3c; color: white; padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 16px; }
+        .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #2e7d32; }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 28px;
+        }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .info-item { background: #f1f8e9; padding: 16px; border-radius: 6px; }
+        .info-item strong { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+        .info-item span { font-size: 18px; font-weight: bold; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures — Farmer Portal</strong>
+    <div>
+        Logged in as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Welcome, {{ request.user.get_full_name|default:request.user.username }}!</h2>
+        <p>This is your farmer dashboard. Your account information is shown below.</p>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Username</strong>
+                <span>{{ request.user.username }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Phone</strong>
+                <span>{{ request.user.phone_number|default:"Not set" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Role</strong>
+                <span>{{ request.user.profile.role|title }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Status</strong>
+                <span>{% if request.user.profile.is_approved %}Approved{% else %}Pending{% endif %}</span>
+            </div>
+            <div class="info-item">
+                <strong>Member Since</strong>
+                <span>{{ request.user.registration_date|date:"M Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>My Farm Activities</h2>
+        {% with activities=request.user.activities.all %}
+        {% if activities %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f1f8e9;">
+                    <th style="padding:10px; text-align:left; border-bottom:1px solid #eee;">Activity</th>
+                    <th style="padding:10px; text-align:left; border-bottom:1px solid #eee;">Crop</th>
+                    <th style="padding:10px; text-align:left; border-bottom:1px solid #eee;">Location</th>
+                    <th style="padding:10px; text-align:left; border-bottom:1px solid #eee;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for act in activities %}
+                <tr>
+                    <td style="padding:10px; border-bottom:1px solid #eee;">{{ act.get_activity_type_display }}</td>
+                    <td style="padding:10px; border-bottom:1px solid #eee;">{{ act.crop_type|default:"—" }}</td>
+                    <td style="padding:10px; border-bottom:1px solid #eee;">{{ act.farm_location|default:"—" }}</td>
+                    <td style="padding:10px; border-bottom:1px solid #eee;">{{ act.date|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No farm activities recorded yet.</p>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+</div>
+</body>
+</html>

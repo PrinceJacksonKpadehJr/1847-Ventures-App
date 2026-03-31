@@ -171,11 +171,35 @@ class FarmActivity(models.Model):
         related_name="activities"
     )
 
+    # Field agent who recorded this activity
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="recorded_activities",
+        null=True,
+        blank=True,
+    )
+
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_CHOICES)
     date = models.DateField()
     inputs_used = models.TextField(blank=True, null=True)
     quantity = models.FloatField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+
+    # Extended fields for full farm activity recording
+    farm_location = models.CharField(max_length=255, blank=True, null=True)
+    farm_size = models.FloatField(blank=True, null=True, help_text="Size in hectares")
+    crop_type = models.CharField(max_length=100, blank=True, null=True)
+    date_planted = models.DateField(blank=True, null=True)
+    harvest_date = models.DateField(blank=True, null=True, help_text="Approximate harvest date")
+    expected_yield_kg = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True,
+        help_text="Expected yield in kg"
+    )
+    seeds_planted_kg = models.DecimalField(
+        max_digits=10, decimal_places=2, blank=True, null=True,
+        help_text="Seeds planted in kg"
+    )
 
     def __str__(self):
         return f"{self.farmer.username} - {self.activity_type}"

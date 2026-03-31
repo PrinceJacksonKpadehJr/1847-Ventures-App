@@ -5,14 +5,16 @@ from rest_framework import viewsets
 from .models import Message
 from .serializers import MessageSerializer
 from Farmers.decorators import approved_user_required
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from Farmers.models import UserProfile
+from Farmers.models import UserProfile, FarmActivity
 from django.shortcuts import redirect
 from django.contrib import messages
+import secrets
+import string
 
 
 
@@ -256,21 +258,169 @@ class CustomLogoutView(LogoutView):
 
 @login_required
 def farmer_dashboard(request):
-    if request.user.role != 'farmer':
+    if not (request.user.is_superuser or
+            getattr(getattr(request.user, 'profile', None), 'role', None) == 'farmer'):
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/farmer_dashboard.html")
 
 
 @login_required
 def agent_dashboard(request):
-    if request.user.role != 'field_agent':
+    profile = getattr(request.user, 'profile', None)
+    if not (request.user.is_superuser or
+            getattr(profile, 'role', None) == 'field_agent'):
         return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+
+    from .forms import CreateFarmerForm, FarmActivityForm
+
+    farmer_form = CreateFarmerForm()
+    activity_form = FarmActivityForm()
+
+    # Recent farmers created by this agent
+    recent_farmers = Farmer.objects.filter(
+        profile__role='farmer'
+    ).order_by('-registration_date')[:10]
+
+    # Recent activities recorded by this agent
+    recent_activities = FarmActivity.objects.filter(
+        created_by=request.user
+    ).order_by('-date')[:10]
+
+    return render(request, "Farmers/agent_dashboard.html", {
+        "farmer_form": farmer_form,
+        "activity_form": activity_form,
+        "recent_farmers": recent_farmers,
+        "recent_activities": recent_activities,
+    })
+
+
+@login_required
+def create_farmer(request):
+    """Field agent creates a new farmer account (pending admin approval)."""
+    profile = getattr(request.user, 'profile', None)
+    if not (request.user.is_superuser or
+            getattr(profile, 'role', None) == 'field_agent'):
+        return HttpResponseForbidden("Access Denied")
+
+    from .forms import CreateFarmerForm
+
+    if request.method == "POST":
+        form = CreateFarmerForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            password = cd.get("password") or _generate_password()
+
+            farmer = Farmer.objects.create_user(
+                username=cd["username"],
+                email=cd.get("email", ""),
+                password=password,
+                first_name=cd.get("first_name", ""),
+                last_name=cd.get("last_name", ""),
+                phone_number=cd.get("phone_number", ""),
+            )
+
+            # The post_save signal already created the UserProfile,
+            # so we just update role and leave is_approved=False
+            farmer_profile = farmer.profile
+            farmer_profile.role = "farmer"
+            farmer_profile.is_approved = False
+            farmer_profile.save()
+
+            if cd.get("password"):
+                messages.success(
+                    request,
+                    f"Farmer '{farmer.username}' created successfully. "
+                    "Awaiting admin approval."
+                )
+            else:
+                messages.success(
+                    request,
+                    f"Farmer '{farmer.username}' created successfully with "
+                    f"auto-generated password: {password}. "
+                    "Awaiting admin approval."
+                )
+            return redirect("agent_dashboard")
+        else:
+            messages.error(request, "Please correct the errors below.")
+            # Re-render the agent dashboard with the invalid form
+            from .forms import FarmActivityForm
+            recent_farmers = Farmer.objects.filter(
+                profile__role='farmer'
+            ).order_by('-registration_date')[:10]
+            recent_activities = FarmActivity.objects.filter(
+                created_by=request.user
+            ).order_by('-date')[:10]
+            return render(request, "Farmers/agent_dashboard.html", {
+                "farmer_form": form,
+                "activity_form": FarmActivityForm(),
+                "recent_farmers": recent_farmers,
+                "recent_activities": recent_activities,
+            })
+
+    return redirect("agent_dashboard")
+
+
+@login_required
+def create_farm_activity(request):
+    """Field agent records a farm activity."""
+    profile = getattr(request.user, 'profile', None)
+    if not (request.user.is_superuser or
+            getattr(profile, 'role', None) == 'field_agent'):
+        return HttpResponseForbidden("Access Denied")
+
+    from .forms import FarmActivityForm
+
+    if request.method == "POST":
+        form = FarmActivityForm(request.POST)
+        if form.is_valid():
+            activity = form.save(commit=False)
+            activity.created_by = request.user
+            activity.save()
+            messages.success(request, "Farm activity recorded successfully.")
+            return redirect("agent_dashboard")
+        else:
+            messages.error(request, "Please correct the errors below.")
+            from .forms import CreateFarmerForm
+            recent_farmers = Farmer.objects.filter(
+                profile__role='farmer'
+            ).order_by('-registration_date')[:10]
+            recent_activities = FarmActivity.objects.filter(
+                created_by=request.user
+            ).order_by('-date')[:10]
+            return render(request, "Farmers/agent_dashboard.html", {
+                "farmer_form": CreateFarmerForm(),
+                "activity_form": form,
+                "recent_farmers": recent_farmers,
+                "recent_activities": recent_activities,
+            })
+
+    return redirect("agent_dashboard")
+
+
+def _generate_password(length=12):
+    """Generate a random secure password."""
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 
 @login_required
 def partner_dashboard(request):
-    if request.user.role != 'partner':
+    if not (request.user.is_superuser or
+            getattr(getattr(request.user, 'profile', None), 'role', None) == 'investor'):
         return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/partner_dashboard.html")
+
+    from django.db.models import Sum
+    from .models import Investment, Announcement as Ann
+
+    investments = Investment.objects.filter(
+        investor=request.user
+    ).select_related("farm").order_by("-invested_at")
+    total_invested = investments.aggregate(total=Sum("amount"))["total"] or 0
+    announcements = Ann.objects.filter(is_active=True).order_by("-created_at")[:10]
+
+    return render(request, "Farmers/partner_dashboard.html", {
+        "investments": investments,
+        "total_invested": total_invested,
+        "announcements": announcements,
+    })
 

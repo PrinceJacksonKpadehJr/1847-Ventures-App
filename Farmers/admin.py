@@ -20,12 +20,27 @@ class FarmerAdmin(admin.ModelAdmin):
     search_fields = ('username', 'farmer_id', 'first_name', 'last_name')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
 
+
+# ===== Admin action to approve selected users =====
+@admin.action(description="Approve selected users")
+def approve_users(modeladmin, request, queryset):
+    updated = queryset.update(is_approved=True)
+    modeladmin.message_user(request, f"{updated} user(s) approved successfully.")
+
+
 # ===== Register User Profile =======
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_approved")
-    list_filter = ("is_approved",)
+    list_display = ("user", "role", "is_approved", "approval_status")
+    list_filter = ("is_approved", "role")
     search_fields = ("user__username", "user__email")
+    actions = [approve_users]
+
+    @admin.display(description="Approval Status")
+    def approval_status(self, obj):
+        if obj.is_approved:
+            return "✅ Approved"
+        return "⏳ Pending Approval"
 
 # ===== Farm Admin =====
 @admin.register(Farm)
@@ -54,8 +69,13 @@ class InvestmentAdmin(admin.ModelAdmin):
 # ===== FarmActivity Admin =====
 @admin.register(FarmActivity)
 class FarmActivityAdmin(admin.ModelAdmin):
-    list_display = ('farmer', 'activity_type', 'date', 'quantity')
-    search_fields = ('farmer__username',)
+    list_display = (
+        'farmer', 'activity_type', 'date', 'farm_location',
+        'farm_size', 'crop_type', 'date_planted', 'harvest_date',
+        'expected_yield_kg', 'seeds_planted_kg', 'created_by',
+    )
+    search_fields = ('farmer__username', 'created_by__username', 'farm_location', 'crop_type')
+    list_filter = ('activity_type',)
 
 # ===== Announcement Admin =====
 @admin.register(Announcement)
@@ -68,6 +88,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('sender', 'receiver', 'created_at', 'is_read')
     search_fields = ('sender__username', 'receiver__username')
+
 
 
 
