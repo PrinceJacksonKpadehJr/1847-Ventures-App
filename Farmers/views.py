@@ -5,14 +5,14 @@ from rest_framework import viewsets
 from .models import Message
 from .serializers import MessageSerializer
 from Farmers.decorators import approved_user_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from Farmers.models import UserProfile
-from django.shortcuts import redirect
 from django.contrib import messages
+from .forms import FarmerCreateByAgentForm
 
 
 
@@ -207,8 +207,6 @@ class MessageViewSet(viewsets.ModelViewSet):
 def dashboard(request):
     return render(request, "Farmers/dashboard.html")
 
-from django.shortcuts import render
-
 def home(request):
     return render(request, "Farmers/home.html")
 
@@ -256,21 +254,50 @@ class CustomLogoutView(LogoutView):
 
 @login_required
 def farmer_dashboard(request):
-    if request.user.role != 'farmer':
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'farmer':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/farmer_dashboard.html")
 
 
 @login_required
 def agent_dashboard(request):
-    if request.user.role != 'field_agent':
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'field_agent':
         return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+    farmers = Farmer.objects.filter(profile__role='farmer').order_by('-registration_date')
+    return render(request, "Farmers/agent_dashboard.html", {"farmers": farmers})
+
+
+@login_required
+def create_farmer(request):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'field_agent':
+        return HttpResponseForbidden("Access Denied")
+
+    if request.method == "POST":
+        form = FarmerCreateByAgentForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data["username"]
+            email = form.cleaned_data["email"]
+            farmer = Farmer(username=username, email=email)
+            farmer.set_unusable_password()
+            farmer.save()
+            profile = farmer.profile
+            profile.role = "farmer"
+            profile.is_approved = False
+            profile.save()
+            messages.success(
+                request,
+                f"Farmer '{username}' has been registered and is pending admin approval."
+            )
+            return redirect("agent_dashboard")
+    else:
+        form = FarmerCreateByAgentForm()
+
+    return render(request, "Farmers/create_farmer.html", {"form": form})
 
 
 @login_required
 def partner_dashboard(request):
-    if request.user.role != 'partner':
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'investor':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/partner_dashboard.html")
 

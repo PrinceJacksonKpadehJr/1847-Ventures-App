@@ -2,35 +2,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Field Agent Dashboard — 1847 Ventures</title>
+    <title>Register Farmer — 1847 Ventures</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
         .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
         h2 { color: #2c7a3a; }
         .notice { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; }
         label { display: block; margin-top: 12px; font-weight: bold; }
         input[type=text], input[type=email] { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .errorlist { color: #c0392b; list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 0.9em; }
         button[type=submit] { margin-top: 16px; padding: 10px 24px; background: #2c7a3a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
         button[type=submit]:hover { background: #235f2d; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; }
-        th { background: #f0f0f0; }
-        .badge-pending { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
-        .badge-approved { background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
-        .messages { list-style: none; padding: 0; }
-        .messages li { padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; }
-        .messages .success { background: #d4edda; color: #155724; }
-        .messages .error { background: #f8d7da; color: #721c24; }
+        .back-link { margin-top: 16px; display: inline-block; color: #2c7a3a; }
     </style>
 </head>
 <body>
 
 <div class="navbar">
-    <strong>1847 Ventures — Field Agent Dashboard</strong>
+    <strong>1847 Ventures — Register Farmer</strong>
     <div>
         Logged in as {{ request.user.username }}
         <a href="{% url 'logout' %}">Logout</a>
@@ -38,15 +30,6 @@
 </div>
 
 <div class="container">
-
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
     <h2>Register a New Farmer</h2>
 
     <div class="notice">
@@ -55,7 +38,7 @@
     </div>
 
     <div class="card">
-        <form method="POST" action="{% url 'create_farmer' %}">
+        <form method="POST">
             {% csrf_token %}
 
             <label for="id_username">Username</label>
@@ -77,42 +60,9 @@
 
             <button type="submit">Register Farmer</button>
         </form>
-    </div>
 
-    <h2>Registered Farmers</h2>
-    <div class="card">
-        {% if farmers %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Registered</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for farmer in farmers %}
-                <tr>
-                    <td>{{ farmer.username }}</td>
-                    <td>{{ farmer.email }}</td>
-                    <td>{{ farmer.registration_date|date:"Y-m-d" }}</td>
-                    <td>
-                        {% if farmer.profile.is_approved %}
-                        <span class="badge-approved">Approved</span>
-                        {% else %}
-                        <span class="badge-pending">Pending Approval</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>No farmers registered yet.</p>
-        {% endif %}
+        <a class="back-link" href="{% url 'agent_dashboard' %}">&larr; Back to Dashboard</a>
     </div>
-
 </div>
 </body>
 </html>

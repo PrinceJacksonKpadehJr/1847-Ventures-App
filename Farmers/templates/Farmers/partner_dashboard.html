@@ -1,9 +1,26 @@
-@login_required
-def partner_dashboard(request):
-    if request.user.profile.role != 'investor':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/partner_dashboard.html")
-
-
-
-    
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Partner Dashboard — 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
+        h2 { color: #2c7a3a; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <strong>1847 Ventures — Partner Dashboard</strong>
+    <div>Logged in as {{ request.user.username }} <a href="{% url 'logout' %}">Logout</a></div>
+</div>
+<div class="container">
+    <h2>Welcome, {{ request.user.username }}</h2>
+    <div class="card">
+        <p>Your investment portfolio and details will appear here.</p>
+    </div>
+</div>
+</body>
+</html>

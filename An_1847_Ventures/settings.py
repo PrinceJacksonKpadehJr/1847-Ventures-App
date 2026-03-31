@@ -133,6 +133,8 @@ EMAIL_HOST_USER = 'your-email@gmail.com'       # Replace with your email
 EMAIL_HOST_PASSWORD = 'your-email-password'    # Replace with your password
 DEFAULT_FROM_EMAIL = 'your-email@gmail.com'    # Replace with your email
 
+AUTH_USER_MODEL = 'Farmers.Farmer'
+
 AUTHENTICATION_BACKENDS = [
     'Farmers.auth_backends.ApprovedUserBackend',
 ]

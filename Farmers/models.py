@@ -10,6 +10,7 @@ import uuid
 # Custom User Model
 # =================================================
 class Farmer(AbstractUser):
+    email = models.EmailField(unique=True, verbose_name="email address")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     farmer_id = models.CharField(
