@@ -95,6 +95,7 @@ class Crop(models.Model):
     planting_date = models.DateField()
     harvest_date = models.DateField(null=True, blank=True)
     expected_yield_kg = models.DecimalField(max_digits=8, decimal_places=2)
+    seeds_planted_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} on {self.farm.name}"

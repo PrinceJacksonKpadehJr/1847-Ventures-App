@@ -1,5 +1,115 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .topbar { background: #2e7d32; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .topbar a { color: #a5d6a7; text-decoration: none; font-size: 0.9em; }
+        .topbar a:hover { color: white; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 8px; }
+        .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .card h3 { margin-top: 0; color: #1b5e20; }
+        .notification { background: #fff8e1; border-left: 4px solid #f9a825; padding: 14px 18px; border-radius: 4px; margin-bottom: 12px; }
+        .notification .meta { font-size: 0.8em; color: #888; margin-bottom: 6px; }
+        .notification pre { white-space: pre-wrap; word-wrap: break-word; font-family: Arial, sans-serif; margin: 0; font-size: 0.92em; color: #333; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .badge-approved { background: #c8e6c9; color: #2e7d32; }
+        .info-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+        .info-box { flex: 1; min-width: 140px; background: #e8f5e9; border-radius: 6px; padding: 12px 16px; }
+        .info-box .label { font-size: 0.78em; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-box .value { font-size: 1.1em; font-weight: bold; color: #1b5e20; margin-top: 4px; }
+        .no-data { color: #888; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <strong>1847 Ventures — Farmer Dashboard</strong>
+    <span>
+        Logged in as {{ request.user.username }}
+        &nbsp;|&nbsp;
+        <a href="{% url 'logout' %}">Logout</a>
+    </span>
+</div>
+
+<div class="container">
+
+    <h2>Welcome, {{ request.user.get_full_name|default:request.user.username }}</h2>
+
+    <!-- Account Status -->
+    <div class="card">
+        <h3>Account Status</h3>
+        <div class="info-row">
+            <div class="info-box">
+                <div class="label">Role</div>
+                <div class="value">{{ request.user.profile.role|capfirst }}</div>
+            </div>
+            <div class="info-box">
+                <div class="label">Approval</div>
+                <div class="value">
+                    {% if request.user.profile.is_approved %}
+                        <span class="badge badge-approved">Approved</span>
+                    {% else %}
+                        <span style="color:#e65100;">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="label">Member since</div>
+                <div class="value">{{ request.user.registration_date|date:"M Y" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications / Messages -->
+    <div class="card">
+        <h3>Notifications</h3>
+        {% if unread_messages %}
+            {% for msg in unread_messages %}
+            <div class="notification">
+                <div class="meta">From {{ msg.sender.username }} &mdash; {{ msg.created_at|date:"Y-m-d H:i" }}</div>
+                <pre>{{ msg.content }}</pre>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">No new notifications.</p>
+        {% endif %}
+    </div>
+
+    <!-- Farms -->
+    <div class="card">
+        <h3>My Farms</h3>
+        {% with farms=request.user.farms.all %}
+        {% if farms %}
+            {% for farm in farms %}
+            <div style="border:1px solid #e0e0e0; border-radius:6px; padding:14px; margin-bottom:12px;">
+                <strong>{{ farm.name }}</strong>
+                &nbsp;&mdash;&nbsp;
+                {{ farm.location }} &nbsp;|&nbsp; {{ farm.size_in_hectares }} ha
+                {% for crop in farm.crops.all %}
+                <div style="margin-top:8px; padding:8px 12px; background:#f1f8e9; border-radius:4px; font-size:0.9em;">
+                    <strong>Crop:</strong> {{ crop.name }} &nbsp;
+                    <strong>Planted:</strong> {{ crop.planting_date }} &nbsp;
+                    <strong>Expected harvest:</strong> {{ crop.harvest_date|default:"TBD" }} &nbsp;
+                    <strong>Expected yield:</strong> {{ crop.expected_yield_kg }} kg &nbsp;
+                    <strong>Seeds planted:</strong> {{ crop.seeds_planted_kg|default:"—" }} kg
+                </div>
+                {% empty %}
+                    <p style="font-size:0.88em;color:#888;">No crop records for this farm.</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">No farms registered yet.</p>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+</div>
+</body>
+</html>

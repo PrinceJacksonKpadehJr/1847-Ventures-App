@@ -7,6 +7,7 @@ from .views import (
     farmer_dashboard,
     agent_dashboard,
     partner_dashboard,
+    farmer_set_password,
 )
 
 router = DefaultRouter()
@@ -20,6 +21,13 @@ urlpatterns = [
     path('farmer/dashboard/', farmer_dashboard, name='farmer_dashboard'),
     path('agent/dashboard/', agent_dashboard, name='agent_dashboard'),
     path('partner/dashboard/', partner_dashboard, name='partner_dashboard'),
+
+    # Password setup (token-based, no login required)
+    path(
+        'farmer/set-password/<uidb64>/<token>/',
+        farmer_set_password,
+        name='farmer_set_password',
+    ),
 
     # API routes
     path('', include(router.urls)),

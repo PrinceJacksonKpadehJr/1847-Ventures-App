@@ -1,5 +1,261 @@
-@login_required
-def agent_dashboard(request):
-    if request.user.profile.role != 'field_agent':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Agent Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .topbar { background: #2e7d32; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .topbar a { color: #a5d6a7; text-decoration: none; font-size: 0.9em; }
+        .topbar a:hover { color: white; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #1b5e20; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; color: #333; }
+        input, select { width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 0.9em; }
+        input:focus, select:focus { border-color: #2e7d32; outline: none; }
+        .btn { display: inline-block; margin-top: 14px; padding: 10px 20px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.95em; }
+        .btn:hover { background: #1b5e20; }
+        .messages { margin-bottom: 20px; }
+        .msg-success { background: #c8e6c9; border-left: 4px solid #2e7d32; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; color: #1b5e20; }
+        .msg-error { background: #ffcdd2; border-left: 4px solid #c62828; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; color: #b71c1c; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+        th { background: #e8f5e9; text-align: left; padding: 8px 10px; border-bottom: 2px solid #a5d6a7; color: #2e7d32; }
+        td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #f9fbe7; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78em; font-weight: bold; }
+        .badge-pending { background: #fff9c4; color: #f57f17; }
+        .badge-approved { background: #c8e6c9; color: #2e7d32; }
+        .errorlist { color: #c62828; font-size: 0.85em; list-style: none; padding: 0; margin: 4px 0 0; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <strong>1847 Ventures — Field Agent Dashboard</strong>
+    <span>
+        Logged in as {{ request.user.username }}
+        &nbsp;|&nbsp;
+        <a href="{% url 'logout' %}">Logout</a>
+    </span>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}msg-success{% else %}msg-error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h2>Field Agent Dashboard</h2>
+
+    <div class="grid">
+
+        <!-- ===== Register New Farmer ===== -->
+        <div class="card">
+            <h3>Register New Farmer</h3>
+            <p style="font-size:0.88em;color:#555;">
+                Create a farmer account with a username only.
+                The farmer will set their own password once approved by admin.
+            </p>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="register_farmer">
+
+                <label for="{{ registration_form.username.id_for_label }}">
+                    {{ registration_form.username.label }} <span style="color:red">*</span>
+                </label>
+                {{ registration_form.username }}
+                {{ registration_form.username.errors }}
+
+                <label for="{{ registration_form.first_name.id_for_label }}">
+                    {{ registration_form.first_name.label }}
+                </label>
+                {{ registration_form.first_name }}
+
+                <label for="{{ registration_form.last_name.id_for_label }}">
+                    {{ registration_form.last_name.label }}
+                </label>
+                {{ registration_form.last_name }}
+
+                <label for="{{ registration_form.email.id_for_label }}">
+                    {{ registration_form.email.label }}
+                </label>
+                {{ registration_form.email }}
+
+                <label for="{{ registration_form.phone_number.id_for_label }}">
+                    {{ registration_form.phone_number.label }}
+                </label>
+                {{ registration_form.phone_number }}
+
+                <button class="btn" type="submit">Register Farmer</button>
+            </form>
+        </div>
+
+        <!-- ===== Log Farm Activity ===== -->
+        <div class="card">
+            <h3>Log Farm Activity</h3>
+            <p style="font-size:0.88em;color:#555;">
+                Record farm details and crop information for an existing farmer.
+            </p>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="log_activity">
+
+                <label for="{{ activity_form.farmer.id_for_label }}">
+                    {{ activity_form.farmer.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.farmer }}
+                {{ activity_form.farmer.errors }}
+
+                <label for="{{ activity_form.farm_name.id_for_label }}">
+                    {{ activity_form.farm_name.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.farm_name }}
+                {{ activity_form.farm_name.errors }}
+
+                <label for="{{ activity_form.location.id_for_label }}">
+                    {{ activity_form.location.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.location }}
+                {{ activity_form.location.errors }}
+
+                <label for="{{ activity_form.size_in_hectares.id_for_label }}">
+                    {{ activity_form.size_in_hectares.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.size_in_hectares }}
+                {{ activity_form.size_in_hectares.errors }}
+
+                <label for="{{ activity_form.crop_name.id_for_label }}">
+                    {{ activity_form.crop_name.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.crop_name }}
+                {{ activity_form.crop_name.errors }}
+
+                <label for="{{ activity_form.date_planted.id_for_label }}">
+                    {{ activity_form.date_planted.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.date_planted }}
+                {{ activity_form.date_planted.errors }}
+
+                <label for="{{ activity_form.approx_harvest_date.id_for_label }}">
+                    {{ activity_form.approx_harvest_date.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.approx_harvest_date }}
+                {{ activity_form.approx_harvest_date.errors }}
+
+                <label for="{{ activity_form.expected_yield_kg.id_for_label }}">
+                    {{ activity_form.expected_yield_kg.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.expected_yield_kg }}
+                {{ activity_form.expected_yield_kg.errors }}
+
+                <label for="{{ activity_form.seeds_planted_kg.id_for_label }}">
+                    {{ activity_form.seeds_planted_kg.label }} <span style="color:red">*</span>
+                </label>
+                {{ activity_form.seeds_planted_kg }}
+                {{ activity_form.seeds_planted_kg.errors }}
+
+                <button class="btn" type="submit">Log Activity</button>
+            </form>
+        </div>
+
+    </div><!-- .grid -->
+
+    <!-- ===== Registered Farmers Table ===== -->
+    <div class="card" style="margin-top:24px;">
+        <h3>Registered Farmers</h3>
+        {% if registered_farmers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Registered</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farmer in registered_farmers %}
+                <tr>
+                    <td>{{ farmer.username }}</td>
+                    <td>{{ farmer.get_full_name|default:"—" }}</td>
+                    <td>{{ farmer.email|default:"—" }}</td>
+                    <td>{{ farmer.phone_number|default:"—" }}</td>
+                    <td>
+                        {% if farmer.profile.is_approved %}
+                            <span class="badge badge-approved">Approved</span>
+                        {% else %}
+                            <span class="badge badge-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ farmer.registration_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#888;">No farmers registered yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- ===== Farm Activities Table ===== -->
+    <div class="card" style="margin-top:24px;">
+        <h3>Farm Activities</h3>
+        {% if farm_activities %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Farm Name</th>
+                    <th>Owner</th>
+                    <th>Location</th>
+                    <th>Size (ha)</th>
+                    <th>Crops</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farm in farm_activities %}
+                <tr>
+                    <td>{{ farm.name }}</td>
+                    <td>{{ farm.owner.username }}</td>
+                    <td>{{ farm.location }}</td>
+                    <td>{{ farm.size_in_hectares }}</td>
+                    <td>
+                        {% for crop in farm.crops.all %}
+                            <div style="margin-bottom:4px;">
+                                <strong>{{ crop.name }}</strong><br>
+                                <small>
+                                    Planted: {{ crop.planting_date }}<br>
+                                    Harvest: {{ crop.harvest_date|default:"TBD" }}<br>
+                                    Yield: {{ crop.expected_yield_kg }} kg<br>
+                                    Seeds: {{ crop.seeds_planted_kg|default:"—" }} kg
+                                </small>
+                            </div>
+                        {% empty %}
+                            <span style="color:#888;">No crops logged</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#888;">No farm activities logged yet.</p>
+        {% endif %}
+    </div>
+
+</div><!-- .container -->
+</body>
+</html>
