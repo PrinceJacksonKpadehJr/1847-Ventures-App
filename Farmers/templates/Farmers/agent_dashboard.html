@@ -1,5 +1,77 @@
-@login_required
-def agent_dashboard(request):
-    if request.user.profile.role != 'field_agent':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Field Agent Dashboard – 1847 Ventures</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding-top: 40px;
+        }
+        h1 { color: #2c3e50; }
+        .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .card {
+            margin: 15px;
+            padding: 20px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 200px;
+            transition: 0.3s;
+        }
+        .card:hover { transform: scale(1.05); }
+        .card a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+        .messages { margin: 10px auto; max-width: 500px; }
+        .messages .success {
+            color: green;
+            background: #e9f7ef;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .messages .error {
+            color: #c0392b;
+            background: #fdecea;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .logout { margin-top: 30px; }
+        .logout a { color: #888; text-decoration: none; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<h1>Field Agent Dashboard</h1>
+<p>Welcome, {{ request.user.username }}</p>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <p class="{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container">
+    <div class="card">
+        <a href="{% url 'create_farmer' %}">➕ Register New Farmer</a>
+    </div>
+</div>
+
+<div class="logout">
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+</body>
+</html>

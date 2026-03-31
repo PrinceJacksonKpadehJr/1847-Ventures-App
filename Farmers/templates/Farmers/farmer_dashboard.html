@@ -1,5 +1,28 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farmer Dashboard – 1847 Ventures</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding-top: 40px;
+        }
+        h1 { color: #2c3e50; }
+        .logout { margin-top: 30px; }
+        .logout a { color: #888; text-decoration: none; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<h1>Farmer Dashboard</h1>
+<p>Welcome, {{ request.user.username }}</p>
+
+<div class="logout">
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+</body>
+</html>

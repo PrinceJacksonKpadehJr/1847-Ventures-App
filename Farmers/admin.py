@@ -1,6 +1,9 @@
 from django.contrib import admin
-from .models import UserProfile
-from .models import UserProfile
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from .models import (
     Farmer,
     UserProfile,
@@ -13,6 +16,64 @@ from .models import (
     Message
 )
 
+
+def _get_farmer_email(profile):
+    """Return email from UserProfile, falling back to Farmer.email."""
+    return profile.email or profile.user.email or None
+
+
+@admin.action(description="Approve selected users and send password setup email")
+def approve_farmers(modeladmin, request, queryset):
+    approved_count = 0
+    for profile in queryset:
+        farmer = profile.user
+        email = _get_farmer_email(profile)
+
+        if not email:
+            modeladmin.message_user(
+                request,
+                f"Skipped {farmer.username}: no email address on file.",
+                level="warning",
+            )
+            continue
+
+        # Sync email to Farmer model so Django built-ins work
+        if not farmer.email:
+            farmer.email = email
+            farmer.save(update_fields=["email"])
+
+        profile.is_approved = True
+        profile.save(update_fields=["is_approved"])
+
+        token = default_token_generator.make_token(farmer)
+        uid = urlsafe_base64_encode(force_bytes(farmer.pk))
+        reset_url = request.build_absolute_uri(
+            f"/reset/{uid}/{token}/"
+        )
+
+        send_mail(
+            subject="Set your 1847 Ventures password",
+            message=(
+                f"Hello {farmer.username},\n\n"
+                "Your account has been approved by an administrator.\n\n"
+                "Please set your password by visiting the link below:\n\n"
+                f"{reset_url}\n\n"
+                "This link is valid for 3 days. If you did not expect this "
+                "email, please ignore it."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        approved_count += 1
+
+    if approved_count:
+        modeladmin.message_user(
+            request,
+            f"Successfully approved {approved_count} account(s) and sent password setup emails."
+        )
+
+
 # ===== Custom Farmer Admin =====
 @admin.register(Farmer)
 class FarmerAdmin(admin.ModelAdmin):
@@ -23,9 +84,10 @@ class FarmerAdmin(admin.ModelAdmin):
 # ===== Register User Profile =======
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_approved")
-    list_filter = ("is_approved",)
-    search_fields = ("user__username", "user__email")
+    list_display = ("user", "email", "role", "is_approved")
+    list_filter = ("is_approved", "role")
+    search_fields = ("user__username", "user__email", "email")
+    actions = [approve_farmers]
 
 # ===== Farm Admin =====
 @admin.register(Farm)
