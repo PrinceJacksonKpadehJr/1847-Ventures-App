@@ -1,5 +1,57 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar { background: #388e3c; color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        h2 { color: #388e3c; }
+        .info-row { display: flex; gap: 12px; margin-bottom: 8px; font-size: 14px; }
+        .label { font-weight: bold; min-width: 120px; }
+        .badge-approved { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures – Farmer Portal</strong>
+    <div>
+        <span>Logged in as {{ request.user.username }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>Welcome, {{ request.user.username }}</h2>
+        <div class="info-row"><span class="label">Role:</span> <span>{{ profile.role }}</span></div>
+        <div class="info-row"><span class="label">Email:</span> <span>{{ request.user.email }}</span></div>
+        <div class="info-row">
+            <span class="label">Account Status:</span>
+            <span class="badge-approved">{% if profile.is_approved %}Approved{% else %}Pending{% endif %}</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>My Farms</h2>
+        {% with farms=request.user.farms.all %}
+            {% if farms %}
+                <ul>
+                    {% for farm in farms %}
+                        <li>{{ farm.name }} — {{ farm.location }} ({{ farm.size_in_hectares }} ha)</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No farm records found. Your field agent will add them for you.</p>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+</body>
+</html>
