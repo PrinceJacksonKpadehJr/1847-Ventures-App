@@ -1,5 +1,64 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farmer Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar { background: #2d6a4f; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 25px; }
+        h2 { color: #2d6a4f; margin-top: 0; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .label { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <span>1847 Ventures – Farmer Portal</span>
+    <div>
+        <span>{{ request.user.username }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Welcome, {{ request.user.username }}!</h2>
+        <div class="info-row">
+            <span class="label">Role:</span>
+            <span>{{ request.user.profile.role|capfirst }}</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Account Status:</span>
+            <span>{% if request.user.profile.is_approved %}Approved{% else %}Pending Approval{% endif %}</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Email:</span>
+            <span>{{ request.user.email|default:"Not set" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Registered:</span>
+            <span>{{ request.user.date_joined|date:"F j, Y" }}</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>My Farms</h2>
+        {% if request.user.farms.all %}
+        <ul>
+            {% for farm in request.user.farms.all %}
+            <li><strong>{{ farm.name }}</strong> — {{ farm.location }} ({{ farm.size_in_hectares }} ha)</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No farms on record yet. Your field agent will add farm details.</p>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>
