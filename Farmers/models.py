@@ -62,6 +62,12 @@ class UserProfile(models.Model):
 
     is_approved = models.BooleanField(default=False)
 
+    email = models.EmailField(
+        unique=True,
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 

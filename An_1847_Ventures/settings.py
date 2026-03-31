@@ -1,3 +1,5 @@
+AUTH_USER_MODEL = 'Farmers.Farmer'
+
 STATIC_URL = '/static/'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

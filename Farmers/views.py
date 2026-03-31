@@ -13,6 +13,8 @@ from django.http import HttpResponseForbidden
 from Farmers.models import UserProfile
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 
 
@@ -256,21 +258,73 @@ class CustomLogoutView(LogoutView):
 
 @login_required
 def farmer_dashboard(request):
-    if request.user.role != 'farmer':
+    if request.user.profile.role != 'farmer':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/farmer_dashboard.html")
 
 
 @login_required
 def agent_dashboard(request):
-    if request.user.role != 'field_agent':
+    if request.user.profile.role != 'field_agent':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/agent_dashboard.html")
 
 
 @login_required
 def partner_dashboard(request):
-    if request.user.role != 'partner':
+    if request.user.profile.role != 'partner':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/partner_dashboard.html")
+
+
+@login_required
+def create_farmer(request):
+    if request.user.profile.role != 'field_agent':
+        return HttpResponseForbidden("Access Denied")
+
+    errors = {}
+    post_data = {}
+
+    if request.method == 'POST':
+        post_data = request.POST
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+
+        if not username:
+            errors['username'] = 'Username is required.'
+        elif Farmer.objects.filter(username=username).exists():
+            errors['username'] = 'This username is already taken.'
+
+        if not email:
+            errors['email'] = 'Email is required.'
+        else:
+            try:
+                validate_email(email)
+            except ValidationError:
+                errors['email'] = 'Enter a valid email address.'
+            else:
+                if UserProfile.objects.filter(email=email).exists():
+                    errors['email'] = 'This email is already registered to another farmer.'
+
+        if not errors:
+            farmer = Farmer(username=username, email=email)
+            farmer.set_unusable_password()
+            farmer.save()
+
+            profile = farmer.profile
+            profile.role = 'farmer'
+            profile.email = email
+            profile.is_approved = False
+            profile.save()
+
+            messages.success(
+                request,
+                f"Farmer '{username}' registered successfully and is pending admin approval."
+            )
+            return redirect('agent_dashboard')
+
+    return render(request, 'Farmers/create_farmer.html', {
+        'errors': errors,
+        'post': post_data,
+    })
 
