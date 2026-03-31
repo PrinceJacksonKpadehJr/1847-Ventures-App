@@ -1,5 +1,5 @@
 from django.contrib.auth.backends import ModelBackend
-from django.core.exceptions import PermissionDenied
+
 
 class ApprovedUserBackend(ModelBackend):
     def user_can_authenticate(self, user):
@@ -10,8 +10,9 @@ class ApprovedUserBackend(ModelBackend):
         if user.is_superuser:
             return True
 
-        # Block unapproved users
+        # Block unapproved users — return False so the login form shows a
+        # generic "invalid credentials" error; the view adds a specific message.
         if hasattr(user, "profile") and not user.profile.is_approved:
-            raise PermissionDenied("Account pending admin approval.")
+            return False
 
         return True

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile
-from .models import UserProfile
+from django.contrib import messages as django_messages
 from .models import (
     Farmer,
     UserProfile,
@@ -10,8 +9,30 @@ from .models import (
     Investment,
     FarmActivity,
     Announcement,
-    Message
+    Message,
 )
+from .utils import send_password_setup_email
+
+
+# ===== Admin action =====
+@admin.action(description="Approve selected farmers and send password-setup email")
+def approve_farmers(modeladmin, request, queryset):
+    """Approve selected UserProfiles and e-mail each farmer a password-setup link."""
+    approved_count = 0
+    for profile in queryset.filter(is_approved=False, role="farmer"):
+        profile.is_approved = True
+        profile.save()
+        # Email is sent via post_save signal -- see signals.py on_profile_approved
+        approved_count += 1
+
+    if approved_count:
+        django_messages.success(
+            request,
+            f"{approved_count} farmer(s) approved. Password-setup email(s) sent.",
+        )
+    else:
+        django_messages.warning(request, "No pending farmer profiles were found in the selection.")
+
 
 # ===== Custom Farmer Admin =====
 @admin.register(Farmer)
@@ -23,9 +44,17 @@ class FarmerAdmin(admin.ModelAdmin):
 # ===== Register User Profile =======
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_approved")
-    list_filter = ("is_approved",)
+    list_display = ("user", "role", "user_email", "is_approved")
+    list_filter = ("is_approved", "role")
     search_fields = ("user__username", "user__email")
+    actions = [approve_farmers]
+
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = "Email"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user")
 
 # ===== Farm Admin =====
 @admin.register(Farm)
@@ -68,7 +97,3 @@ class AnnouncementAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('sender', 'receiver', 'created_at', 'is_read')
     search_fields = ('sender__username', 'receiver__username')
-
-
-
-

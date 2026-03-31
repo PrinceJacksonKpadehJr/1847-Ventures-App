@@ -1,9 +1,91 @@
-@login_required
-def partner_dashboard(request):
-    if request.user.profile.role != 'investor':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/partner_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investor Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar { background: #1565c0; color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        h2 { color: #1565c0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+        th { background: #e3f2fd; color: #0d47a1; }
+        .info-row { display: flex; gap: 12px; margin-bottom: 8px; font-size: 14px; }
+        .label { font-weight: bold; min-width: 130px; }
+        .badge-approved { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+    </style>
+</head>
+<body>
 
+<div class="navbar">
+    <strong>1847 Ventures – Investor Portal</strong>
+    <div>
+        <span>Logged in as {{ request.user.username }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
 
+<div class="container">
 
-    
+    <div class="card">
+        <h2>Account Status</h2>
+        <div class="info-row"><span class="label">Role:</span> <span>{{ profile.role }}</span></div>
+        <div class="info-row">
+            <span class="label">Approval:</span>
+            <span class="badge-approved">{% if profile.is_approved %}Approved{% else %}Pending{% endif %}</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>My Investments</h2>
+        <p>Your portfolio history and expected returns.</p>
+        {% if investments %}
+            <p><strong>Total Invested:</strong> ${{ total_invested }}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Farm</th>
+                        <th>Amount ($)</th>
+                        <th>Expected Return (%)</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in investments %}
+                    <tr>
+                        <td>{{ inv.farm.name }}</td>
+                        <td>{{ inv.amount }}</td>
+                        <td>{{ inv.expected_return_percentage|default:"—" }}</td>
+                        <td>{{ inv.invested_at|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No investments yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Announcements</h2>
+        {% if announcements %}
+            {% for ann in announcements %}
+                <div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #eee;">
+                    <strong>{{ ann.title }}</strong>
+                    <p style="margin:4px 0; font-size:14px;">{{ ann.message }}</p>
+                    <small style="color:#888;">{{ ann.created_at|date:"d M Y" }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No announcements right now.</p>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'Farmers.apps.FarmersConfig',
 ]
 
+AUTH_USER_MODEL = 'Farmers.Farmer'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
