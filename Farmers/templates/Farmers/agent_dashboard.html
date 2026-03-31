@@ -1,5 +1,118 @@
-@login_required
-def agent_dashboard(request):
-    if request.user.profile.role != 'field_agent':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/agent_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agent Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .navbar { background: #2d6a4f; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 25px; }
+        h2 { color: #2d6a4f; margin-top: 0; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type=text], input[type=email] { width: 100%; padding: 9px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .help { font-size: 0.85em; color: #555; margin-top: 3px; }
+        .btn { background: #2d6a4f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px; }
+        .btn:hover { background: #1b4332; }
+        .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 15px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #2d6a4f; color: white; }
+        tr:hover { background: #f9f9f9; }
+        .badge-pending { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+        .badge-approved { background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <span>1847 Ventures – Field Agent Portal</span>
+    <div>
+        <span>{{ request.user.username }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+
+    <!-- Register New Farmer -->
+    <div class="card">
+        <h2>Register New Farmer</h2>
+        <p>
+            Create a farmer account by entering a username and email address.
+            <strong>The farmer can use an existing email address or create a new one.</strong>
+            After admin approval, a password-setup link will be sent to the email provided.
+        </p>
+        <form method="POST" action="{% url 'create_farmer' %}">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="alert alert-error">
+                Please correct the errors below.
+            </div>
+            {% endif %}
+
+            <label for="{{ form.username.id_for_label }}">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div style="color:#721c24; font-size:0.9em;">{{ form.username.errors }}</div>
+            {% endif %}
+            <div class="help">{{ form.username.help_text }}</div>
+
+            <label for="{{ form.email.id_for_label }}">Email Address</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div style="color:#721c24; font-size:0.9em;">{{ form.email.errors }}</div>
+            {% endif %}
+            <div class="help">{{ form.email.help_text }}</div>
+
+            <button type="submit" class="btn">Register Farmer</button>
+        </form>
+    </div>
+
+    <!-- Farmer List -->
+    <div class="card">
+        <h2>Registered Farmers</h2>
+        {% if farmers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Registered</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farmer in farmers %}
+                <tr>
+                    <td>{{ farmer.username }}</td>
+                    <td>{{ farmer.email|default:"—" }}</td>
+                    <td>{{ farmer.date_joined|date:"Y-m-d" }}</td>
+                    <td>
+                        {% if farmer.profile.is_approved %}
+                            <span class="badge-approved">Approved</span>
+                        {% else %}
+                            <span class="badge-pending">Pending Approval</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No farmers registered yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>
