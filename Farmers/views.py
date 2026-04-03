@@ -301,7 +301,7 @@ def agent_dashboard(request):
                 farmer = UserModel.objects.create(username=username)
                 farmer.set_unusable_password()
                 farmer.save()
-                profile = farmer.profile
+                profile, _ = UserProfile.objects.get_or_create(user=farmer)
                 profile.role = "farmer"
                 profile.is_approved = False
                 profile.email = email
