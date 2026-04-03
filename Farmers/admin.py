@@ -1,6 +1,4 @@
 from django.contrib import admin
-from .models import UserProfile
-from .models import UserProfile
 from .models import (
     Farmer,
     UserProfile,
@@ -13,19 +11,35 @@ from .models import (
     Message
 )
 
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    fields = ("role", "email", "is_approved")
+    extra = 0
+
+
 # ===== Custom Farmer Admin =====
 @admin.register(Farmer)
 class FarmerAdmin(admin.ModelAdmin):
-    list_display = ('username', 'farmer_id', 'phone_number', 'is_staff', 'date_joined')
+    inlines = [UserProfileInline]
+    list_display = ('username', 'farmer_id', 'phone_number', 'is_staff', 'is_active', 'date_joined')
     search_fields = ('username', 'farmer_id', 'first_name', 'last_name')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
+
 
 # ===== Register User Profile =======
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_approved")
-    list_filter = ("is_approved",)
-    search_fields = ("user__username", "user__email")
+    list_display = ("user", "email", "role", "is_approved")
+    list_filter = ("role", "is_approved")
+    search_fields = ("user__username", "email")
+    actions = ["approve_selected"]
+
+    def approve_selected(self, request, queryset):
+        updated = queryset.update(is_approved=True)
+        self.message_user(request, f"{updated} user(s) approved.")
+    approve_selected.short_description = "Approve selected users"
 
 # ===== Farm Admin =====
 @admin.register(Farm)
