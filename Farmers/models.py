@@ -62,6 +62,8 @@ class UserProfile(models.Model):
 
     is_approved = models.BooleanField(default=False)
 
+    email = models.EmailField(unique=True, null=True, blank=True)
+
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
@@ -228,3 +230,30 @@ class Message(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
+
+# =================================================
+# Farm Report (submitted by Field Agents)
+# =================================================
+class FarmReport(models.Model):
+    field_agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="farm_reports"
+    )
+    farmer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_farm_reports"
+    )
+    farm_location = models.CharField(max_length=255)
+    farm_size = models.DecimalField(max_digits=6, decimal_places=2)
+    crop_type = models.CharField(max_length=100)
+    date_planted = models.DateField()
+    approx_harvest_date = models.DateField(null=True, blank=True)
+    expected_yield_kg = models.DecimalField(max_digits=8, decimal_places=2)
+    seeds_planted_kg = models.DecimalField(max_digits=8, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.farmer.username} - {self.crop_type} ({self.farm_location})"
