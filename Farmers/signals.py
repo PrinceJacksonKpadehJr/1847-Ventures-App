@@ -1,16 +1,7 @@
-from django.dispatch import receiver
-from django.contrib.auth.signals import user_logged_in
-from django.core.exceptions import PermissionDenied
-
-@receiver(user_logged_in)
-def block_unapproved_users(sender, user, request, **kwargs):
-    if hasattr(user, "profile") and not user.profile.is_approved:
-        raise PermissionDenied("Account pending admin approval.")
-
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
-from django.shortcuts import redirect
 from django.contrib import messages
+
 
 @receiver(user_logged_in)
 def block_unapproved_users(sender, request, user, **kwargs):

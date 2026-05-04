@@ -39,15 +39,16 @@ class FarmerViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        role = user.profile.role
+        if role == 'admin':
             return Farmer.objects.all()
-        elif user.role == 'field_agent':
+        elif role == 'field_agent':
             return Farmer.objects.filter(created_by=user)
         return Farmer.objects.filter(id=user.id)  # Farmer sees only self
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role in ['admin', 'field_agent']:
+        if user.profile.role in ['admin', 'field_agent']:
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to create a farmer.")
@@ -62,17 +63,18 @@ class FarmViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        role = user.profile.role
+        if role == 'admin':
             return Farm.objects.all()
-        elif user.role == 'field_agent':
+        elif role == 'field_agent':
             return Farm.objects.filter(farmer__created_by=user)
-        elif user.role == 'farmer':
+        elif role == 'farmer':
             return Farm.objects.filter(farmer=user)
         return Farm.objects.none()  # Investors cannot modify farms
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role in ['admin', 'field_agent']:
+        if user.profile.role in ['admin', 'field_agent']:
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to create a farm.")
@@ -87,19 +89,20 @@ class HarvestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        role = user.profile.role
+        if role == 'admin':
             return Harvest.objects.all()
-        elif user.role == 'field_agent':
+        elif role == 'field_agent':
             return Harvest.objects.filter(farm__farmer__created_by=user)
-        elif user.role == 'farmer':
+        elif role == 'farmer':
             return Harvest.objects.filter(farm__farmer=user)
-        elif user.role == 'investor':
+        elif role == 'investor':
             return Harvest.objects.all()
         return Harvest.objects.none()
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role in ['admin', 'field_agent', 'farmer']:
+        if user.profile.role in ['admin', 'field_agent', 'farmer']:
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to create a harvest.")
@@ -114,17 +117,16 @@ class InvestmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        role = user.profile.role
+        if role == 'admin':
             return Investment.objects.all()
-        elif user.role == 'investor':
-            return Investment.objects.filter(farmer=user)
-        elif user.role == 'farmer':
-            return Investment.objects.filter(farmer=user)
+        elif role in ['investor', 'farmer']:
+            return Investment.objects.filter(investor=user)
         return Investment.objects.none()
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role in ['admin', 'investor']:
+        if user.profile.role in ['admin', 'investor']:
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to create an investment.")
@@ -139,19 +141,20 @@ class FarmActivityViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        role = user.profile.role
+        if role == 'admin':
             return FarmActivity.objects.all()
-        elif user.role == 'field_agent':
+        elif role == 'field_agent':
             return FarmActivity.objects.filter(farmer__created_by=user)
-        elif user.role == 'farmer':
+        elif role == 'farmer':
             return FarmActivity.objects.filter(farmer=user)
-        elif user.role == 'investor':
+        elif role == 'investor':
             return FarmActivity.objects.all()
         return FarmActivity.objects.none()
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role in ['admin', 'field_agent', 'farmer']:
+        if user.profile.role in ['admin', 'field_agent', 'farmer']:
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to create farm activity.")
@@ -185,7 +188,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return Message.objects.all()
 
-        if user.role in ['field_agent', 'farmer']:
+        if user.profile.role in ['field_agent', 'farmer']:
             return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
 
         return Message.objects.none()
@@ -194,10 +197,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         receiver = serializer.validated_data['receiver']
 
-        if user.role == 'farmer' and receiver.is_superuser:
+        if user.profile.role == 'farmer' and receiver.is_superuser:
             raise PermissionDenied("Farmers cannot message admin.")
 
-        if user.role == 'farmer' and receiver.role != 'field_agent':
+        if user.profile.role == 'farmer' and receiver.profile.role != 'field_agent':
             raise PermissionDenied("Farmers can only message field agents.")
 
         serializer.save(sender=user)
@@ -256,21 +259,21 @@ class CustomLogoutView(LogoutView):
 
 @login_required
 def farmer_dashboard(request):
-    if request.user.role != 'farmer':
+    if request.user.profile.role != 'farmer':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/farmer_dashboard.html")
 
 
 @login_required
 def agent_dashboard(request):
-    if request.user.role != 'field_agent':
+    if request.user.profile.role != 'field_agent':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/agent_dashboard.html")
 
 
 @login_required
 def partner_dashboard(request):
-    if request.user.role != 'partner':
+    if request.user.profile.role != 'investor':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/partner_dashboard.html")
 

@@ -1,5 +1,52 @@
-@login_required
-def farmer_dashboard(request):
-    if request.user.profile.role != 'farmer':
-        return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/farmer_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farmer Dashboard – 1847 Ventures</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .navbar { background: #2e7d32; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        h2 { color: #2e7d32; }
+        .cards { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; flex: 1 1 200px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #555; font-size: 0.9rem; text-transform: uppercase; }
+        .card p { font-size: 1.8rem; font-weight: bold; color: #2e7d32; margin: 0; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures – Farmer Dashboard</strong>
+    <div>
+        <span>Welcome, {{ request.user.first_name|default:request.user.username }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>My Farm Overview</h2>
+
+    <div class="cards">
+        <div class="card">
+            <h3>My Farms</h3>
+            <p>{{ request.user.farms.count }}</p>
+        </div>
+        <div class="card">
+            <h3>Registered Since</h3>
+            <p style="font-size:1rem;">{{ request.user.registration_date|date:"M d, Y" }}</p>
+        </div>
+        <div class="card">
+            <h3>Farmer ID</h3>
+            <p style="font-size:0.9rem;">{{ request.user.farmer_id }}</p>
+        </div>
+    </div>
+
+    <h2 style="margin-top:40px;">Announcements</h2>
+    <p><a href="/api/farmers/announcements/">View latest announcements</a></p>
+</div>
+
+</body>
+</html>
+
