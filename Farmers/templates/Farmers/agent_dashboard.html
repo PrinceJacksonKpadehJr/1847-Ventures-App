@@ -9,6 +9,7 @@
         .navbar a { color: white; text-decoration: none; margin-left: 15px; }
         .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
         h2 { color: #2c7a3a; }
+        h3 { color: #2c7a3a; margin-top: 0; }
         .notice { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
         label { display: block; margin-top: 12px; font-weight: bold; }
@@ -21,10 +22,15 @@
         th { background: #f0f0f0; }
         .badge-pending { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
         .badge-approved { background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
+        .badge-request { background: #fd7e14; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
         .messages { list-style: none; padding: 0; }
         .messages li { padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; }
         .messages .success { background: #d4edda; color: #155724; }
         .messages .error { background: #f8d7da; color: #721c24; }
+        .btn { display: inline-block; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 0.88em; font-weight: bold; }
+        .btn-primary { background: #2c7a3a; color: white; }
+        .btn-primary:hover { background: #235f2d; }
+        .empty-state { color: #888; font-style: italic; }
     </style>
 </head>
 <body>
@@ -45,6 +51,42 @@
         <li class="{{ message.tags }}">{{ message }}</li>
         {% endfor %}
     </ul>
+    {% endif %}
+
+    <!-- Pending Requests from Admin -->
+    {% if pending_requests %}
+    <div class="card">
+        <h3>📋 Farmer Registrations Assigned to You <span class="badge-request">{{ pending_requests|length }} pending</span></h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Farmer Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Notes from Admin</th>
+                    <th>Assigned</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in pending_requests %}
+                <tr>
+                    <td><strong>{{ req.farmer_name }}</strong></td>
+                    <td>{{ req.farmer_email|default:"—" }}</td>
+                    <td>{{ req.farmer_phone|default:"—" }}</td>
+                    <td>{{ req.notes|default:"—" }}</td>
+                    <td>{{ req.created_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <a class="btn btn-primary"
+                           href="{% url 'create_farmer' %}?request_id={{ req.pk }}">
+                            Register Farmer
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% endif %}
 
     <h2>Register a New Farmer</h2>
@@ -109,7 +151,7 @@
             </tbody>
         </table>
         {% else %}
-        <p>No farmers registered yet.</p>
+        <p class="empty-state">No farmers registered yet.</p>
         {% endif %}
     </div>
 

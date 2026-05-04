@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Assign Farmer Registration — 1847 Ventures</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .navbar {
+            background: #1a4f27; color: white; padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        h2 { color: #1a4f27; }
+        .notice {
+            background: #fff3cd; border: 1px solid #ffc107;
+            border-radius: 6px; padding: 12px 18px; margin-bottom: 20px;
+        }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1); padding: 28px;
+        }
+        label { display: block; margin-top: 14px; font-weight: bold; color: #333; }
+        input[type=text], input[type=email], select, textarea {
+            width: 100%; padding: 10px; margin-top: 5px;
+            border: 1px solid #ccc; border-radius: 4px; font-size: 1em;
+        }
+        textarea { resize: vertical; }
+        .errorlist {
+            color: #c0392b; list-style: none; padding: 0;
+            margin: 4px 0 0 0; font-size: 0.9em;
+        }
+        .btn {
+            display: inline-block; margin-top: 20px; padding: 10px 28px;
+            background: #fd7e14; color: white; border: none;
+            border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold;
+        }
+        .btn:hover { background: #e06b0e; }
+        .back-link { display: inline-block; margin-top: 14px; color: #2c7a3a; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures — Assign Farmer Registration</strong>
+    <div>
+        Logged in as {{ request.user.username }}
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>Assign Farmer Registration to Agent</h2>
+
+    <div class="notice">
+        <strong>Note:</strong> Admins cannot directly create farmer accounts.
+        Fill in the farmer's preliminary information and select a field agent
+        who will complete and verify the registration on the ground.
+    </div>
+
+    <div class="card">
+        <form method="POST">
+            {% csrf_token %}
+
+            <label for="id_farmer_name">Farmer's Full Name</label>
+            <input type="text" id="id_farmer_name" name="farmer_name"
+                   value="{{ form.farmer_name.value|default:'' }}"
+                   placeholder="Full name of the farmer" required>
+            {% if form.farmer_name.errors %}
+            <ul class="errorlist">{% for e in form.farmer_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <label for="id_farmer_email">Farmer's Email <span style="font-weight:normal;color:#888;">(optional)</span></label>
+            <input type="email" id="id_farmer_email" name="farmer_email"
+                   value="{{ form.farmer_email.value|default:'' }}"
+                   placeholder="farmer@example.com">
+            {% if form.farmer_email.errors %}
+            <ul class="errorlist">{% for e in form.farmer_email.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <label for="id_farmer_phone">Farmer's Phone <span style="font-weight:normal;color:#888;">(optional)</span></label>
+            <input type="text" id="id_farmer_phone" name="farmer_phone"
+                   value="{{ form.farmer_phone.value|default:'' }}"
+                   placeholder="Phone number">
+
+            <label for="id_assigned_agent">Assign to Field Agent</label>
+            <select id="id_assigned_agent" name="assigned_agent" required>
+                <option value="">— Select a Field Agent —</option>
+                {% for agent in form.assigned_agent.field.queryset %}
+                <option value="{{ agent.pk }}"
+                    {% if form.assigned_agent.value|stringformat:"s" == agent.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ agent.username }}{% if agent.first_name or agent.last_name %} — {{ agent.first_name }} {{ agent.last_name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            {% if form.assigned_agent.errors %}
+            <ul class="errorlist">{% for e in form.assigned_agent.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <label for="id_notes">Notes for the Agent <span style="font-weight:normal;color:#888;">(optional)</span></label>
+            <textarea id="id_notes" name="notes" rows="3"
+                      placeholder="Additional context or instructions for the field agent...">{{ form.notes.value|default:'' }}</textarea>
+
+            <button class="btn" type="submit">📋 Assign Registration</button>
+        </form>
+
+        <a class="back-link" href="{% url 'admin_dashboard' %}">&larr; Back to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

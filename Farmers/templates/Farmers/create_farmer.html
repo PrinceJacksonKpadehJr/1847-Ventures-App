@@ -40,6 +40,9 @@
     <div class="card">
         <form method="POST">
             {% csrf_token %}
+            {% if request_id %}
+            <input type="hidden" name="request_id" value="{{ request_id }}">
+            {% endif %}
 
             <label for="id_username">Username</label>
             <input type="text" id="id_username" name="username"

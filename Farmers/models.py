@@ -63,6 +63,14 @@ class UserProfile(models.Model):
 
     is_approved = models.BooleanField(default=False)
 
+    created_by_agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="farmers_created"
+    )
+
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
@@ -220,6 +228,81 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"
+
+
+# =================================================
+# Admin Notification
+# =================================================
+class AdminNotification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('new_farmer', 'New Farmer Submission'),
+        ('info', 'Information'),
+    ]
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='admin_notifications'
+    )
+    notification_type = models.CharField(
+        max_length=20,
+        choices=NOTIFICATION_TYPES,
+        default='new_farmer'
+    )
+    message = models.TextField()
+    related_farmer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='notifications_about'
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.message[:50]}"
+
+
+# =================================================
+# Farmer Registration Request
+# =================================================
+class FarmerRegistrationRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='farmer_requests_created'
+    )
+    assigned_agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='farmer_requests_assigned'
+    )
+    farmer_name = models.CharField(max_length=255)
+    farmer_email = models.EmailField(blank=True)
+    farmer_phone = models.CharField(max_length=20, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Request for {self.farmer_name} → {self.assigned_agent.username}"
 
 
 # =================================================

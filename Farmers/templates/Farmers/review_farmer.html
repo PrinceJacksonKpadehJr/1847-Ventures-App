@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Review Farmer — 1847 Ventures</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .navbar {
+            background: #1a4f27; color: white; padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        h2 { color: #1a4f27; }
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1); padding: 28px; margin-bottom: 20px;
+        }
+        .info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { width: 160px; font-weight: bold; color: #555; flex-shrink: 0; }
+        .info-value { color: #222; }
+        label { display: block; margin-top: 14px; font-weight: bold; color: #333; }
+        textarea, input[type=text] {
+            width: 100%; padding: 10px; margin-top: 5px;
+            border: 1px solid #ccc; border-radius: 4px; font-size: 1em;
+        }
+        textarea { resize: vertical; }
+        .btn {
+            display: inline-block; padding: 10px 22px;
+            border: none; border-radius: 4px; cursor: pointer;
+            font-size: 0.95em; font-weight: bold; text-decoration: none;
+            margin-top: 10px; margin-right: 8px;
+        }
+        .btn-primary { background: #2c7a3a; color: white; }
+        .btn-primary:hover { background: #235f2d; }
+        .btn-danger { background: #c0392b; color: white; }
+        .btn-danger:hover { background: #a93226; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-info:hover { background: #138496; }
+        .back-link { display: inline-block; margin-top: 14px; color: #2c7a3a; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .section-title { color: #2c7a3a; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures — Review Farmer</strong>
+    <div>
+        Logged in as {{ request.user.username }}
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>Review Farmer Registration</h2>
+
+    <!-- Farmer Info -->
+    <div class="card">
+        <h3 class="section-title">Farmer Details</h3>
+        <div class="info-row">
+            <span class="info-label">Username</span>
+            <span class="info-value">{{ farmer.username }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ farmer.email }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Phone</span>
+            <span class="info-value">{{ farmer.phone_number|default:"—" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Registered</span>
+            <span class="info-value">{{ farmer.registration_date|date:"Y-m-d H:i" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Created By Agent</span>
+            <span class="info-value">
+                {% if farmer.profile.created_by_agent %}
+                    {{ farmer.profile.created_by_agent.username }}
+                {% else %}
+                    <em style="color:#999;">Not tracked</em>
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value">
+                {% if farmer.profile.is_approved %}
+                    <span style="color:green;">✔ Approved</span>
+                {% else %}
+                    <span style="color:#856404;">⏳ Pending Approval</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    {% if action == "reject" %}
+    <!-- Reject Form -->
+    <div class="card">
+        <h3 class="section-title">Reject Farmer</h3>
+        <form method="POST" action="{% url 'reject_farmer' farmer.pk %}">
+            {% csrf_token %}
+            <label for="id_reason">Reason for rejection</label>
+            <textarea id="id_reason" name="reason" rows="4"
+                      placeholder="Explain why this registration is being rejected..."></textarea>
+            <button class="btn btn-danger" type="submit">✘ Confirm Rejection</button>
+        </form>
+        <a class="back-link" href="{% url 'admin_dashboard' %}">&larr; Cancel</a>
+    </div>
+
+    {% elif action == "request_info" %}
+    <!-- Request More Info Form -->
+    <div class="card">
+        <h3 class="section-title">Request Additional Information</h3>
+        <p style="color:#555;">
+            A message will be sent to the field agent
+            {% if farmer.profile.created_by_agent %}
+            (<strong>{{ farmer.profile.created_by_agent.username }}</strong>)
+            {% endif %}
+            asking them to provide more details.
+        </p>
+        <form method="POST" action="{% url 'request_more_info' farmer.pk %}">
+            {% csrf_token %}
+            <label for="id_info_request">What additional information is needed?</label>
+            <textarea id="id_info_request" name="info_request" rows="4"
+                      placeholder="Describe what extra details or documents are required..."></textarea>
+            <button class="btn btn-info" type="submit">💬 Send Request</button>
+        </form>
+        <a class="back-link" href="{% url 'admin_dashboard' %}">&larr; Cancel</a>
+    </div>
+
+    {% else %}
+    <!-- Default: show all actions -->
+    <div class="card">
+        <h3 class="section-title">Actions</h3>
+        <a class="btn btn-primary"
+           href="{% url 'approve_farmer' farmer.pk %}"
+           onclick="return confirm('Approve farmer {{ farmer.username }}?')">✔ Approve</a>
+        <a class="btn btn-info"
+           href="{% url 'request_more_info' farmer.pk %}">💬 Request More Info</a>
+        <a class="btn btn-danger"
+           href="{% url 'reject_farmer' farmer.pk %}">✘ Reject</a>
+    </div>
+    {% endif %}
+
+    <a class="back-link" href="{% url 'admin_dashboard' %}">&larr; Back to Dashboard</a>
+</div>
+</body>
+</html>

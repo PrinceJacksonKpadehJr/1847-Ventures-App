@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard — 1847 Ventures</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+        .navbar {
+            background: #1a4f27; color: white; padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        h2 { color: #1a4f27; margin-top: 0; }
+        h3 { color: #2c7a3a; margin-top: 0; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+            padding: 20px; text-align: center;
+        }
+        .stat-card .number { font-size: 2em; font-weight: bold; color: #1a4f27; }
+        .stat-card .label { color: #666; font-size: 0.9em; margin-top: 4px; }
+
+        /* Action buttons */
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
+        .btn {
+            display: inline-block; padding: 10px 20px; border-radius: 5px;
+            text-decoration: none; font-size: 0.95em; cursor: pointer;
+            border: none; font-weight: bold;
+        }
+        .btn-primary { background: #2c7a3a; color: white; }
+        .btn-primary:hover { background: #235f2d; }
+        .btn-secondary { background: #4a90d9; color: white; }
+        .btn-secondary:hover { background: #357abd; }
+        .btn-accent { background: #6f42c1; color: white; }
+        .btn-accent:hover { background: #5a32a3; }
+        .btn-warning { background: #fd7e14; color: white; }
+        .btn-warning:hover { background: #e06b0e; }
+        .btn-danger { background: #c0392b; color: white; }
+        .btn-danger:hover { background: #a93226; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-info:hover { background: #138496; }
+        .btn-sm { padding: 5px 12px; font-size: 0.85em; }
+
+        /* Card */
+        .card {
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+            padding: 24px; margin-bottom: 24px;
+        }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; }
+        th { background: #f0f0f0; color: #333; }
+        tr:last-child td { border-bottom: none; }
+
+        /* Badges */
+        .badge {
+            display: inline-block; padding: 2px 10px; border-radius: 10px;
+            font-size: 0.82em; font-weight: bold;
+        }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-approved { background: #d4edda; color: #155724; }
+
+        /* Notifications */
+        .notification-item {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 12px 0; border-bottom: 1px solid #eee;
+        }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-item.unread { background: #f0f8ff; padding: 12px; border-radius: 4px; margin: 4px 0; }
+        .notification-msg { flex: 1; font-size: 0.93em; }
+        .notification-time { color: #999; font-size: 0.82em; margin-left: 16px; white-space: nowrap; }
+        .notification-actions { margin-left: 16px; }
+
+        /* Messages */
+        .messages-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
+        .messages-list li { padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; }
+        .messages-list .success { background: #d4edda; color: #155724; }
+        .messages-list .error { background: #f8d7da; color: #721c24; }
+        .messages-list .warning { background: #fff3cd; color: #856404; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .badge-count {
+            background: #c0392b; color: white; border-radius: 50%;
+            padding: 2px 8px; font-size: 0.8em; margin-left: 6px;
+        }
+        .empty-state { color: #888; font-style: italic; text-align: center; padding: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>1847 Ventures — Admin Dashboard</strong>
+    <div>
+        Logged in as <strong>{{ request.user.username }}</strong>
+        {% if unread_count > 0 %}
+        <span class="badge-count">{{ unread_count }}</span>
+        {% endif %}
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    {% if messages %}
+    <ul class="messages-list">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h2>Admin Dashboard</h2>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number">{{ stats.total_farmers }}</div>
+            <div class="label">Total Farmers</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="color:#c0392b;">{{ stats.pending_approvals }}</div>
+            <div class="label">Pending Approvals</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ stats.total_agents }}</div>
+            <div class="label">Field Agents</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ stats.total_partners }}</div>
+            <div class="label">Partners</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ stats.total_admins }}</div>
+            <div class="label">Admins</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <h3>Quick Actions</h3>
+        <div class="actions">
+            <a class="btn btn-primary" href="{% url 'create_user' %}?role=field_agent">+ New Field Agent</a>
+            <a class="btn btn-secondary" href="{% url 'create_user' %}?role=investor">+ New Partner</a>
+            <a class="btn btn-accent" href="{% url 'create_user' %}?role=admin">+ New Admin</a>
+            <a class="btn btn-warning" href="{% url 'assign_farmer_request' %}">📋 Assign Farmer Registration</a>
+        </div>
+        <p style="color:#666; font-size:0.88em; margin:0;">
+            <em>Note: Admins cannot directly create farmer accounts. Use "Assign Farmer Registration" to delegate the task to a field agent.</em>
+        </p>
+    </div>
+
+    <!-- Pending Farmer Approvals -->
+    <div class="card">
+        <div class="section-header">
+            <h3>
+                Pending Farmer Approvals
+                {% if stats.pending_approvals > 0 %}
+                <span class="badge-count">{{ stats.pending_approvals }}</span>
+                {% endif %}
+            </h3>
+        </div>
+
+        {% if pending_farmers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Created By Agent</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farmer in pending_farmers %}
+                <tr>
+                    <td>{{ farmer.username }}</td>
+                    <td>{{ farmer.email }}</td>
+                    <td>
+                        {% if farmer.profile.created_by_agent %}
+                            {{ farmer.profile.created_by_agent.username }}
+                        {% else %}
+                            <span style="color:#999;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ farmer.registration_date|date:"Y-m-d" }}</td>
+                    <td>
+                        <a class="btn btn-primary btn-sm"
+                           href="{% url 'approve_farmer' farmer.pk %}"
+                           onclick="return confirm('Approve farmer {{ farmer.username }}?')">✔ Approve</a>
+                        <a class="btn btn-info btn-sm"
+                           href="{% url 'request_more_info' farmer.pk %}">💬 Request Info</a>
+                        <a class="btn btn-danger btn-sm"
+                           href="{% url 'reject_farmer' farmer.pk %}">✘ Reject</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No pending farmer approvals. 🎉</p>
+        {% endif %}
+    </div>
+
+    <!-- Notifications -->
+    <div class="card">
+        <h3>
+            Notifications
+            {% if unread_count > 0 %}
+            <span class="badge-count">{{ unread_count }} unread</span>
+            {% endif %}
+        </h3>
+        {% if notifications %}
+        {% for notif in notifications %}
+        <div class="notification-item {% if not notif.is_read %}unread{% endif %}">
+            <div class="notification-msg">
+                {% if not notif.is_read %}<strong>{% endif %}
+                {{ notif.message }}
+                {% if not notif.is_read %}</strong>{% endif %}
+            </div>
+            <div class="notification-time">{{ notif.created_at|date:"M d, H:i" }}</div>
+            {% if not notif.is_read %}
+            <div class="notification-actions">
+                <a class="btn btn-sm" style="background:#eee; color:#333;"
+                   href="{% url 'mark_notification_read' notif.pk %}">Mark read</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="empty-state">No notifications yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>
