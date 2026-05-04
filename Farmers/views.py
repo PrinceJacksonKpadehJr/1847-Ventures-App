@@ -309,16 +309,19 @@ def create_farmer(request):
 
             # Notify all admins
             admin_users = Farmer.objects.filter(profile__role='admin', is_active=True)
-            for admin_user in admin_users:
-                AdminNotification.objects.create(
+            notification_message = (
+                f"Field agent '{request.user.username}' has registered a new farmer: "
+                f"'{username}' ({email}). Pending your approval."
+            )
+            AdminNotification.objects.bulk_create([
+                AdminNotification(
                     recipient=admin_user,
                     notification_type='new_farmer',
-                    message=(
-                        f"Field agent '{request.user.username}' has registered a new farmer: "
-                        f"'{username}' ({email}). Pending your approval."
-                    ),
+                    message=notification_message,
                     related_farmer=farmer,
                 )
+                for admin_user in admin_users
+            ])
 
             messages.success(
                 request,
