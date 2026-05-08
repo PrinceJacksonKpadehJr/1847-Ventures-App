@@ -4,6 +4,7 @@ from .views import (
     FarmerRegistrationView,
     AnnouncementViewSet,
     MessageViewSet,
+    PasswordResetRequestCreateView,
     farmer_dashboard,
     agent_dashboard,
     partner_dashboard,
@@ -15,6 +16,7 @@ router.register(r'messages', MessageViewSet, basename='message')
 
 urlpatterns = [
     path('register/', FarmerRegistrationView.as_view(), name='farmer-register'),
+    path('request-password/', PasswordResetRequestCreateView.as_view(), name='request-password'),
 
     # Dashboards
     path('farmer/dashboard/', farmer_dashboard, name='farmer_dashboard'),

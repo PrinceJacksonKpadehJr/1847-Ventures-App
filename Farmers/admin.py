@@ -1,4 +1,11 @@
 from django.contrib import admin
+from django.contrib import messages as django_messages
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import path, reverse
+from django.utils import timezone
+from django.utils.html import format_html
+from django.conf import settings
 from .models import UserProfile
 from .models import UserProfile
 from .models import (
@@ -10,7 +17,8 @@ from .models import (
     Investment,
     FarmActivity,
     Announcement,
-    Message
+    Message,
+    PasswordResetRequest,
 )
 
 # ===== Custom Farmer Admin =====
@@ -70,5 +78,57 @@ class MessageAdmin(admin.ModelAdmin):
     search_fields = ('sender__username', 'receiver__username')
 
 
+@admin.register(PasswordResetRequest)
+class PasswordResetRequestAdmin(admin.ModelAdmin):
+    list_display = ("requester", "requested_at", "is_otp_sent", "otp_sent_at", "send_otp_button")
+    search_fields = ("requester__username", "requester__email")
+    list_filter = ("is_otp_sent", "requested_at")
+    readonly_fields = ("otp_code", "otp_sent_at", "requested_at")
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<int:request_id>/send-otp/",
+                self.admin_site.admin_view(self.send_otp_view),
+                name="farmers_passwordresetrequest_send_otp",
+            ),
+        ]
+        return custom_urls + urls
+
+    def send_otp_button(self, obj):
+        if obj.is_otp_sent:
+            return "OTP sent"
+        url = reverse("admin:farmers_passwordresetrequest_send_otp", args=[obj.id])
+        return format_html('<a class="button" href="{}">Send OTP</a>', url)
+
+    send_otp_button.short_description = "Action"
+
+    def send_otp_view(self, request, request_id):
+        password_request = get_object_or_404(PasswordResetRequest, id=request_id)
+
+        if not password_request.requester.email:
+            self.message_user(
+                request,
+                "Requester has no email address.",
+                level=django_messages.ERROR,
+            )
+            return redirect(request.META.get("HTTP_REFERER", "../"))
+
+        otp = password_request.generate_otp()
+        password_request.is_otp_sent = True
+        password_request.otp_sent_at = timezone.now()
+        password_request.save(update_fields=["otp_code", "is_otp_sent", "otp_sent_at"])
+
+        send_mail(
+            subject="Your password reset OTP",
+            message=f"Your OTP is {otp}. It is for your password reset request.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[password_request.requester.email],
+            fail_silently=False,
+        )
+
+        self.message_user(request, f"OTP sent to {password_request.requester.email}.")
+        return redirect(request.META.get("HTTP_REFERER", "../"))
 
 

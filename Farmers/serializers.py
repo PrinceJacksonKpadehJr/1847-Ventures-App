@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Farmer, Farm, Harvest, Investment, FarmActivity, Announcement
+from .models import Farmer, Farm, Harvest, Investment, FarmActivity, Announcement, PasswordResetRequest
 from .models import Message
 
 class FarmerSerializer(serializers.ModelSerializer):
@@ -59,3 +59,10 @@ class MessageSerializer(serializers.ModelSerializer):
             'is_read',
         ]
         read_only_fields = ['sender', 'created_at']
+
+
+class PasswordResetRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PasswordResetRequest
+        fields = ["id", "requester", "requested_at", "is_otp_sent", "otp_sent_at"]
+        read_only_fields = ["id", "requester", "requested_at", "is_otp_sent", "otp_sent_at"]
