@@ -6,6 +6,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.conf import settings
+import logging
 from .models import UserProfile
 from .models import (
     Farmer,
@@ -19,6 +20,8 @@ from .models import (
     Message,
     PasswordResetRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 # ===== Custom Farmer Admin =====
 @admin.register(Farmer)
@@ -118,24 +121,24 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
             return redirect(changelist_url)
 
         otp = password_request.generate_otp()
-        password_request.is_otp_sent = True
-        password_request.otp_sent_at = timezone.now()
-        password_request.save(update_fields=["otp_code", "otp_expires_at", "is_otp_sent", "otp_sent_at"])
 
         try:
             send_mail(
                 subject="Your password reset OTP",
-                message=f"Your OTP is {otp}. It is for your password reset request and expires in 10 minutes.",
+                message=f"Your OTP is {otp}. It is for your password reset request. It expires in 10 minutes.",
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[password_request.requester.email],
                 fail_silently=False,
             )
+            password_request.is_otp_sent = True
+            password_request.otp_sent_at = timezone.now()
+            password_request.save(update_fields=["otp_code", "otp_expires_at", "is_otp_sent", "otp_sent_at"])
             self.message_user(request, f"OTP sent to {password_request.requester.email}.")
         except Exception:
+            logger.exception("Failed sending OTP email for password reset request %s", password_request.id)
             self.message_user(
                 request,
                 "OTP could not be sent because email delivery failed.",
                 level=django_messages.ERROR,
             )
         return redirect(changelist_url)
-
