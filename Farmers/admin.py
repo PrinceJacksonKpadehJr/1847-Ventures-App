@@ -125,7 +125,7 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
         try:
             send_mail(
                 subject="Your password reset OTP",
-                message=f"Your OTP is {otp}. It is for your password reset request. It expires in 10 minutes.",
+                message=f"Your OTP for password reset is {otp}. It expires in 10 minutes.",
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[password_request.requester.email],
                 fail_silently=False,
