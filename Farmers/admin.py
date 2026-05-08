@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.conf import settings
 from .models import UserProfile
-from .models import UserProfile
 from .models import (
     Farmer,
     UserProfile,
@@ -83,7 +82,7 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
     list_display = ("requester", "requested_at", "is_otp_sent", "otp_sent_at", "send_otp_button")
     search_fields = ("requester__username", "requester__email")
     list_filter = ("is_otp_sent", "requested_at")
-    readonly_fields = ("otp_code", "otp_sent_at", "requested_at")
+    readonly_fields = ("otp_code", "otp_sent_at", "otp_expires_at", "requested_at")
 
     def get_urls(self):
         urls = super().get_urls()
@@ -106,6 +105,9 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
 
     def send_otp_view(self, request, request_id):
         password_request = get_object_or_404(PasswordResetRequest, id=request_id)
+        changelist_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist"
+        )
 
         if not password_request.requester.email:
             self.message_user(
@@ -113,22 +115,27 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
                 "Requester has no email address.",
                 level=django_messages.ERROR,
             )
-            return redirect(request.META.get("HTTP_REFERER", "../"))
+            return redirect(changelist_url)
 
         otp = password_request.generate_otp()
         password_request.is_otp_sent = True
         password_request.otp_sent_at = timezone.now()
-        password_request.save(update_fields=["otp_code", "is_otp_sent", "otp_sent_at"])
+        password_request.save(update_fields=["otp_code", "otp_expires_at", "is_otp_sent", "otp_sent_at"])
 
-        send_mail(
-            subject="Your password reset OTP",
-            message=f"Your OTP is {otp}. It is for your password reset request.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[password_request.requester.email],
-            fail_silently=False,
-        )
-
-        self.message_user(request, f"OTP sent to {password_request.requester.email}.")
-        return redirect(request.META.get("HTTP_REFERER", "../"))
-
+        try:
+            send_mail(
+                subject="Your password reset OTP",
+                message=f"Your OTP is {otp}. It is for your password reset request and expires in 10 minutes.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[password_request.requester.email],
+                fail_silently=False,
+            )
+            self.message_user(request, f"OTP sent to {password_request.requester.email}.")
+        except Exception:
+            self.message_user(
+                request,
+                "OTP could not be sent because email delivery failed.",
+                level=django_messages.ERROR,
+            )
+        return redirect(changelist_url)
 

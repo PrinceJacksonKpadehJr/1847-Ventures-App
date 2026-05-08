@@ -3,8 +3,10 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 import uuid
 import secrets
+from datetime import timedelta
 
 
 # =================================================
@@ -232,9 +234,11 @@ class PasswordResetRequest(models.Model):
     is_otp_sent = models.BooleanField(default=False)
     otp_code = models.CharField(max_length=6, blank=True)
     otp_sent_at = models.DateTimeField(null=True, blank=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
 
     def generate_otp(self):
         self.otp_code = f"{secrets.randbelow(10**6):06d}"
+        self.otp_expires_at = timezone.now() + timedelta(minutes=10)
         return self.otp_code
 
     def __str__(self):
