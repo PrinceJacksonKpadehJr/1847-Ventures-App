@@ -20,7 +20,7 @@ from django.contrib import messages
 
 
 
-from .models import Farmer, Farm, Harvest, Investment, FarmActivity, Announcement
+from .models import Farmer, Farm, Harvest, Investment, FarmActivity, Announcement, PasswordResetRequest
 from .serializers import (
     FarmerSerializer,
     FarmSerializer,
@@ -28,7 +28,8 @@ from .serializers import (
     InvestmentSerializer,
     FarmActivitySerializer,
     AnnouncementSerializer,
-    FarmerRegistrationSerializer
+    FarmerRegistrationSerializer,
+    PasswordResetRequestSerializer,
 )
 # -------------------------------
 # Farmer ViewSet
@@ -203,6 +204,14 @@ class MessageViewSet(viewsets.ModelViewSet):
         serializer.save(sender=user)
 
 
+class PasswordResetRequestCreateView(generics.CreateAPIView):
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(requester=self.request.user)
+
+
 @approved_user_required
 def dashboard(request):
     return render(request, "Farmers/dashboard.html")
@@ -273,4 +282,3 @@ def partner_dashboard(request):
     if request.user.role != 'partner':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/partner_dashboard.html")
-
