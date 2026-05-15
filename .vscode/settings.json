@@ -1,0 +1,8 @@
+{
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.donotVerifyTags": true,
+  "liveServer.settings.ignoreFiles": [
+    "**/*.py"
+  ],
+  "workbench.browser.openLocalhostLinks": false
+}

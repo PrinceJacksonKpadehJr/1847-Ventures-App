@@ -15,11 +15,12 @@ from .models import (
     Investment,
     FarmActivity,
     Announcement,
-    Message
+    Message,
+    DatasetAuditLog,
 )
 
 
-def _send_password_setup_email(request, farmer):
+def _send_password_setup_email(request, farmer, from_email):
     """Send a password-setup email to a newly approved farmer."""
     uid = urlsafe_base64_encode(force_bytes(farmer.pk))
     token = default_token_generator.make_token(farmer)
@@ -38,7 +39,7 @@ def _send_password_setup_email(request, farmer):
     send_mail(
         subject,
         message,
-        django_settings.DEFAULT_FROM_EMAIL,
+        from_email,
         [farmer.email],
         fail_silently=True,
     )
@@ -48,12 +49,13 @@ def _send_password_setup_email(request, farmer):
 def approve_farmers(modeladmin, request, queryset):
     approved_count = 0
     skipped_no_email = 0
+    sender_email = request.user.email or django_settings.DEFAULT_FROM_EMAIL
     for profile in queryset.filter(is_approved=False).select_related("user"):
         farmer = profile.user
         profile.is_approved = True
         profile.save()
         if farmer.email:
-            _send_password_setup_email(request, farmer)
+            _send_password_setup_email(request, farmer, sender_email)
         else:
             skipped_no_email += 1
         approved_count += 1
@@ -127,3 +129,17 @@ class AnnouncementAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('sender', 'receiver', 'created_at', 'is_read')
     search_fields = ('sender__username', 'receiver__username')
+
+
+@admin.register(DatasetAuditLog)
+class DatasetAuditLogAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "actor", "action", "dataset")
+    list_filter = ("action", "created_at")
+    search_fields = ("actor__username", "dataset__dataset_name")
+    readonly_fields = ("actor", "dataset", "action", "details", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

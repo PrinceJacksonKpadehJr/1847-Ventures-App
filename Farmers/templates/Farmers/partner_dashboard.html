@@ -1,26 +1,1830 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partner Dashboard — 1847 Ventures</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-        .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; }
-        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
-        h2 { color: #2c7a3a; }
+        :root {
+            --primary: #1f6a43;
+            --ink: #0f4a2b;
+            --muted: #5a7369;
+            --line: #dce4df;
+            --bg-light: #f8faf7;
+            --success: #1f6a43;
+            --warning: #f4a460;
+            --danger: #d32f2f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-light);
+            color: var(--ink);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: white;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(15, 74, 43, 0.08);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-right: auto;
+        }
+
+        .navbar-user {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .navbar-user a {
+            color: var(--primary);
+            text-decoration: none;
+            margin-left: 12px;
+            font-weight: 600;
+        }
+
+        .workspace-container {
+            display: flex;
+            flex: 1;
+            margin-top: 60px;
+        }
+
+        .workspace-sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--line);
+            overflow-y: auto;
+            transition: width 0.3s ease, transform 0.3s ease;
+        }
+
+        body.sidebar-collapsed .workspace-sidebar {
+            width: 0;
+            border-right: none;
+        }
+
+        .workspace-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 60px);
+        }
+
+        .workspace-nav-group {
+            border-bottom: 1px solid var(--line);
+        }
+
+        .workspace-group-toggle {
+            width: 100%;
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--muted);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .workspace-group-toggle:hover {
+            background: rgba(31, 106, 67, 0.06);
+        }
+
+        .workspace-nav-link {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .workspace-nav-link:hover,
+        .workspace-nav-link.active {
+            background: rgba(31, 106, 67, 0.08);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .workspace-view-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .workspace-block {
+            display: none;
+        }
+
+        .workspace-block.is-active {
+            display: block;
+        }
+
+        .workspace-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 0;
+        }
+
+        .workspace-tab {
+            padding: 12px 18px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--muted);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+            top: 1px;
+        }
+
+        .workspace-tab:hover {
+            color: var(--primary);
+        }
+
+        .workspace-tab.is-active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .workspace-tab:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .metric-detail {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .section-heading {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section-heading h2 {
+            font-size: 1.3rem;
+            margin-bottom: 6px;
+        }
+
+        .section-heading p {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .section-content {
+            padding: 24px;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .panel {
+            background: var(--bg-light);
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid var(--line);
+        }
+
+        .panel h3 {
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+            color: var(--ink);
+        }
+
+        .panel-subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .bar-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .bar {
+            height: 20px;
+            background: rgba(31, 106, 67, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            background: var(--primary);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .visualization-studio {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            grid-template-rows: auto 1fr auto;
+            gap: 16px;
+            height: calc(100vh - 120px);
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+            padding: 16px;
+        }
+
+        .studio-top {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--line);
+        }
+
+        .studio-center {
+            grid-column: 1;
+            grid-row: 2;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: auto;
+            min-height: 320px;
+        }
+
+        .studio-right {
+            grid-column: 2;
+            grid-row: 2;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: auto;
+            resize: horizontal;
+            min-width: 280px;
+        }
+
+        .studio-bottom {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: auto;
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        .studio-tab-panel {
+            display: none;
+            padding: 16px;
+        }
+
+        .studio-tab-panel.is-active {
+            display: block;
+        }
+
+        .dataset-grid-toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .dataset-grid-toolbar input,
+        .dataset-grid-toolbar select {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 8px 10px;
+            background: white;
+            font-size: 0.9rem;
+            min-width: 140px;
+        }
+
+        .dataset-grid-toolbar input:focus,
+        .dataset-grid-toolbar select:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -1px;
+        }
+
+        .dataset-grid-wrap {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            overflow: auto;
+            max-height: 280px;
+            background: white;
+        }
+
+        .dataset-grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .dataset-grid-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .dataset-grid-table th {
+            background: var(--bg-light);
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+        }
+
+        .dataset-grid-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dataset-grid-table tbody tr:hover {
+            background: rgba(31, 106, 67, 0.04);
+        }
+
+        .is-loading,
+        .is-empty {
+            color: var(--muted);
+            font-weight: 600;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .dataset-grid-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        .dataset-grid-pagination button {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: white;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .dataset-grid-pagination button:hover:not(:disabled) {
+            background: var(--bg-light);
+            border-color: var(--primary);
+        }
+
+        .dataset-grid-pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dataset-row-count {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .insight-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .insight-chip {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: white;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .insight-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .insight-chip.is-active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .insight-chip:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .insight-panel {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 12px;
+            background: white;
+            min-height: 60px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            display: none;
+        }
+
+        .insight-panel.is-active {
+            display: block;
+        }
+
+        .live-preview-drawer {
+            position: fixed;
+            right: -420px;
+            top: 60px;
+            width: 420px;
+            max-height: calc(100vh - 80px);
+            overflow: auto;
+            z-index: 200;
+            border: 1px solid var(--line);
+            border-radius: 8px 0 0 8px;
+            background: white;
+            box-shadow: -4px 0 12px rgba(15, 74, 43, 0.1);
+            transition: right 0.24s ease;
+        }
+
+        .live-preview-drawer.open {
+            right: 0;
+        }
+
+        .live-preview-drawer.docked {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            top: auto;
+            width: 380px;
+            border-radius: 8px;
+            max-height: 480px;
+        }
+
+        .live-preview-head {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: white;
+        }
+
+        .live-preview-body {
+            padding: 12px;
+        }
+
+        .live-preview-body table {
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .live-preview-body tr td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: white;
+            color: var(--ink);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--bg-light);
+            border-color: var(--primary);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
+        }
+
+        .btn.btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn.btn-primary:hover {
+            background: #155a35;
+            border-color: #155a35;
+        }
+
+        .btn.btn-secondary {
+            background: var(--bg-light);
+        }
+
+        @media (max-width: 980px) {
+            .workspace-sidebar {
+                position: fixed;
+                left: 0;
+                top: 60px;
+                height: calc(100vh - 60px);
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            body.sidebar-open .workspace-sidebar {
+                transform: translateX(0);
+            }
+
+            .visualization-studio {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+
+            .studio-right {
+                grid-column: 1;
+                grid-row: 3;
+                margin-top: 12px;
+                resize: none;
+            }
+
+            .studio-bottom {
+                grid-column: 1;
+            }
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .studio-tab-panel.is-active {
+            animation: fadeSlideIn 0.2s ease;
+        }
+
+        /* ===== PARTNER TOGGLE SIDEBAR ===== */
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        .profile-trigger {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(31, 106, 67, 0.4);
+            background: rgba(31, 106, 67, 0.1);
+            color: var(--primary);
+            font-weight: 700;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+        }
+        .sidebar-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .sidebar-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(320px, 88vw);
+            height: 100vh;
+            background: #0f2d1f;
+            color: #e7f4eb;
+            z-index: 1050;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.3);
+            padding: 20px 18px;
+            overflow-y: auto;
+        }
+        .sidebar-panel.open { transform: translateX(0); }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .sidebar-close {
+            border: 1px solid rgba(255,255,255,0.25);
+            background: transparent;
+            color: #e7f4eb;
+            border-radius: 6px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .partner-profile-block {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .partner-photo {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.18);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .partner-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .sidebar-label {
+            display: block;
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+            color: #b9d3c0;
+        }
+        .sidebar-file-input {
+            width: 100%;
+            margin-bottom: 8px;
+            color: #dcebe1;
+        }
+        .photo-editor {
+            display: none;
+            margin: 8px 0 10px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+        }
+        .photo-editor.active { display: block; }
+        .photo-preview-frame {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+            margin: 0 auto 10px;
+            background: rgba(255,255,255,0.12);
+            position: relative;
+        }
+        .photo-preview-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .photo-editor label {
+            display: block;
+            font-size: 0.76rem;
+            color: #b9d3c0;
+            margin: 6px 0 2px;
+        }
+        .photo-editor input[type="range"] {
+            width: 100%;
+        }
+        .photo-controls {
+            display: none;
+            margin-top: 8px;
+        }
+        .photo-controls.active {
+            display: block;
+        }
+        .sidebar-nav {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .sidebar-link {
+            display: block;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #e7f4eb;
+            text-decoration: none;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .sidebar-link:hover { background: rgba(255,255,255,0.16); }
+        .sidebar-btn {
+            display: inline-block;
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.15);
+            color: #e7f4eb;
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+        .flash-msg {
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .flash-msg-success {
+            background: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #a5d6a7;
+        }
+        .flash-msg-error {
+            background: #fdecea;
+            color: #b71c1c;
+            border: 1px solid #f5c6c6;
+        }
+        .sidebar-btn:hover { background: rgba(255,255,255,0.28); }
     </style>
 </head>
 <body>
-<div class="navbar">
-    <strong>1847 Ventures — Partner Dashboard</strong>
-    <div>Logged in as {{ request.user.username }} <a href="{% url 'logout' %}">Logout</a></div>
-</div>
-<div class="container">
-    <h2>Welcome, {{ request.user.username }}</h2>
-    <div class="card">
-        <p>Your investment portfolio and details will appear here.</p>
+    <div class="navbar">
+        <div class="navbar-left">
+            <button type="button" class="profile-trigger" onclick="toggleSidebar()" title="Open partner menu">
+                {% if investor_profile and investor_profile.profile_photo %}
+                <img src="{{ investor_profile.profile_photo.url }}" alt="Partner photo">
+                {% else %}
+                {{ request.user.username|slice:":2"|upper }}
+                {% endif %}
+            </button>
+            <div class="navbar-brand" style="display:flex; align-items:center; gap:8px;">
+                <img src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.4);">
+                1847 Ventures — Partner Dashboard
+            </div>
+        </div>
+        <div class="navbar-user">
+            Logged in as {{ request.user.username }}
+            <a href="{% url 'inbox' %}" style="position:relative;">💬 Messages{% if unread_notifications_count %}<span style="position:absolute;top:-6px;right:-8px;background:#e07c00;color:white;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ unread_notifications_count }}</span>{% endif %}</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
     </div>
-</div>
+
+    <div class="sidebar-overlay" id="partnerSidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar-panel" id="partnerSidebar">
+        <div class="sidebar-header">
+            <h3>Partner Menu</h3>
+            <button type="button" class="sidebar-close" onclick="closeSidebar()">✕</button>
+        </div>
+
+        <div class="partner-profile-block">
+            <div class="partner-photo">
+                {% if investor_profile and investor_profile.profile_photo %}
+                <img src="{{ investor_profile.profile_photo.url }}" alt="Profile photo">
+                {% else %}
+                {{ request.user.username|slice:":2"|upper }}
+                {% endif %}
+            </div>
+            <p style="font-weight:700; margin-bottom:2px;">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p style="font-size:0.82rem; color:#b9d3c0; margin-bottom:10px;">Partner</p>
+
+            <form method="post" action="{% url 'upload_investor_profile_photo' %}" enctype="multipart/form-data" class="profile-photo-upload-form">
+                {% csrf_token %}
+                <button class="sidebar-btn photo-toggle-btn" type="button">
+                    {% if investor_profile and investor_profile.profile_photo %}Change Photo{% else %}Upload Photo{% endif %}
+                </button>
+                <div class="photo-controls">
+                    <label class="sidebar-label" for="partner_profile_photo_input">Choose photo</label>
+                    <input id="partner_profile_photo_input" class="sidebar-file-input" type="file" name="profile_photo" accept="image/*">
+                    <input type="hidden" name="profile_zoom" value="1" class="profile-zoom-field">
+                    <input type="hidden" name="profile_shift_x" value="0" class="profile-shift-x-field">
+                    <input type="hidden" name="profile_shift_y" value="0" class="profile-shift-y-field">
+                    <div class="photo-editor" aria-live="polite">
+                        <div class="photo-preview-frame">
+                            <canvas class="photo-preview-canvas" width="108" height="108"></canvas>
+                        </div>
+                        <label>Zoom</label>
+                        <input type="range" min="1" max="3" step="0.05" value="1" class="photo-zoom-slider">
+                        <label>Move left / right</label>
+                        <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-x-slider">
+                        <label>Move up / down</label>
+                        <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-y-slider">
+                    </div>
+                    <button class="sidebar-btn" type="submit">Save Photo</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="sidebar-nav">
+            {% if request.user.is_superuser %}
+            <a class="sidebar-link" href="{% url 'superuser_dashboard_selector' %}">Dashboard Selector</a>
+            {% endif %}
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('investor-dashboard'); closeSidebar(); return false;">Investor Dashboard</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('external-dataset-analysis'); closeSidebar(); return false;">External Dataset Analysis</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('field-agent-data-center'); closeSidebar(); return false;">Field Agent Data Center</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('ai-insights-recommendations'); closeSidebar(); return false;">Intelligent Business Assistant</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('farm-portfolio-intelligence'); closeSidebar(); return false;">Farm Portfolio Intelligence</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('predictive-analytics'); closeSidebar(); return false;">Predictive Analytics</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('esg-carbon-monitoring'); closeSidebar(); return false;">ESG / Carbon Monitoring</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('visualization-studio'); closeSidebar(); return false;">Visualization Studio</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('saved-reports-exports'); closeSidebar(); return false;">Saved Reports &amp; Exports</a>
+            <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('admin-data-governance'); closeSidebar(); return false;">Admin &amp; Data Governance</a>
+            <a class="sidebar-link" href="{% url 'partner_external_dataset_intelligence' %}">Open External Dataset Intelligence</a>
+            <a class="sidebar-link" href="{% url 'partner_field_agent_data_center' %}">Open Field Agent Data Center</a>
+            <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
+        </div>
+    </aside>
+
+    <div class="workspace-container">
+        <aside class="workspace-sidebar" id="workspaceSidebar">
+            <nav>
+                <div class="workspace-nav-group">
+                    <button type="button" class="workspace-group-toggle">Enterprise Workspaces</button>
+                    <a href="#" class="workspace-nav-link" data-view="investor-dashboard">Investor Dashboard</a>
+                    <a href="#" class="workspace-nav-link" data-view="external-dataset-analysis">External Dataset Analysis</a>
+                    <a href="#" class="workspace-nav-link" data-view="field-agent-data-center">Field Agent Data Center</a>
+                    <a href="#" class="workspace-nav-link" data-view="ai-insights-recommendations">Intelligent Business Assistant</a>
+                    <a href="#" class="workspace-nav-link" data-view="farm-portfolio-intelligence">Farm Portfolio Intelligence</a>
+                    <a href="#" class="workspace-nav-link" data-view="predictive-analytics">Predictive Analytics</a>
+                    <a href="#" class="workspace-nav-link" data-view="esg-carbon-monitoring">ESG / Carbon Monitoring</a>
+                    <a href="#" class="workspace-nav-link" data-view="visualization-studio">Visualization Studio</a>
+                    <a href="#" class="workspace-nav-link" data-view="saved-reports-exports">Saved Reports &amp; Exports</a>
+                    <a href="#" class="workspace-nav-link" data-view="admin-data-governance">Admin &amp; Data Governance</a>
+                </div>
+                <div class="workspace-nav-group">
+                    <button type="button" class="workspace-group-toggle">Operations</button>
+                    <a href="{% url 'partner_external_dataset_intelligence' %}" class="workspace-nav-link">Open External Dataset Intelligence</a>
+                    <a href="{% url 'partner_field_agent_data_center' %}" class="workspace-nav-link">Open Field Agent Data Center</a>
+                    <a href="#" class="workspace-nav-link" data-view="live-preview">Live Preview</a>
+                </div>
+            </nav>
+        </aside>
+        <main class="workspace-main">
+            {% if messages %}
+            <div style="padding: 10px 20px 0;">
+                {% for message in messages %}
+                <div class="flash-msg {% if message.tags == 'error' %}flash-msg-error{% else %}flash-msg-success{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="workspace-view-scroll" id="workspaceViewScroll">
+                <!-- Dashboard Home -->
+                <section class="workspace-block is-active" id="home-metrics" data-views="investor-dashboard">
+                    <div class="metric-grid">
+                        {% for card in metric_cards %}
+                            <article class="metric-card">
+                                <div class="metric-label">{{ card.label }}</div>
+                                <div class="metric-value">{{ card.value }}</div>
+                                <div class="metric-detail">{{ card.detail }}</div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Executive Overview -->
+                <section class="section workspace-block" id="executive-overview" data-views="investor-dashboard">
+                    <div class="section-heading">
+                        <h2>Executive Overview</h2>
+                        <p>Portfolio metrics, regional exposure, and trend analysis across your investment profile.</p>
+                    </div>
+                    <div class="section-content">
+                        <div class="overview-grid">
+                            <article class="panel">
+                                <h3>Portfolio footprint</h3>
+                                <p class="panel-subtitle">Regional exposure overview</p>
+                                <div class="stack">
+                                    {% for region in region_cards %}
+                                        <div class="bar-row">
+                                            <div class="bar-meta">
+                                                <strong>{{ region.name }}</strong>
+                                                <span>{{ region.yield_kg }} kg</span>
+                                            </div>
+                                            <div class="bar"><span data-width-pct="{{ region.yield_bar }}"></span></div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <h3>Yield and emissions trend</h3>
+                                <p class="panel-subtitle">Portfolio trajectory</p>
+                                <div class="stack">
+                                    {% for row in trend_rows %}
+                                        <div class="bar-row">
+                                            <div class="bar-meta">
+                                                <strong>{{ row.year }}</strong>
+                                                <span>{{ row.yield_kg }} kg</span>
+                                            </div>
+                                            <div class="bar"><span data-width-pct="{{ row.yield_bar }}"></span></div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="panel-subtitle">No trend data available yet.</p>
+                                    {% endfor %}
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Farm Portfolio Table -->
+                <section class="section workspace-block" id="farm-portfolio" data-views="farm-portfolio-intelligence">
+                    <div class="section-heading">
+                        <h2>Farm Portfolio</h2>
+                        <p>Your invested farms and associated farmers with key performance metrics.</p>
+                    </div>
+                    <div class="section-content">
+                        <div style="overflow-x: auto;">
+                            <table class="dataset-grid-table" style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th>Farm</th>
+                                        <th>Farmer</th>
+                                        <th>Region</th>
+                                        <th>Planted</th>
+                                        <th>Harvest Yr</th>
+                                        <th>Yield/ha</th>
+                                        <th>Risk</th>
+                                        <th>ESG</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in farm_rows %}
+                                        <tr>
+                                            <td>{{ row.farm_name }}</td>
+                                            <td>{{ row.farmer_name }}</td>
+                                            <td>{{ row.region }}</td>
+                                            <td>{{ row.year_planted|default:"—" }}</td>
+                                            <td>{{ row.time_year }}</td>
+                                            <td>{{ row.yield_per_hectare }}</td>
+                                            <td>{{ row.risk_score }}</td>
+                                            <td>{{ row.esg_score }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="external-dataset-analysis">
+                    <div class="section-heading">
+                        <h2>External Dataset Intelligence</h2>
+                        <p>Isolated sandbox analytics for partner uploads with optional merge into platform intelligence.</p>
+                    </div>
+                    <div class="section-content">
+                        <div class="overview-grid">
+                            <article class="panel">
+                                <h3>Sandbox ingestion channels</h3>
+                                <p class="panel-subtitle">CSV, XLSX, JSON, API ingestion, bulk and incremental workflows.</p>
+                                <div class="stack">
+                                    <p>Use independent upload workflows in the external intelligence workspace to protect core platform datasets.</p>
+                                    <p><a href="{% url 'partner_external_dataset_intelligence' %}" class="btn btn-primary">Launch External Dataset Intelligence</a></p>
+                                </div>
+                            </article>
+                            <article class="panel">
+                                <h3>Pipeline guarantees</h3>
+                                <p class="panel-subtitle">Automated schema profiling and recommendation generation.</p>
+                                <ul style="margin-left: 16px; line-height: 1.7; color: var(--muted);">
+                                    <li>Schema auto-detection with type inference</li>
+                                    <li>Missing, duplicate, anomaly, and geospatial detection</li>
+                                    <li>Farm lifecycle indicator classification</li>
+                                    <li>AI investment-grade summary and visualization recommendations</li>
+                                </ul>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="field-agent-data-center">
+                    <div class="section-heading">
+                        <h2>Field Agent Data Center</h2>
+                        <p>Operational intelligence hub for field uploads and farm-level observational evidence.</p>
+                    </div>
+                    <div class="section-content">
+                        <article class="panel" style="margin-bottom: 16px;">
+                            <h3>Collection schema headers</h3>
+                            <p class="panel-subtitle">Canonical field-agent payload headers captured by upload and API ingestion.</p>
+                            <div style="overflow-x: auto; max-height: 320px;">
+                                <table class="dataset-grid-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Header</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in field_agent_form_schema %}
+                                            <tr>
+                                                <td>{{ item.header }}</td>
+                                                <td>{{ item.description }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <div class="overview-grid">
+                            <article class="panel">
+                                <h3>Upload operations</h3>
+                                <p class="panel-subtitle">Bulk and incremental ingestion with API compatibility.</p>
+                                <p>Supported: CSV, XLSX, JSON, API ingestion, bulk uploads, incremental updates.</p>
+                                <p style="margin-top: 12px;"><a href="{% url 'partner_external_dataset_intelligence' %}" class="btn">Open upload console</a></p>
+                            </article>
+                            <article class="panel">
+                                <h3>Geospatial readiness</h3>
+                                <p class="panel-subtitle">GPS-enabled overlays for farm cluster and risk intelligence.</p>
+                                <p>Map layers can consume gps_latitude/gps_longitude fields for cross-filtering and drill-through from region to farmer.</p>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="ai-insights-recommendations">
+                    <div class="section-heading">
+                        <h2>Intelligent Business Assistant</h2>
+                        <p>Investor-grade intelligence for productivity, lifecycle, sustainability, risk, and prioritization.</p>
+                    </div>
+                    <div class="section-content">
+                        <article class="panel">
+                            {% if latest_dataset_ai_summary %}
+                                <h3>Executive Summary</h3>
+                                <p>{{ latest_dataset_ai_summary.executive_summary }}</p>
+                                <h3 style="margin-top: 12px;">Key Insights</h3>
+                                <ul style="margin-left: 16px; line-height: 1.7; color: var(--muted);">
+                                    {% for item in latest_dataset_ai_summary.key_insights %}
+                                        <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <h3 style="margin-top: 12px;">Scores</h3>
+                                <p>
+                                    Investment Potential: {{ latest_dataset_ai_summary.investment_potential_score }} |
+                                    Sustainability: {{ latest_dataset_ai_summary.sustainability_score }} |
+                                    Productivity: {{ latest_dataset_ai_summary.productivity_score }} |
+                                    Confidence: {{ latest_dataset_ai_summary.confidence_level }}
+                                </p>
+                                <h3 style="margin-top: 12px;">Partner Advisory Note</h3>
+                                <p>{{ latest_dataset_ai_summary.partner_advisory_note }}</p>
+                            {% else %}
+                                <h3>AI engine status</h3>
+                                <p class="panel-subtitle">No dataset has been profiled yet in this session. Upload or ingest a dataset to populate full AI recommendations.</p>
+                            {% endif %}
+                        </article>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="predictive-analytics">
+                    <div class="section-heading">
+                        <h2>Predictive Analytics</h2>
+                        <p>Forecast yields, decline risk, and investor warnings with scenario-driven analytics.</p>
+                    </div>
+                    <div class="section-content">
+                        <div class="overview-grid">
+                            <article class="panel">
+                                <h3>Predictive warning channels</h3>
+                                <p>Trend shifts, anomaly spikes, and lifecycle decline signals are continuously profiled during ingestion.</p>
+                            </article>
+                            <article class="panel">
+                                <h3>Decision support</h3>
+                                <p>Use drill-through from region to farmer for remediation sequencing and phased replanting plans.</p>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="esg-carbon-monitoring">
+                    <div class="section-heading">
+                        <h2>ESG / Carbon Monitoring</h2>
+                        <p>Track sustainability posture with carbon intensity overlays and compliance risk indicators.</p>
+                    </div>
+                    <div class="section-content">
+                        <article class="panel">
+                            <h3>ESG intelligence layers</h3>
+                            <p class="panel-subtitle">Agroforestry, shade-tree signals, irrigation proxies, and carbon emissions balance.</p>
+                            <p>Map overlays and heatmaps are available in the visualization studio with preserved filters and drill state.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="saved-reports-exports">
+                    <div class="section-heading">
+                        <h2>Saved Reports &amp; Exports</h2>
+                        <p>Investment-grade report generation and export workflows.</p>
+                    </div>
+                    <div class="section-content">
+                        <article class="panel">
+                            <h3>Export channels</h3>
+                            <p>Supported report outputs: PDF, Excel, CSV, PowerPoint-style summaries, and AI briefing narratives.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="section workspace-block" data-views="admin-data-governance">
+                    <div class="section-heading">
+                        <h2>Admin &amp; Data Governance</h2>
+                        <p>Audit logs, access controls, and data lifecycle governance for enterprise reliability.</p>
+                    </div>
+                    <div class="section-content">
+                        <div class="overview-grid">
+                            <article class="panel">
+                                <h3>Audit oversight</h3>
+                                <p><a href="{% url 'dataset_audit_log_viewer' %}" class="btn">Open dataset audit logs</a></p>
+                            </article>
+                            <article class="panel">
+                                <h3>State persistence</h3>
+                                <p>Dashboard layout, analysis filters, and drill state remain persisted via analysis-state and profile layout controls.</p>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Visualization Studio -->
+                <section class="workspace-block" id="viz-studio" data-views="visualization-studio">
+                    <div class="visualization-studio">
+                        <div class="studio-top">
+                            <span style="font-size: 0.9rem; color: var(--muted);">Studio Controls</span>
+                        </div>
+
+                        <div class="studio-center">
+                            <div id="chartCanvas" style="width: 100%; height: 100%;"></div>
+                        </div>
+
+                        <aside class="studio-right">
+                            <div style="padding: 12px;">
+                                <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">Studio Info</p>
+                                <p style="font-size: 0.8rem; color: var(--muted);">Interactive charts and analytics appear here.</p>
+                            </div>
+                        </aside>
+
+                        <section class="studio-bottom">
+                            <div class="workspace-tabs" id="studioBottomTabs" role="tablist" aria-label="Studio tabs">
+                                <button type="button" class="workspace-tab is-active" data-studio-tab="dataset-preview" role="tab" aria-selected="true" tabindex="0">Dataset preview</button>
+                                <button type="button" class="workspace-tab" data-studio-tab="insight-engine" role="tab" aria-selected="false" tabindex="-1">Insight engine</button>
+                            </div>
+
+                            <!-- Dataset Preview Tab -->
+                            <div class="studio-tab-panel is-active" data-studio-panel="dataset-preview" role="tabpanel">
+                                <div class="dataset-grid-toolbar">
+                                    <input type="search" id="datasetColumnSearch" placeholder="Search rows..." aria-label="Search dataset">
+                                    <select id="datasetQuickFilterRegion" aria-label="Filter by region">
+                                        <option value="all">All regions</option>
+                                    </select>
+                                    <select id="datasetQuickFilterRisk" aria-label="Filter by risk">
+                                        <option value="all">All risk levels</option>
+                                        <option value="high">High risk</option>
+                                        <option value="medium">Medium risk</option>
+                                        <option value="low">Low risk</option>
+                                    </select>
+                                    <span class="dataset-row-count" id="datasetRowCount" aria-live="polite">Rows: 0</span>
+                                </div>
+                                <div class="dataset-grid-wrap">
+                                    <table class="dataset-grid-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Farm</th>
+                                                <th>Farmer</th>
+                                                <th>Region</th>
+                                                <th>Year</th>
+                                                <th>Yield/ha</th>
+                                                <th>Revenue</th>
+                                                <th>Risk</th>
+                                                <th>ESG</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="datasetGridBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="dataset-grid-pagination">
+                                    <button type="button" id="datasetPagePrev" aria-label="Previous page">Prev</button>
+                                    <span id="datasetPageInfo" aria-live="polite">Page 1</span>
+                                    <button type="button" id="datasetPageNext" aria-label="Next page">Next</button>
+                                </div>
+                            </div>
+
+                            <!-- Insight Engine Tab -->
+                            <div class="studio-tab-panel" data-studio-panel="insight-engine" role="tabpanel">
+                                <div class="insight-tabs" id="insightEngineTabs" role="tablist" aria-label="Insight tabs">
+                                    <button type="button" class="insight-chip is-active" data-insight-tab="anomalies" role="tab" aria-selected="true" tabindex="0">Anomalies</button>
+                                    <button type="button" class="insight-chip" data-insight-tab="correlations" role="tab" aria-selected="false" tabindex="-1">Correlations</button>
+                                    <button type="button" class="insight-chip" data-insight-tab="forecasts" role="tab" aria-selected="false" tabindex="-1">Forecasts</button>
+                                    <button type="button" class="insight-chip" data-insight-tab="recommendations" role="tab" aria-selected="false" tabindex="-1">Recommendations</button>
+                                    <button type="button" class="insight-chip" data-insight-tab="ai-insights" role="tab" aria-selected="false" tabindex="-1">AI Insights</button>
+                                </div>
+
+                                <div class="insight-panel is-active" data-insight-panel="anomalies" id="insightPanelAnomalies" role="tabpanel" aria-live="polite">Loading anomaly intelligence...</div>
+                                <div class="insight-panel" data-insight-panel="correlations" id="insightPanelCorrelations" role="tabpanel" aria-live="polite">Select the tab to load correlation analysis.</div>
+                                <div class="insight-panel" data-insight-panel="forecasts" id="insightPanelForecasts" role="tabpanel" aria-live="polite">Select the tab to load forecast models.</div>
+                                <div class="insight-panel" data-insight-panel="recommendations" id="insightPanelRecommendations" role="tabpanel" aria-live="polite">Select the tab to load recommendations.</div>
+                                <div class="insight-panel" data-insight-panel="ai-insights" id="insightPanelAiInsights" role="tabpanel" aria-live="polite">Select the tab to load AI-generated insights.</div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Live Preview View -->
+                <section class="workspace-block" id="live-preview-view" data-views="live-preview">
+                    <div style="padding: 24px;">
+                        <h2>Live Preview</h2>
+                        <p style="color: var(--muted); margin: 12px 0 24px;">Real-time preview of filtered dataset rows. Open the drawer to see live updates.</p>
+                        <button type="button" class="btn btn-primary" id="openLivePreviewDrawerBtn">Open Preview Drawer</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Live Preview Drawer -->
+    <aside class="live-preview-drawer" id="livePreviewDrawer" aria-label="Live preview drawer">
+        <div class="live-preview-head">
+            <strong style="font-size: 0.9rem;">Live Preview</strong>
+            <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn" id="toggleLivePreviewDockBtn" aria-label="Toggle dock state" title="Dock/undock drawer">Dock</button>
+                <button type="button" class="btn" id="closeLivePreviewDrawerBtn" aria-label="Close drawer">Close</button>
+            </div>
+        </div>
+        <div class="live-preview-body" id="livePreviewBody">
+            <table>
+                <thead>
+                    <tr><th>Farm</th><th>Farmer</th><th>Region</th><th>Yield</th><th>Risk</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </aside>
+
+    {{ farm_rows_json|default:"[]"|json_script:"farmRowsJson" }}
+    {{ initial_workspace_view|default:"investor-dashboard"|json_script:"initialWorkspaceViewJson" }}
+    <script>
+        // Bind farm rows data for filtering.
+        const farmRowsData = {
+            raw: JSON.parse(document.getElementById('farmRowsJson').textContent || '[]')
+        };
+
+        window.__latestFilteredRows = Array.isArray(farmRowsData.raw) ? farmRowsData.raw : [];
+
+        function getFilteredRows() {
+            return window.__latestFilteredRows || [];
+        }
+
+        function initWorkspaceSidebar() {
+            const body = document.body;
+            const navLinks = document.querySelectorAll('.workspace-nav-link');
+            const viewBlocks = document.querySelectorAll('.workspace-block[data-views]');
+            const workspaceTabs = document.querySelectorAll('[aria-label="Workspace quick views"] .workspace-tab');
+            const studioBottomTabs = document.querySelectorAll('#studioBottomTabs .workspace-tab');
+            const studioBottomPanels = document.querySelectorAll('.studio-tab-panel[data-studio-panel]');
+            const datasetColumnSearch = document.getElementById('datasetColumnSearch');
+            const datasetQuickFilterRegion = document.getElementById('datasetQuickFilterRegion');
+            const datasetQuickFilterRisk = document.getElementById('datasetQuickFilterRisk');
+            const datasetGridBody = document.getElementById('datasetGridBody');
+            const datasetRowCount = document.getElementById('datasetRowCount');
+            const datasetPagePrev = document.getElementById('datasetPagePrev');
+            const datasetPageNext = document.getElementById('datasetPageNext');
+            const datasetPageInfo = document.getElementById('datasetPageInfo');
+            const insightTabs = document.querySelectorAll('#insightEngineTabs .insight-chip[data-insight-tab]');
+            const insightPanels = document.querySelectorAll('.insight-panel[data-insight-panel]');
+            const insightPanelAnomalies = document.getElementById('insightPanelAnomalies');
+            const insightPanelCorrelations = document.getElementById('insightPanelCorrelations');
+            const insightPanelForecasts = document.getElementById('insightPanelForecasts');
+            const insightPanelRecommendations = document.getElementById('insightPanelRecommendations');
+            const insightPanelAiInsights = document.getElementById('insightPanelAiInsights');
+            const livePreviewDrawer = document.getElementById('livePreviewDrawer');
+            const livePreviewBody = document.getElementById('livePreviewBody');
+            const openLivePreviewDrawerBtn = document.getElementById('openLivePreviewDrawerBtn');
+            const closeLivePreviewDrawerBtn = document.getElementById('closeLivePreviewDrawerBtn');
+            const toggleLivePreviewDockBtn = document.getElementById('toggleLivePreviewDockBtn');
+            const viewScroll = document.getElementById('workspaceViewScroll');
+
+            const defaultView = JSON.parse(document.getElementById('initialWorkspaceViewJson').textContent || '"investor-dashboard"');
+            let activeView = defaultView;
+            const insightLoaded = new Set();
+            const datasetGridState = {
+                page: 1,
+                pageSize: 18,
+                search: '',
+                region: 'all',
+                risk: 'all',
+            };
+
+            const setActiveLink = (link) => {
+                navLinks.forEach((item) => item.classList.remove('active'));
+                if (link) link.classList.add('active');
+            };
+
+            const setLivePreviewDrawerOpen = (open) => {
+                if (!livePreviewDrawer) return;
+                livePreviewDrawer.classList.toggle('open', !!open);
+            };
+
+            const renderLivePreviewDrawer = (rows, options = {}) => {
+                if (!livePreviewBody) return;
+                if (options.loading) {
+                    const tbody = livePreviewBody.querySelector('tbody') || livePreviewBody;
+                    tbody.innerHTML = '<tr><td colspan="5" class="is-loading">Loading preview rows...</td></tr>';
+                    return;
+                }
+                const list = (rows || []).slice(0, 18);
+                const tbody = livePreviewBody.querySelector('tbody') || livePreviewBody;
+                tbody.innerHTML = list.map((row) => (
+                    `<tr><td>${row.farm_name || '-'}</td><td>${row.farmer_name || '-'}</td><td>${row.region || '-'}</td><td>${row.yield_per_hectare || '-'}</td><td>${row.risk_score || '-'}</td></tr>`
+                )).join('') || '<tr><td colspan="5" class="is-empty">No preview rows available. Try broadening filters.</td></tr>';
+            };
+
+            const computeDatasetRows = () => {
+                const source = Array.isArray(window.__latestFilteredRows) ? window.__latestFilteredRows : [];
+                const searchToken = datasetGridState.search.trim().toLowerCase();
+                return source.filter((row) => {
+                    if (datasetGridState.region !== 'all' && row.region !== datasetGridState.region) return false;
+                    if (datasetGridState.risk === 'high' && Number(row.risk_score || 0) < 65) return false;
+                    if (datasetGridState.risk === 'medium' && (Number(row.risk_score || 0) < 40 || Number(row.risk_score || 0) >= 65)) return false;
+                    if (datasetGridState.risk === 'low' && Number(row.risk_score || 0) >= 40) return false;
+                    if (!searchToken) return true;
+                    const aggregate = `${row.farm_name} ${row.farmer_name} ${row.region} ${row.time_year} ${row.yield_per_hectare}`.toLowerCase();
+                    return aggregate.includes(searchToken);
+                });
+            };
+
+            const renderDatasetGrid = () => {
+                if (!datasetGridBody) return;
+                datasetGridBody.innerHTML = '<tr><td colspan="8" class="is-loading">Loading dataset...</td></tr>';
+                
+                const rows = computeDatasetRows();
+                const totalRows = rows.length;
+                const maxPage = Math.max(1, Math.ceil(totalRows / datasetGridState.pageSize));
+                datasetGridState.page = Math.max(1, Math.min(datasetGridState.page, maxPage));
+                const start = (datasetGridState.page - 1) * datasetGridState.pageSize;
+                const pagedRows = rows.slice(start, start + datasetGridState.pageSize);
+
+                if (datasetRowCount) datasetRowCount.textContent = `Rows: ${totalRows}`;
+                if (datasetPageInfo) datasetPageInfo.textContent = `Page ${datasetGridState.page} / ${maxPage}`;
+                if (datasetPagePrev) datasetPagePrev.disabled = datasetGridState.page <= 1;
+                if (datasetPageNext) datasetPageNext.disabled = datasetGridState.page >= maxPage;
+
+                window.requestAnimationFrame(() => {
+                    datasetGridBody.innerHTML = pagedRows.map((row) => (
+                        `<tr><td>${row.farm_name || '-'}</td><td>${row.farmer_name || '-'}</td><td>${row.region || '-'}</td><td>${row.time_year || '-'}</td><td>${row.yield_per_hectare || '-'}</td><td>${row.revenue || '-'}</td><td>${row.risk_score || '-'}</td><td>${row.esg_score || '-'}</td></tr>`
+                    )).join('') || '<tr><td colspan="8" class="is-empty">No rows match filters. Adjust search or selections.</td></tr>';
+                });
+
+                if (datasetQuickFilterRegion) {
+                    const selectedRegion = datasetQuickFilterRegion.value || datasetGridState.region;
+                    const regions = Array.from(new Set((Array.isArray(window.__latestFilteredRows) ? window.__latestFilteredRows : []).map((row) => row.region))).filter(Boolean).sort();
+                    datasetQuickFilterRegion.innerHTML = '<option value="all">All regions</option>' + regions.map((region) => `<option value="${region}">${region}</option>`).join('');
+                    datasetQuickFilterRegion.value = regions.includes(selectedRegion) ? selectedRegion : 'all';
+                    datasetGridState.region = datasetQuickFilterRegion.value;
+                }
+            };
+
+            const loadInsightPanel = (insightId) => {
+                if (insightLoaded.has(insightId)) return;
+                const rows = Array.isArray(window.__latestFilteredRows) ? window.__latestFilteredRows : [];
+
+                window.setTimeout(() => {
+                    if (insightId === 'anomalies' && insightPanelAnomalies) {
+                        const flagged = rows.filter((row) => Number(row.risk_score || 0) >= 65).length;
+                        insightPanelAnomalies.textContent = `Anomalies detected: ${flagged} high-risk records in current filter state.`;
+                    }
+                    if (insightId === 'correlations' && insightPanelCorrelations) {
+                        insightPanelCorrelations.textContent = rows.slice(0, 5).map((row) => `${row.farm_name}: yield ${row.yield_per_hectare}, risk ${row.risk_score}`).join(' | ') || 'No correlation sample yet.';
+                    }
+                    if (insightId === 'forecasts' && insightPanelForecasts) {
+                        const avgYield = rows.length ? (rows.reduce((acc, row) => acc + Number(row.yield_per_hectare || 0), 0) / rows.length).toFixed(1) : '0';
+                        insightPanelForecasts.textContent = `Forecast: next cycle avg yield ~${avgYield} kg/ha based on current portfolio.`;
+                    }
+                    if (insightId === 'recommendations' && insightPanelRecommendations) {
+                        const highRisk = rows.filter((row) => Number(row.risk_score || 0) >= 65).length;
+                        insightPanelRecommendations.textContent = highRisk ? `Priority: address ${highRisk} high-risk farms with remediation protocols.` : 'Portfolio compliance on track. Continue monitoring quarterly.';
+                    }
+                    if (insightId === 'ai-insights' && insightPanelAiInsights) {
+                        const avgEsg = rows.length ? (rows.reduce((acc, row) => acc + Number(row.esg_score || 0), 0) / rows.length).toFixed(1) : '0';
+                        insightPanelAiInsights.textContent = `AI Insight: portfolio ESG score ${avgEsg}/100. Recommend focusing on traceability and emissions reduction to unlock next funding round.`;
+                    }
+                    insightLoaded.add(insightId);
+                }, 90);
+            };
+
+            const activateInsightTab = (insightId) => {
+                insightTabs.forEach((tab) => {
+                    const active = tab.getAttribute('data-insight-tab') === insightId;
+                    tab.classList.toggle('is-active', active);
+                    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                    tab.setAttribute('tabindex', active ? '0' : '-1');
+                });
+                insightPanels.forEach((panel) => panel.classList.toggle('is-active', panel.getAttribute('data-insight-panel') === insightId));
+                loadInsightPanel(insightId);
+            };
+
+            const wireTabKeyboardNavigation = (tabs, onActivate) => {
+                const ordered = Array.from(tabs || []);
+                if (!ordered.length) return;
+                ordered.forEach((tab, index) => {
+                    tab.setAttribute('role', 'tab');
+                    if (!tab.hasAttribute('tabindex')) {
+                        tab.setAttribute('tabindex', index === 0 ? '0' : '-1');
+                    }
+                    tab.addEventListener('keydown', (event) => {
+                        const key = event.key;
+                        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(key)) return;
+                        event.preventDefault();
+                        let nextIndex = index;
+                        if (key === 'ArrowRight') nextIndex = (index + 1) % ordered.length;
+                        if (key === 'ArrowLeft') nextIndex = (index - 1 + ordered.length) % ordered.length;
+                        if (key === 'Home') nextIndex = 0;
+                        if (key === 'End') nextIndex = ordered.length - 1;
+                        if (key === 'Enter' || key === ' ') {
+                            onActivate(tab);
+                            return;
+                        }
+                        const nextTab = ordered[nextIndex];
+                        if (nextTab) {
+                            nextTab.focus();
+                            onActivate(nextTab);
+                        }
+                    });
+                });
+            };
+
+            const activateStudioTab = (tabId) => {
+                studioBottomTabs.forEach((tab) => {
+                    const active = tab.getAttribute('data-studio-tab') === tabId;
+                    tab.classList.toggle('is-active', active);
+                    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                    tab.setAttribute('tabindex', active ? '0' : '-1');
+                });
+                studioBottomPanels.forEach((panel) => {
+                    panel.classList.toggle('is-active', panel.getAttribute('data-studio-panel') === tabId);
+                });
+                if (tabId === 'insight-engine') {
+                    const activeInsight = document.querySelector('#insightEngineTabs .insight-chip.is-active');
+                    activateInsightTab(activeInsight ? (activeInsight.getAttribute('data-insight-tab') || 'anomalies') : 'anomalies');
+                }
+            };
+
+            const activateView = (viewId, sourceLink = null) => {
+                activeView = viewId || defaultView;
+                viewBlocks.forEach((block) => {
+                    const supported = String(block.getAttribute('data-views') || '').split(',').map((item) => item.trim());
+                    const match = supported.includes(activeView);
+                    block.classList.toggle('is-active', match);
+                });
+
+                if (viewScroll) {
+                    viewScroll.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                if (activeView === 'live-preview') {
+                    renderLivePreviewDrawer([], { loading: true });
+                    setLivePreviewDrawerOpen(true);
+                    window.requestAnimationFrame(() => {
+                        renderLivePreviewDrawer(Array.isArray(window.__latestFilteredRows) ? window.__latestFilteredRows : []);
+                    });
+                } else if (livePreviewDrawer && !livePreviewDrawer.classList.contains('docked')) {
+                    setLivePreviewDrawerOpen(false);
+                }
+
+                if (sourceLink) {
+                    setActiveLink(sourceLink);
+                } else {
+                    const matchedLink = Array.from(navLinks).find((link) => (link.getAttribute('data-view') || '') === activeView);
+                    setActiveLink(matchedLink || null);
+                }
+            };
+
+            navLinks.forEach((link) => {
+                const viewId = link.getAttribute('data-view');
+                if (!viewId) return;
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    activateView(viewId, link);
+                });
+            });
+
+            studioBottomTabs.forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    activateStudioTab(tab.getAttribute('data-studio-tab'));
+                });
+            });
+            wireTabKeyboardNavigation(studioBottomTabs, (tab) => {
+                activateStudioTab(tab.getAttribute('data-studio-tab'));
+            });
+            activateStudioTab('dataset-preview');
+
+            insightTabs.forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    activateInsightTab(tab.getAttribute('data-insight-tab') || 'anomalies');
+                });
+            });
+            wireTabKeyboardNavigation(insightTabs, (tab) => {
+                activateInsightTab(tab.getAttribute('data-insight-tab') || 'anomalies');
+            });
+
+            if (datasetColumnSearch) {
+                datasetColumnSearch.addEventListener('input', () => {
+                    datasetGridState.search = datasetColumnSearch.value || '';
+                    datasetGridState.page = 1;
+                    renderDatasetGrid();
+                });
+                datasetColumnSearch.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        datasetColumnSearch.value = '';
+                        datasetGridState.search = '';
+                        datasetGridState.page = 1;
+                        renderDatasetGrid();
+                    }
+                });
+            }
+
+            if (datasetQuickFilterRegion) {
+                datasetQuickFilterRegion.addEventListener('change', () => {
+                    datasetGridState.region = datasetQuickFilterRegion.value || 'all';
+                    datasetGridState.page = 1;
+                    renderDatasetGrid();
+                });
+            }
+
+            if (datasetQuickFilterRisk) {
+                datasetQuickFilterRisk.addEventListener('change', () => {
+                    datasetGridState.risk = datasetQuickFilterRisk.value || 'all';
+                    datasetGridState.page = 1;
+                    renderDatasetGrid();
+                });
+            }
+
+            if (datasetPagePrev) {
+                datasetPagePrev.addEventListener('click', () => {
+                    datasetGridState.page = Math.max(1, datasetGridState.page - 1);
+                    renderDatasetGrid();
+                });
+            }
+
+            if (datasetPageNext) {
+                datasetPageNext.addEventListener('click', () => {
+                    datasetGridState.page += 1;
+                    renderDatasetGrid();
+                });
+            }
+
+            if (openLivePreviewDrawerBtn) {
+                openLivePreviewDrawerBtn.addEventListener('click', () => {
+                    renderLivePreviewDrawer([], { loading: true });
+                    setLivePreviewDrawerOpen(true);
+                    window.requestAnimationFrame(() => {
+                        renderLivePreviewDrawer(Array.isArray(window.__latestFilteredRows) ? window.__latestFilteredRows : []);
+                    });
+                });
+            }
+
+            if (closeLivePreviewDrawerBtn) {
+                closeLivePreviewDrawerBtn.addEventListener('click', () => {
+                    setLivePreviewDrawerOpen(false);
+                });
+            }
+
+            const toggleDockState = () => {
+                if (!livePreviewDrawer) return;
+                livePreviewDrawer.classList.toggle('docked');
+                if (toggleLivePreviewDockBtn) {
+                    toggleLivePreviewDockBtn.textContent = livePreviewDrawer.classList.contains('docked') ? 'Undock' : 'Dock';
+                }
+            };
+
+            if (toggleLivePreviewDockBtn) toggleLivePreviewDockBtn.addEventListener('click', toggleDockState);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') return;
+                if (livePreviewDrawer && livePreviewDrawer.classList.contains('open') && !livePreviewDrawer.classList.contains('docked')) {
+                    setLivePreviewDrawerOpen(false);
+                    if (openLivePreviewDrawerBtn) openLivePreviewDrawerBtn.focus();
+                }
+            });
+
+            // Initialize first load
+            renderDatasetGrid();
+            activateInsightTab('anomalies');
+            activateView(defaultView);
+            window.__partnerActivateView = activateView;
+        }
+
+        function applyTemplateBarWidths() {
+            document.querySelectorAll('[data-width-pct]').forEach((el) => {
+                const raw = parseFloat(el.getAttribute('data-width-pct') || '0');
+                const safe = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
+                el.style.width = `${safe}%`;
+            });
+        }
+
+        function toggleSidebar() {
+            document.getElementById('partnerSidebar').classList.toggle('open');
+            document.getElementById('partnerSidebarOverlay').classList.toggle('open');
+        }
+
+        function closeSidebar() {
+            document.getElementById('partnerSidebar').classList.remove('open');
+            document.getElementById('partnerSidebarOverlay').classList.remove('open');
+        }
+
+        function initProfilePhotoEditors() {
+            document.querySelectorAll('.profile-photo-upload-form').forEach((form) => {
+                const fileInput = form.querySelector('input[name="profile_photo"]');
+                const toggleBtn = form.querySelector('.photo-toggle-btn');
+                const controls = form.querySelector('.photo-controls');
+                const editor = form.querySelector('.photo-editor');
+                const previewCanvas = form.querySelector('.photo-preview-canvas');
+                const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+                const zoomSlider = form.querySelector('.photo-zoom-slider');
+                const shiftXSlider = form.querySelector('.photo-shift-x-slider');
+                const shiftYSlider = form.querySelector('.photo-shift-y-slider');
+                const zoomField = form.querySelector('.profile-zoom-field');
+                const shiftXField = form.querySelector('.profile-shift-x-field');
+                const shiftYField = form.querySelector('.profile-shift-y-field');
+                let previewUrl = null;
+                let previewImage = null;
+
+                if (!fileInput || !editor || !previewCanvas || !previewCtx || !toggleBtn || !controls) {
+                    return;
+                }
+
+                toggleBtn.addEventListener('click', () => {
+                    controls.classList.toggle('active');
+                });
+
+                const renderPreview = () => {
+                    const zoom = parseFloat(zoomSlider.value || '1');
+                    const shiftX = parseFloat(shiftXSlider.value || '0');
+                    const shiftY = parseFloat(shiftYSlider.value || '0');
+                    zoomField.value = String(zoom);
+                    shiftXField.value = String(shiftX);
+                    shiftYField.value = String(shiftY);
+
+                    if (!previewImage) { return; }
+
+                    const width = previewImage.naturalWidth || previewImage.width;
+                    const height = previewImage.naturalHeight || previewImage.height;
+                    const minSide = Math.min(width, height);
+                    const cropSize = Math.max(Math.floor(minSide / zoom), 1);
+                    const maxDx = (width - cropSize) / 2;
+                    const maxDy = (height - cropSize) / 2;
+                    const centerX = (width / 2) + (shiftX / 100) * maxDx;
+                    const centerY = (height / 2) + (shiftY / 100) * maxDy;
+                    let left = Math.round(centerX - (cropSize / 2));
+                    let top = Math.round(centerY - (cropSize / 2));
+                    left = Math.max(0, Math.min(left, width - cropSize));
+                    top = Math.max(0, Math.min(top, height - cropSize));
+
+                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    previewCtx.drawImage(previewImage, left, top, cropSize, cropSize, 0, 0, previewCanvas.width, previewCanvas.height);
+                };
+
+                fileInput.addEventListener('change', () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    if (!file) {
+                        editor.classList.remove('active');
+                        previewImage = null;
+                        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                        return;
+                    }
+                    if (previewUrl) { URL.revokeObjectURL(previewUrl); }
+                    previewUrl = URL.createObjectURL(file);
+                    const img = new Image();
+                    img.onload = () => {
+                        previewImage = img;
+                        zoomSlider.value = '1';
+                        shiftXSlider.value = '0';
+                        shiftYSlider.value = '0';
+                        editor.classList.add('active');
+                        renderPreview();
+                    };
+                    img.src = previewUrl;
+                });
+
+                [zoomSlider, shiftXSlider, shiftYSlider].forEach((slider) => {
+                    slider.addEventListener('input', renderPreview);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTemplateBarWidths();
+            initWorkspaceSidebar();
+            initProfilePhotoEditors();
+        });
+    </script>
 </body>
 </html>

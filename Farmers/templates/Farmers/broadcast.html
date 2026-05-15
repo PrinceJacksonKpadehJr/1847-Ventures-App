@@ -1,0 +1,271 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broadcast Message — 1847 Ventures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .navbar {
+    background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .navbar-brand { font-size: 1.1rem; font-weight: 700; }
+  .navbar-right { display: flex; gap: 14px; align-items: center; }
+  .navbar a { color: rgba(255,255,255,.85); text-decoration: none; font-size: .9rem; }
+  .back-btn {
+    background: rgba(255,255,255,.15);
+    padding: 6px 14px;
+    border-radius: 6px;
+    color: white !important;
+    font-size: .85rem;
+  }
+  .back-btn:hover { background: rgba(255,255,255,.25) !important; }
+
+  .container {
+    max-width: 660px;
+    width: 100%;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  }
+
+  .card-header {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 16px;
+  }
+  .card-header h1 {
+    font-size: 1.3rem;
+    color: #1a1a2e;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-header p {
+    font-size: .88rem;
+    color: #777;
+    margin-top: 6px;
+  }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 7px;
+  }
+  .form-group input[type=text],
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #dde;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-family: inherit;
+    transition: border-color .2s;
+    background: #fafbfc;
+    color: #1a1a2e;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #2c7a3a;
+    background: white;
+  }
+  .form-group textarea { resize: vertical; min-height: 140px; }
+
+  /* Audience selector cards */
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .audience-card {
+    border: 2px solid #dde;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    text-align: center;
+  }
+  .audience-card:hover { border-color: #2c7a3a; background: #f0f7f1; }
+  .audience-card.selected { border-color: #2c7a3a; background: #e8f5e9; }
+  .audience-card input[type=radio] { display: none; }
+  .audience-card .aud-icon { font-size: 1.6rem; margin-bottom: 6px; }
+  .audience-card .aud-label { font-size: .82rem; font-weight: 600; color: #333; }
+  .audience-card .aud-desc { font-size: .73rem; color: #777; margin-top: 3px; }
+
+  .error-msg {
+    background: #fff5f5;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: .88rem;
+    margin-bottom: 20px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: #e07c00; color: white; }
+  .btn-primary:hover { background: #b86200; }
+  .btn-cancel { background: #eee; color: #555; }
+  .btn-cancel:hover { background: #ddd; }
+
+  .info-banner {
+    background: #fff8e8;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: .85rem;
+    color: #5a4200;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <span class="navbar-brand" style="display:flex; align-items:center; gap:10px;">
+    <img src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.4);">
+    📢 Broadcast Message
+  </span>
+  <div class="navbar-right">
+    <a href="{% url 'inbox' %}" class="back-btn">← Messages</a>
+    <a href="{% url 'logout' %}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h1>📢 Send Broadcast</h1>
+      <p>
+        {% if role == "field_agent" %}
+          Broadcast a message to all farmers in your group.
+        {% else %}
+          Send an announcement to farmers, field agents, or everyone.
+        {% endif %}
+      </p>
+    </div>
+
+    {% if error %}
+    <div class="error-msg">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if role == "field_agent" %}
+    <div class="info-banner">
+      ℹ️ This message will be sent as an announcement to all farmers registered under you.
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if role == "admin" %}
+      <div class="form-group">
+        <label>Send to</label>
+        <div class="audience-grid" id="audience-grid">
+          <label class="audience-card" onclick="selectAudience(this, 'all_farmers')">
+            <input type="radio" name="target_audience" value="all_farmers">
+            <div class="aud-icon">👨‍🌾</div>
+            <div class="aud-label">All Farmers</div>
+            <div class="aud-desc">Every registered farmer</div>
+          </label>
+          <label class="audience-card" onclick="selectAudience(this, 'all_field_agents')">
+            <input type="radio" name="target_audience" value="all_field_agents">
+            <div class="aud-icon">🧑‍💼</div>
+            <div class="aud-label">All Field Agents</div>
+            <div class="aud-desc">Every field agent</div>
+          </label>
+          <label class="audience-card selected" onclick="selectAudience(this, 'all')">
+            <input type="radio" name="target_audience" value="all" checked>
+            <div class="aud-icon">🌍</div>
+            <div class="aud-label">Everyone</div>
+            <div class="aud-desc">Farmers + Field Agents</div>
+          </label>
+        </div>
+      </div>
+      {% else %}
+      <input type="hidden" name="target_audience" value="agent_farmers">
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_title">Subject / Title</label>
+        <input type="text" name="title" id="id_title" placeholder="e.g. Harvest season reminder" required>
+      </div>
+
+      <div class="form-group">
+        <label for="id_message">Message</label>
+        <textarea name="message" id="id_message" placeholder="Write your announcement here…" required></textarea>
+      </div>
+
+      <div class="form-actions">
+        <a href="{% url 'inbox' %}" class="btn btn-cancel">Cancel</a>
+        <button type="submit" class="btn btn-primary">📢 Send Broadcast</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectAudience(card, val) {
+  document.querySelectorAll('.audience-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  card.querySelector('input[type=radio]').checked = true;
+}
+// Set default selected state visually
+document.addEventListener('DOMContentLoaded', function() {
+  const checked = document.querySelector('input[name="target_audience"]:checked');
+  if (checked) checked.closest('.audience-card').classList.add('selected');
+});
+</script>
+</body>
+</html>

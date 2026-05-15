@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI Embedded Intelligence — 1847 Ventures</title>
+    <style>
+        :root {
+            --ink: #1c2b22;
+            --muted: #5f7066;
+            --paper: #f3f1e9;
+            --panel: #ffffff;
+            --line: rgba(22, 40, 28, 0.14);
+            --forest: #1e6d44;
+            --forest-dark: #145134;
+            --warn: #fff0d8;
+            --good: #e4f5e9;
+            --risk: #fde5de;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 0% 0%, rgba(140, 190, 92, 0.22), transparent 34%),
+                linear-gradient(180deg, #f7f4ed 0%, #eee9dd 100%);
+        }
+
+        .shell {
+            width: min(1240px, calc(100% - 34px));
+            margin: 20px auto 34px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .title p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 9px 13px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: var(--forest);
+        }
+
+        .btn-primary:hover { background: var(--forest-dark); }
+
+        .btn-ghost {
+            color: var(--ink);
+            background: #fff;
+            border-color: var(--line);
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+            padding: 14px;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            border-radius: 10px;
+            padding: 9px 12px;
+            font-size: 0.88rem;
+            border: 1px solid transparent;
+            display: none;
+        }
+
+        .status.show { display: block; }
+        .status.info { background: #eef5ff; border-color: #c9dcff; }
+        .status.success { background: var(--good); border-color: #b6ddc3; }
+        .status.warning { background: var(--warn); border-color: #f0d39f; }
+        .status.error { background: var(--risk); border-color: #e9b8a8; }
+
+        #reportHost {
+            width: 100%;
+            height: min(76vh, 880px);
+            min-height: 520px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .meta {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px;
+        }
+
+        @media (max-width: 780px) {
+            #reportHost {
+                min-height: 460px;
+                height: 70vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <div class="topbar">
+            <div class="title">
+                <h1>Embedded Power BI Intelligence</h1>
+                <p>Secure report embedding with service-principal authentication and controlled dataset refresh.</p>
+            </div>
+            <div class="actions">
+                <a class="btn btn-ghost" href="{% url 'partner_external_analysis' %}">Back to External Dataset Intelligence</a>
+                {% if request.user.profile.role == "analyst" or request.user.profile.role == "admin" %}
+                    <button id="refreshDatasetBtn" class="btn btn-primary" type="button">Refresh Dataset</button>
+                {% endif %}
+            </div>
+        </div>
+
+        <section class="card">
+            <div id="statusBox" class="status info">Loading Power BI report...</div>
+            <div id="reportHost"></div>
+            <div class="meta">
+                <div><strong>User:</strong> {{ request.user.username }}</div>
+                <div><strong>Role:</strong> {{ request.user.profile.role|title }}</div>
+                <div><strong>Auth mode:</strong> Service Principal (App-Owns-Data)</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.23.1/dist/powerbi.min.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const statusBox = document.getElementById("statusBox");
+            const reportHost = document.getElementById("reportHost");
+            const refreshBtn = document.getElementById("refreshDatasetBtn");
+            const powerbiModels = window["powerbi-client"].models;
+            const powerbiService = window.powerbi;
+
+            function showStatus(level, text) {
+                statusBox.className = `status show ${level}`;
+                statusBox.textContent = text;
+            }
+
+            function getCsrfToken() {
+                const cookie = document.cookie
+                    .split(";")
+                    .map(part => part.trim())
+                    .find(part => part.startsWith("csrftoken="));
+                return cookie ? cookie.split("=")[1] : "";
+            }
+
+            function embedReport(config) {
+                if (!config || !config.embedUrl || !config.reportId || !config.embedToken) {
+                    showStatus("error", "Power BI embed configuration is incomplete.");
+                    return;
+                }
+
+                const embedConfig = {
+                    type: "report",
+                    id: config.reportId,
+                    embedUrl: config.embedUrl,
+                    accessToken: config.embedToken,
+                    tokenType: powerbiModels.TokenType.Embed,
+                    permissions: powerbiModels.Permissions.All,
+                    settings: {
+                        panes: {
+                            filters: { visible: true },
+                            pageNavigation: { visible: true },
+                        },
+                    },
+                };
+
+                powerbiService.reset(reportHost);
+                const report = powerbiService.embed(reportHost, embedConfig);
+                report.on("loaded", () => showStatus("success", `Report loaded: ${config.reportName || "Portfolio Intelligence"}`));
+                report.on("error", (event) => {
+                    const detail = event && event.detail ? JSON.stringify(event.detail) : "unknown error";
+                    showStatus("error", `Power BI rendering failed: ${detail}`);
+                });
+            }
+
+            async function fetchEmbedConfig() {
+                showStatus("info", "Requesting secure embed token...");
+                const response = await fetch("{% url 'partner_powerbi_embed_config' %}", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json",
+                    },
+                });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.error || "Failed to load embed config.");
+                }
+                return payload.config;
+            }
+
+            async function requestDatasetRefresh() {
+                showStatus("info", "Triggering Power BI dataset refresh...");
+                const response = await fetch("{% url 'partner_powerbi_refresh_dataset' %}", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRFToken": getCsrfToken(),
+                        "Accept": "application/json",
+                    },
+                });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.error || "Dataset refresh failed.");
+                }
+                const requestId = payload.refresh && payload.refresh.requestId ? payload.refresh.requestId : "submitted";
+                showStatus("success", `Dataset refresh ${requestId} has been submitted.`);
+            }
+
+            if (refreshBtn) {
+                refreshBtn.addEventListener("click", async () => {
+                    refreshBtn.disabled = true;
+                    try {
+                        await requestDatasetRefresh();
+                    } catch (err) {
+                        showStatus("error", err.message || "Dataset refresh failed.");
+                    } finally {
+                        refreshBtn.disabled = false;
+                    }
+                });
+            }
+
+            fetchEmbedConfig()
+                .then(embedReport)
+                .catch((err) => showStatus("error", err.message || "Unable to initialize embedded report."));
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Analysis Mode - 1847 Ventures</title>
+    <style>
+        :root {
+            --ink: #17261d;
+            --muted: #607066;
+            --paper: #f4f2ea;
+            --panel: rgba(255, 255, 255, 0.92);
+            --line: rgba(22, 38, 29, 0.12);
+            --forest: #1f6a43;
+            --forest-deep: #0f4a2b;
+            --warn: #fff1d8;
+            --good: #e3f4e8;
+            --risk: #fde4dc;
+            --shadow: 0 18px 40px rgba(23, 38, 29, 0.14);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(156, 207, 83, 0.2), transparent 30%),
+                linear-gradient(180deg, #f7f5ee 0%, #f1ede3 52%, #ece7dc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: min(900px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 48px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            margin: 0 0 12px 0;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 1.1rem;
+        }
+
+        .dataset-name {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #f0f8f4;
+            border-left: 4px solid var(--forest);
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--forest-deep);
+        }
+
+        .modes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin: 40px 0;
+        }
+
+        @media (max-width: 768px) {
+            .modes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .mode-card {
+            padding: 32px;
+            border: 2px solid var(--line);
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .mode-card:hover {
+            border-color: var(--forest);
+            box-shadow: 0 8px 24px rgba(31, 106, 67, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .mode-card input[type="radio"] {
+            position: absolute;
+            top: -9999px;
+        }
+
+        .mode-card input[type="radio"]:checked + .mode-content {
+            background: var(--good);
+        }
+
+        .mode-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            height: 100%;
+        }
+
+        .mode-content {
+            padding: 12px;
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .mode-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .mode-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.4rem;
+            color: var(--ink);
+        }
+
+        .mode-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .mode-benefits {
+            margin-top: 16px;
+            text-align: left;
+            display: inline-block;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .mode-benefits li {
+            margin: 4px 0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 48px;
+            justify-content: center;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 32px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: linear-gradient(180deg, #2d8c51, #19693d);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(31, 106, 67, 0.25);
+        }
+
+        .btn-secondary {
+            color: var(--ink);
+            background: #fff;
+            border: 2px solid var(--line);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--forest);
+            color: var(--forest);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        form {
+            margin: 0;
+        }
+
+        .info-box {
+            margin-top: 32px;
+            padding: 16px;
+            background: var(--warn);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #5d4c1a;
+            border-left: 4px solid #d4a574;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>How would you like to analyze this data?</h1>
+            <p>Choose your analysis experience</p>
+            {% if dataset.dataset_name %}
+            <div class="dataset-name">
+                📁 {{ dataset.dataset_name }}
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="post" id="modeForm">
+            {% csrf_token %}
+            <input type="hidden" name="dataset_id" value="{{ dataset_id }}">
+            
+            <div class="modes-grid">
+                <!-- Integrated Mode -->
+                <label class="mode-card">
+                    <input type="radio" name="analysis_mode" value="integrated" required>
+                    <div class="mode-label">
+                        <div class="mode-content">
+                            <div class="mode-icon">🔗</div>
+                            <h3>Analyze with Portfolio</h3>
+                            <p>Connect your data to your existing farm portfolio</p>
+                            <ul class="mode-benefits">
+                                <li>✓ Cross-reference with farm data</li>
+                                <li>✓ View merged analytics</li>
+                                <li>✓ Track correlations</li>
+                                <li>✓ Portfolio health metrics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Standalone Mode -->
+                <label class="mode-card">
+                    <input type="radio" name="analysis_mode" value="standalone" required>
+                    <div class="mode-label">
+                        <div class="mode-content">
+                            <div class="mode-icon">🔍</div>
+                            <h3>Analyze Standalone</h3>
+                            <p>Focus on this dataset independently</p>
+                            <ul class="mode-benefits">
+                                <li>✓ Isolated data analysis</li>
+                                <li>✓ Clean workspace</li>
+                                <li>✓ No portfolio interference</li>
+                                <li>✓ Dataset-only insights</li>
+                            </ul>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="actions">
+                <form method="get" action="{% url 'partner_external_analysis' %}" style="display: inline;">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back();">Cancel</button>
+                </form>
+                <button type="submit" class="btn btn-primary" onclick="return validateSelection();">Continue</button>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> You can switch between these views later from the dataset options menu if you change your mind.
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function validateSelection() {
+            const selected = document.querySelector('input[name="analysis_mode"]:checked');
+            if (!selected) {
+                alert('Please select an analysis mode to continue.');
+                return false;
+            }
+            return true;
+        }
+
+        // Auto-select integrated mode by default
+        document.addEventListener('DOMContentLoaded', function() {
+            const integratedRadio = document.querySelector('input[value="integrated"]');
+            if (integratedRadio) {
+                integratedRadio.checked = true;
+            }
+        });
+    </script>
+</body>
+</html>

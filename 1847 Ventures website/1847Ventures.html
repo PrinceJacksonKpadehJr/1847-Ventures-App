@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forest Green Navbar</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.min.css" />
+</head>
+<body>
+
+  <!-- 🔹 Sticky Banner -->
+  <header class="navbar" id="navbar">
+    <div class="logo">
+      <img src="d:\1847 Ventures bebsite\Logo 1847 Ventures.png" alt="Logo" />
+    </div>
+    <nav class="menu">
+      <button onclick="scrollToSection('section1')">About 1847</button>
+      <button onclick="scrollToSection('section2')">Our Mission</button>
+      <button onclick="scrollToSection('section3')">Our Team</button>
+    </nav>
+  </header>
+
+  <!-- 🔹 Hero Section -->
+  <section class="hero" id="section1">
+    <div class="hero-container">
+      <div class="hero-left">
+        <video src="d:\1847 Ventures bebsite\1847 Ventures Documentry.mp4" controls autoplay muted></video>
+        <h1>Welcome to 1847 Ventures</h1>
+        <h3>Empowering farmers, investors, and communities through cocoa</h3>
+        <p>
+          Join our sustainable mission to transform cocoa agriculture through regenerative practices, fair investment opportunities, and inclusive partnerships. Discover how we’re changing the landscape for good.
+        </p>
+        <p>
+          At <strong>1847 Ventures</strong>, we are pioneering a transformative agroforestry platform in Liberia that delivers both economic prosperity and environmental sustainability. Our unique model fuses <strong>premium, traceable Grade 1A cocoa exports</strong> with <strong>high-integrity carbon credits</strong>, creating a powerful dual-revenue stream for investors and farmers alike.
+        </p>
+       <button id="cta-button-hero">Subscribe Now</button>
+      </div>
+      <div class="hero-right">
+        <h1>Why Cocoa Investment Matters</h1>
+        <h3>Long-term value, social impact, and ecological regeneration</h3>
+        <p>
+          Liberia is blessed with rich soils, abundant rainfall, and vast forest potential—yet its cocoa farmers remain undercapitalized and disconnected from high-value markets. We bridge that gap through cooperative-based models that offer farmers better terms, direct access to sustainable inputs, and non-cash credit systems. By doing so, we elevate livelihoods and secure long-term prosperity for cocoa-growing communities.
+        </p>
+        <p>
+          <strong>Agroforestry That Heals:</strong> We cultivate cocoa beneath forest canopies to protect biodiversity and reduce deforestation.<br>
+          <strong>Blockchain-Powered Transparency:</strong> Every cocoa bean is tracked from farm to container, meeting the strictest ESG and EUDR standards.<br>
+          <strong>Community First:</strong> Our clusters support over <strong>4,500 farmers</strong>, and we're scaling to reach <strong>10,000+ farmers</strong>, backed by tailored support, healthcare access, and training.<br>
+          <strong>Carbon Credits That Count:</strong> By integrating reforestation and conservation into our cocoa model, we generate carbon credits that bring added income and climate value.
+        </p>
+        <p>
+          As global cocoa demand surges—and carbon markets rise—our platform positions Liberia as a new ethical origin for the world’s top chocolate makers. We're securing partnerships with leading brands in <strong>Europe, Asia, and the U.S.</strong>, while building Liberia’s flagship cocoa estate spanning up to <strong>5,000 hectares</strong>.
+        </p>
+        <p>
+          Our leadership includes internationally recognized cocoa agronomists, climate scientists, and economic strategists with over 100 years of combined experience. Together, we bring world-class execution, local trust, and investor-grade discipline to every project we launch.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🔹 Modal Subscription Form -->
+  <div class="modal" id="subscribeModal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Subscribe to Join Us</h2>
+      <form id="subscriptionForm">
+        <input type="text" name="fullname" placeholder="Full Name" required />
+
+        <select name="sex" required>
+          <option value="">Select Sex</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <input type="email" name="email" placeholder="Email Address" required />
+
+        <input id="phone" name="contact" placeholder="Phone Number" required />
+
+        <select id="countrySelect" name="nationality" required>
+          <option value="">Select Nationality</option>
+        </select>
+
+        <textarea name="message" placeholder="Optional Message (Max 50 words)" maxlength="300"></textarea>
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <main>
+   <section id="section2" style="padding: 60px 20px; background-color: #e0e0e0;">
+  <div style="display: flex; flex-wrap: wrap; max-width: 1000px; margin: auto; gap: 4rem;">
+    <div style="flex: 1; min-width: 300px;">
+      <h1>Our Mission & Vision</h1>
+
+      <h2>Our Mission</h2>
+      <p>
+        To unlock Liberia’s potential as a globally competitive cocoa origin through regenerative agroforestry, inclusive value chains, and digital traceability that improves farmer incomes and environmental resilience.
+      </p>
+      <img src="d:\1847 Ventures bebsite\Photos\what-is-Agroforestry-1024x512.jpg" alt="Mission Icon" style="width: 80%; height: auto; margin-bottom: 10px;" />
+      <h2>Our Vision</h2>
+      <p>
+        To become West Africa’s most impactful cocoa and carbon enterprise—creating prosperity for farmers, restoring biodiversity, and setting a new benchmark for ethical cocoa investment across the continent.
+      </p>
+      <img src="d:\1847 Ventures bebsite\Photos\loading-sacks-of-gari-to-be-transported-to-different-local-markets-KPB766 (1).jpg" alt="Vision Icon" 
+      style="width: 80%; height: auto; margin-bottom: 10px;" />
+    </div>
+    <div style="flex: 1; min-width: 300px;">
+  <h2>Empowering Liberia Through Innovation</h2>
+  <img src="d:\1847 Ventures bebsite\Photos\sddefault.jpg" alt="Cocoa Cluster Impact" style="width: 100%; border-radius: 8px; margin-bottom: 1rem;" />
+  <p>
+    Our platform connects smallholder cocoa farmers with premium markets and climate-smart tools, empowering local communities through cooperative governance and transparent value chains. With a focus on traceability and high-quality output, we’re reshaping Liberia’s place in the global cocoa economy.
+  </p>
+
+  <h3>Smart Tech, Smarter Trade</h3>
+  <img src="d:\1847 Ventures bebsite\Photos\Nimba cocoa clusters.jpg" alt="Blockchain Traceability" style="width: 100%; border-radius: 8px; margin: 1rem 0;" />
+  <p>
+    Every pod harvested is tracked via blockchain to meet global ESG and EUDR regulations. This transparency ensures integrity for buyers and fair returns for producers, enabling sustainable growth rooted in data-driven accountability.
+  </p>
+</div>
+  </div>
+</section>
+    <!-- 🔹 Team Section -->
+    <section id="section3" style="background-color: #d0d0d0; padding: 40px 20px; text-align: center;">
+      <h1>Meet Our Team</h1>
+      <div class="team-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px;">
+        <div class="team-member" style="width: 220px;">
+          <img src="d:\1847 Ventures bebsite\Photos\shot-of-a-happy-female-african-farmer-in-nigeria-holding-some-money-2H483GX.jpg" alt="Team Member 1" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover;" />
+          <h2>John Doe</h2>
+          <h4>Founder & CEO</h4>
+          <p>John brings over 20 years of experience in sustainable agriculture, helping bridge the gap between impact and innovation in cocoa farming.</p>
+        </div>
+        <div class="team-member" style="width: 220px;">
+          <img src="d:\1847 Ventures bebsite\Photos\shot-of-a-happy-female-african-farmer-in-nigeria-holding-some-money-2H483GX.jpg" alt="Team Member 2" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover;" />
+          <h2>Jane Smith</h2>
+          <h4>Chief Agronomist</h4>
+          <p>Jane leads our regenerative practices, ensuring every cocoa pod is nurtured sustainably for generations to come.</p>
+        </div>
+        <div class="team-member" style="width: 220px;">
+          <img src="d:\1847 Ventures bebsite\Photos\shot-of-a-happy-female-african-farmer-in-nigeria-holding-some-money-2H483GX.jpg" alt="Team Member 3" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover;" />
+          <h2>Michael Brown</h2>
+          <h4>Director of Finance</h4>
+          <p>Michael manages investor relations and financial strategies that drive our mission with transparency and growth.</p>
+        </div>
+        <div class="team-member" style="width: 220px;">
+          <img src="d:\1847 Ventures bebsite\Photos\shot-of-a-happy-female-african-farmer-in-nigeria-holding-some-money-2H483GX.jpg" alt="Team Member 4" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover;" />
+          <h2>Linda Green</h2>
+          <h4>Community Liaison</h4>
+          <p>Linda works directly with farmers and communities, building trust, knowledge sharing, and empowerment from the ground up.</p>
+        </div>
+      </div>
+    </section>
+    <!-- 🔹 Responsive Footer -->
+<footer style="background-color: #013220; color: white; padding: 40px 20px; text-align: center;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; max-width: 1000px; margin: auto; gap: 40px;">
+
+    <!-- Contact Column -->
+    <div style="flex: 1; min-width: 250px;">
+      <h3>Contact Our Team</h3>
+      <ul style="list-style: none; padding: 0; text-align: left;">
+        <li>
+          📧 <a href="mailto:john@cocoaimpact.org" style="color: #90ee90;">John Doe (CEO)</a><br>
+          <input type="email" placeholder="Write to John..." style="width: 100%; padding: 5px; margin-top: 5px; border-radius: 5px;">
+        </li>
+        <li style="margin-top: 15px;">
+          📧 <a href="mailto:jane@cocoaimpact.org" style="color: #90ee90;">Jane Smith (Agronomist)</a><br>
+          <input type="email" placeholder="Write to Jane..." style="width: 100%; padding: 5px; margin-top: 5px; border-radius: 5px;">
+        </li>
+        <li style="margin-top: 15px;">
+          📧 <a href="mailto:michael@cocoaimpact.org" style="color: #90ee90;">Michael Brown (Finance)</a><br>
+          <input type="email" placeholder="Write to Michael..." style="width: 100%; padding: 5px; margin-top: 5px; border-radius: 5px;">
+        </li>
+        <li style="margin-top: 15px;">
+          📧 <a href="mailto:linda@cocoaimpact.org" style="color: #90ee90;">Linda Green (Community)</a><br>
+          <input type="email" placeholder="Write to Linda..." style="width: 100%; padding: 5px; margin-top: 5px; border-radius: 5px;">
+        </li>
+      </ul>
+    </div>
+
+    <!-- Social Column -->
+    <div style="flex: 1; min-width: 250px;">
+      <h3>Follow Us</h3>
+      <a href="#" target="_blank" style="color: #90ee90; font-size: 20px; text-decoration: underline;">@1847 Ventures</a>
+    </div>
+
+  </div>
+
+  <p style="margin-top: 30px; font-size: 14px;">&copy; 2025 Cocoa Impact. All rights reserved.</p>
+</footer>
+
+
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+  <script>
+    // Smooth scroll to section
+    function scrollToSection(id) {
+      const section = document.getElementById(id);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Navbar scroll color change
+    window.addEventListener('scroll', function () {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // Modal logic
+    const modal = document.getElementById("subscribeModal");
+    const ctaButton = document.getElementById("cta-button");
+    const ctaHeroButton = document.getElementById("cta-button-hero");
+    const closeBtn = document.querySelector(".close");
+
+    if (ctaButton) ctaButton.addEventListener("click", () => modal.style.display = "block");
+    if (ctaHeroButton) ctaHeroButton.addEventListener("click", () => modal.style.display = "block");
+    closeBtn.addEventListener("click", () => modal.style.display = "none");
+
+    window.addEventListener("click", (e) => {
+      if (e.target === modal) modal.style.display = "none";
+    });
+
+    // Phone input setup
+    const phoneInput = document.querySelector("#phone");
+    const iti = window.intlTelInput(phoneInput, {
+      initialCountry: "auto",
+      separateDialCode: true,
+      geoIpLookup: function (callback) {
+        fetch("https://ipapi.co/json")
+          .then(res => res.json())
+          .then(data => callback(data.country_code))
+          .catch(() => callback("us"));
+      },
+      utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+    });
+
+    // Country dropdown for nationality
+    const countries = window.intlTelInputGlobals.getCountryData();
+    const countrySelect = document.getElementById("countrySelect");
+
+    countries.forEach(country => {
+      const option = document.createElement("option");
+      option.value = country.iso2;
+      option.textContent = country.name;
+      countrySelect.appendChild(option);
+    });
+
+    // Form submission with thank-you message
+    document.getElementById("subscriptionForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const fullPhoneNumber = iti.getNumber();
+      const name = this.fullname.value;
+
+      this.innerHTML = `
+        <h3 style="text-align: center; color: forestgreen;">
+          Thanks for contacting us, ${name.split(' ')[0] || 'friend'}!<br>
+          We’ll be in touch shortly.
+        </h3>
+      `;
+
+      setTimeout(() => {
+        modal.style.display = "none";
+        location.reload();
+      }, 4000);
+    });
+  </script>
+</body>
+</html>

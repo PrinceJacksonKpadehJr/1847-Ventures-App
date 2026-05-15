@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Audit Logs - 1847 Ventures</title>
+    <style>
+        :root {
+            --ink: #1d2c23;
+            --muted: #607066;
+            --paper: #f5f2ea;
+            --panel: #ffffff;
+            --line: rgba(18, 40, 27, 0.12);
+            --forest: #1d6b43;
+            --forest-dark: #125033;
+            --shadow: 0 12px 28px rgba(18, 40, 27, 0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 20% 0%, rgba(120, 177, 101, 0.22), transparent 35%),
+                linear-gradient(180deg, #f7f4ec 0%, #efe9de 100%);
+        }
+
+        .shell {
+            width: min(1120px, calc(100% - 34px));
+            margin: 24px auto 36px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .title p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--forest);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: var(--forest-dark); }
+
+        .btn-ghost {
+            background: #fff;
+            color: var(--ink);
+            border-color: var(--line);
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .filters {
+            padding: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .filters-actions {
+            display: flex;
+            gap: 8px;
+            align-self: end;
+        }
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(18, 40, 27, 0.22);
+            font-size: 0.92rem;
+            background: #fff;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 11px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: #f7f9f8;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(29, 107, 67, 0.11);
+            color: #1d6b43;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-size: 0.8rem;
+            color: #33463b;
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        .empty {
+            padding: 20px;
+            color: var(--muted);
+        }
+
+        .summary {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 12px;
+            border-top: 1px solid var(--line);
+            background: #fbfcfb;
+        }
+
+        .page-info {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-right: 6px;
+        }
+
+        @media (max-width: 860px) {
+            .filters {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <div class="topbar">
+            <div class="title">
+                <h1>Dataset Audit Logs</h1>
+                <p>Governance visibility with filters and page navigation.</p>
+            </div>
+            <div class="actions">
+                {% if request.user.profile.role == "admin" %}
+                    <a class="btn btn-ghost" href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+                {% else %}
+                    <a class="btn btn-ghost" href="{% url 'partner_dashboard' %}">Back to Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="get" class="card filters">
+            <div>
+                <label for="action">Action</label>
+                <select id="action" name="action">
+                    <option value="">All Actions</option>
+                    {% for value, label in action_choices %}
+                        <option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="actor">Actor Username</label>
+                <input id="actor" name="actor" value="{{ actor_query }}" placeholder="Search actor username">
+            </div>
+            <div>
+                <label for="start_date">Start Date</label>
+                <input id="start_date" name="start_date" type="date" value="{{ start_date }}">
+            </div>
+            <div>
+                <label for="end_date">End Date</label>
+                <input id="end_date" name="end_date" type="date" value="{{ end_date }}">
+            </div>
+            <div class="filters-actions">
+                <button class="btn btn-primary" type="submit">Apply Filters</button>
+                <a class="btn btn-ghost" href="{% url 'dataset_audit_log_viewer' %}">Reset</a>
+            </div>
+        </form>
+
+        <section class="card table-wrap">
+            <p class="summary">
+                Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }} events.
+            </p>
+            {% if logs %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Dataset</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ log.actor.username }}</td>
+                                <td><span class="pill">{{ log.action }}</span></td>
+                                <td>{% if log.dataset %}{{ log.dataset.dataset_name }}{% else %}-{% endif %}</td>
+                                <td><pre>{{ log.details }}</pre></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty">No audit log events match your filters.</div>
+            {% endif %}
+
+            {% if is_paginated %}
+                <div class="pagination">
+                    <span class="page-info">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+                    {% if page_obj.has_previous %}
+                        <a class="btn btn-ghost" href="?{% if query_string %}{{ query_string }}&{% endif %}page=1">First</a>
+                        <a class="btn btn-ghost" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a class="btn btn-ghost" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                        <a class="btn btn-ghost" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ paginator.num_pages }}">Last</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

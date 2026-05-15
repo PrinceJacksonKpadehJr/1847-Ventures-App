@@ -3,67 +3,542 @@
 <html>
 <head>
     <title>Field Agent Dashboard — 1847 Ventures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
-        h2 { color: #2c7a3a; }
-        h3 { color: #2c7a3a; margin-top: 0; }
-        .notice { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
-        label { display: block; margin-top: 12px; font-weight: bold; }
-        input[type=text], input[type=email] { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .errorlist { color: #c0392b; list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 0.9em; }
-        button[type=submit] { margin-top: 16px; padding: 10px 24px; background: #2c7a3a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
-        button[type=submit]:hover { background: #235f2d; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; }
-        th { background: #f0f0f0; }
-        .badge-pending { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
-        .badge-approved { background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
-        .badge-request { background: #fd7e14; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
-        .messages { list-style: none; padding: 0; }
-        .messages li { padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; }
-        .messages .success { background: #d4edda; color: #155724; }
-        .messages .error { background: #f8d7da; color: #721c24; }
-        .btn { display: inline-block; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 0.88em; font-weight: bold; }
-        .btn-primary { background: #2c7a3a; color: white; }
-        .btn-primary:hover { background: #235f2d; }
-        .empty-state { color: #888; font-style: italic; }
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 { margin: 0; font-size: 1.5em; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: background 0.3s; }
+        .navbar a:hover { background: rgba(255,255,255,0.1); }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        
+        .messages li {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .messages .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .messages .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Profile Section */
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .profile-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .profile-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3em;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-info p { margin: 4px 0; color: #666; }
+        .profile-info .role { color: #2c7a3a; font-weight: bold; }
+        
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .profile-photo-upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .profile-photo-file {
+            width: 100%;
+        }
+
+        .photo-editor {
+            display: none;
+            border: 1px solid #d6e7da;
+            border-radius: 10px;
+            background: #f8fbf9;
+            padding: 10px;
+        }
+
+        .photo-editor.active { display: block; }
+
+        .photo-preview-frame {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 10px;
+            border: 2px solid #c4dcc9;
+            background: #e6f1e9;
+        }
+
+        .photo-preview-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .photo-editor label {
+            font-size: 0.78rem;
+            color: #386042;
+            margin: 5px 0 2px;
+            display: block;
+        }
+
+        .photo-editor input[type="range"] {
+            width: 100%;
+        }
+
+        .photo-controls {
+            display: none;
+            width: 100%;
+        }
+
+        .photo-controls.active { display: block; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: #2c7a3a;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1f5a2a;
+            box-shadow: 0 4px 12px rgba(44, 122, 58, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-top: 4px solid #2c7a3a;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c7a3a;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        /* Sections */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #2c7a3a;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title .icon { font-size: 1.3em; }
+        
+        .toggle-btn {
+            margin-left: auto;
+            background: #2c7a3a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .toggle-btn:hover {
+            background: #1f5a2a;
+        }
+        
+        .toggle-btn.collapsed::after { content: " ▼"; }
+        .toggle-btn.expanded::after { content: " ▲"; }
+        
+        .collapsible-content {
+            display: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+        
+        .collapsible-content.show {
+            display: block;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="file"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2c7a3a;
+            box-shadow: 0 0 0 3px rgba(44, 122, 58, 0.1);
+        }
+        
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 6px 0 0 0;
+            color: #dc3545;
+            font-size: 0.85em;
+        }
+        
+        .errorlist li::before { content: "⚠ "; }
+        
+        .photo-upload-section {
+            border: 2px dashed #2c7a3a;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            background: #f8faf9;
+            margin: 12px 0;
+        }
+        
+        .photo-upload-section input[type="file"] {
+            border: none;
+        }
+        
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f8faf9;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        tr:hover { background: #f8faf9; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-approved { background: #d4edda; color: #155724; }
+        .badge-request { background: #fdeae6; color: #c71c07; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            color: #856404;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-left {
+                flex-direction: column;
+            }
+            
+            .profile-actions {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .navbar-right {
+                width: 100%;
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="navbar">
-    <strong>1847 Ventures — Field Agent Dashboard</strong>
-    <div>
-        Logged in as {{ request.user.username }}
-        <a href="{% url 'logout' %}">Logout</a>
+    <h1 style="display:flex; align-items:center; gap:10px;">
+        <img src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.4);">
+        📊 Field Agent Dashboard
+    </h1>
+    <div class="navbar-right">
+        <span>👤 {{ request.user.username }}</span>
+        <a href=\"{% url 'inbox' %}\" style=\"position:relative;\">💬 Messages{% if unread_notifications_count %}<span style=\"position:absolute;top:-6px;right:-8px;background:#e07c00;color:white;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;\">{{ unread_notifications_count }}</span>{% endif %}</a>
+        {% if request.user.is_superuser %}
+        <a href="{% url 'superuser_dashboard_selector' %}">🧭 Switch Dashboard</a>
+        {% endif %}
+        <a href="{% url 'logout' %}">🔓 Logout</a>
     </div>
 </div>
 
 <div class="container">
-
+    
+    <!-- Messages -->
     {% if messages %}
     <ul class="messages">
         {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
+        <li class="{{ message.tags }}">
+            {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}✗{% else %}ℹ{% endif %}
+            {{ message }}
+        </li>
         {% endfor %}
     </ul>
     {% endif %}
-
+    
+    <!-- Profile Section -->
+    <div class="profile-card">
+        <div class="profile-left">
+            <div class="profile-photo">
+                {% if agent_profile.profile_photo %}
+                    <img src="{{ agent_profile.profile_photo.url }}" alt="{{ request.user.username }}">
+                {% else %}
+                    👤
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <p style="font-weight:700; margin-bottom:2px;">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p><span class="role">Field Agent</span></p>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <form method="POST" action="{% url 'upload_agent_profile_photo' %}" enctype="multipart/form-data" class="profile-photo-upload-form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-primary photo-toggle-btn">
+                    {% if agent_profile.profile_photo %}Change Photo{% else %}Upload Photo{% endif %}
+                </button>
+                <div class="photo-controls">
+                    <input type="file" name="profile_photo" accept="image/*" class="profile-photo-file">
+                    <input type="hidden" name="profile_zoom" value="1" class="profile-zoom-field">
+                    <input type="hidden" name="profile_shift_x" value="0" class="profile-shift-x-field">
+                    <input type="hidden" name="profile_shift_y" value="0" class="profile-shift-y-field">
+                    <div class="photo-editor" aria-live="polite">
+                        <div class="photo-preview-frame">
+                            <canvas class="photo-preview-canvas" width="108" height="108"></canvas>
+                        </div>
+                        <label>Zoom</label>
+                        <input type="range" min="1" max="3" step="0.05" value="1" class="photo-zoom-slider">
+                        <label>Move left / right</label>
+                        <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-x-slider">
+                        <label>Move up / down</label>
+                        <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-y-slider">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Farmers</div>
+            <div class="stat-number">{{ total_farmers }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Approved</div>
+            <div class="stat-number">{{ approved_farmers }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pending Approval</div>
+            <div class="stat-number">{{ pending_approval }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">New Assignments</div>
+            <div class="stat-number">{{ pending_assignments }}</div>
+        </div>
+    </div>
+    
     <!-- Pending Requests from Admin -->
     {% if pending_requests %}
-    <div class="card">
-        <h3>📋 Farmer Registrations Assigned to You <span class="badge-request">{{ pending_requests|length }} pending</span></h3>
+    <div class="section">
+        <h3 class="section-title">
+            <span class="icon">📋</span>
+            New Farmer Registrations
+            <span class="badge badge-request">{{ pending_requests|length }}</span>
+        </h3>
         <table>
             <thead>
                 <tr>
                     <th>Farmer Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Notes from Admin</th>
+                    <th>Notes</th>
                     <th>Assigned</th>
                     <th>Action</th>
                 </tr>
@@ -74,12 +549,11 @@
                     <td><strong>{{ req.farmer_name }}</strong></td>
                     <td>{{ req.farmer_email|default:"—" }}</td>
                     <td>{{ req.farmer_phone|default:"—" }}</td>
-                    <td>{{ req.notes|default:"—" }}</td>
-                    <td>{{ req.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ req.notes|default:"—"|truncatewords:10 }}</td>
+                    <td>{{ req.created_at|date:"M d, Y" }}</td>
                     <td>
-                        <a class="btn btn-primary"
-                           href="{% url 'create_farmer' %}?request_id={{ req.pk }}">
-                            Register Farmer
+                        <a class="btn btn-primary btn-sm" href="{% url 'create_farmer' %}?request_id={{ req.pk }}">
+                            Register ►
                         </a>
                     </td>
                 </tr>
@@ -88,73 +562,180 @@
         </table>
     </div>
     {% endif %}
+    
+    <!-- Register New Farmer (Collapsible) -->
+    <div class="section">
+        <h3 class="section-title">
+            <span class="icon">➕</span>
+            Register New Farmer
+            <button type="button" class="toggle-btn collapsed" id="toggle-form" onclick="toggleForm()">Show Form</button>
+        </h3>
+        
+        <div class="collapsible-content" id="form-content">
+            <div class="notice">
+                <strong>See → Ask → Select intake:</strong> the full data collection form opens only when you start adding a new farmer.
+            </div>
 
-    <h2>Register a New Farmer</h2>
-
-    <div class="notice">
-        <strong>Important:</strong> Every farmer must have a <strong>unique email address</strong>.
-        The email will be used to send the farmer a password-setup link once their account is approved by an administrator.
+            <a href="{% url 'create_farmer' %}" class="btn btn-primary">Start New Farmer Intake</a>
+        </div>
     </div>
-
-    <div class="card">
-        <form method="POST" action="{% url 'create_farmer' %}">
-            {% csrf_token %}
-
-            <label for="id_username">Username</label>
-            <input type="text" id="id_username" name="username"
-                   value="{{ form.username.value|default:'' }}"
-                   placeholder="Enter farmer username" required>
-            {% if form.username.errors %}
-            <ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-            {% endif %}
-
-            <label for="id_email">Email address</label>
-            <input type="email" id="id_email" name="email"
-                   value="{{ form.email.value|default:'' }}"
-                   placeholder="farmer@example.com" required>
-            {% if form.email.errors %}
-            <ul class="errorlist">{% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-            {% endif %}
-            <small style="color:#666;">{{ form.email.help_text }}</small>
-
-            <button type="submit">Register Farmer</button>
-        </form>
-    </div>
-
-    <h2>Registered Farmers</h2>
-    <div class="card">
+    
+    <!-- Registered Farmers with Data Collection Links -->
+    <div class="section">
+        <h3 class="section-title">
+            <span class="icon">👥</span>
+            Your Registered Farmers
+            <span style="margin-left: auto; font-size: 0.9em; color: #666;">{{ total_farmers }} total</span>
+        </h3>
+        
         {% if farmers %}
         <table>
             <thead>
                 <tr>
-                    <th>Username</th>
+                    <th>Farmer Name</th>
                     <th>Email</th>
                     <th>Registered</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for farmer in farmers %}
                 <tr>
-                    <td>{{ farmer.username }}</td>
+                    <td><strong>{{ farmer.username }}</strong></td>
                     <td>{{ farmer.email }}</td>
-                    <td>{{ farmer.registration_date|date:"Y-m-d" }}</td>
+                    <td>{{ farmer.registration_date|date:"M d, Y" }}</td>
                     <td>
                         {% if farmer.profile.is_approved %}
-                        <span class="badge-approved">Approved</span>
+                            <span class="badge badge-approved">✓ Approved</span>
                         {% else %}
-                        <span class="badge-pending">Pending Approval</span>
+                            <span class="badge badge-pending">⏳ Pending</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn btn-primary btn-sm" href="{% url 'farm_assessment_sheet1' farmer.pk %}" title="Collect farm data in three sheets">
+                            📋 Collect Data
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p class="empty-state">No farmers registered yet.</p>
+        <div class="empty-state">
+            📭 No farmers registered yet. Add one using the form above!
+        </div>
         {% endif %}
     </div>
 
 </div>
+
+<script>
+    function initProfilePhotoEditors() {
+        document.querySelectorAll('.profile-photo-upload-form').forEach((form) => {
+            const fileInput = form.querySelector('input[name="profile_photo"]');
+            const toggleBtn = form.querySelector('.photo-toggle-btn');
+            const controls = form.querySelector('.photo-controls');
+            const editor = form.querySelector('.photo-editor');
+            const previewCanvas = form.querySelector('.photo-preview-canvas');
+            const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+            const zoomSlider = form.querySelector('.photo-zoom-slider');
+            const shiftXSlider = form.querySelector('.photo-shift-x-slider');
+            const shiftYSlider = form.querySelector('.photo-shift-y-slider');
+            const zoomField = form.querySelector('.profile-zoom-field');
+            const shiftXField = form.querySelector('.profile-shift-x-field');
+            const shiftYField = form.querySelector('.profile-shift-y-field');
+            let previewUrl = null;
+            let previewImage = null;
+
+            if (!fileInput || !editor || !previewCanvas || !previewCtx || !toggleBtn || !controls) {
+                return;
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                controls.classList.toggle('active');
+            });
+
+            const renderPreview = () => {
+                const zoom = parseFloat(zoomSlider.value || '1');
+                const shiftX = parseFloat(shiftXSlider.value || '0');
+                const shiftY = parseFloat(shiftYSlider.value || '0');
+                zoomField.value = String(zoom);
+                shiftXField.value = String(shiftX);
+                shiftYField.value = String(shiftY);
+
+                if (!previewImage) {
+                    return;
+                }
+
+                const width = previewImage.naturalWidth || previewImage.width;
+                const height = previewImage.naturalHeight || previewImage.height;
+                const minSide = Math.min(width, height);
+                const cropSize = Math.max(Math.floor(minSide / zoom), 1);
+                const maxDx = (width - cropSize) / 2;
+                const maxDy = (height - cropSize) / 2;
+                const centerX = (width / 2) + (shiftX / 100) * maxDx;
+                const centerY = (height / 2) + (shiftY / 100) * maxDy;
+                let left = Math.round(centerX - (cropSize / 2));
+                let top = Math.round(centerY - (cropSize / 2));
+                left = Math.max(0, Math.min(left, width - cropSize));
+                top = Math.max(0, Math.min(top, height - cropSize));
+
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                previewCtx.drawImage(
+                    previewImage,
+                    left,
+                    top,
+                    cropSize,
+                    cropSize,
+                    0,
+                    0,
+                    previewCanvas.width,
+                    previewCanvas.height
+                );
+            };
+
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) {
+                    editor.classList.remove('active');
+                    previewImage = null;
+                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    return;
+                }
+                if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl);
+                }
+                previewUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    previewImage = img;
+                    zoomSlider.value = '1';
+                    shiftXSlider.value = '0';
+                    shiftYSlider.value = '0';
+                    editor.classList.add('active');
+                    renderPreview();
+                };
+                img.src = previewUrl;
+            });
+
+            [zoomSlider, shiftXSlider, shiftYSlider].forEach((slider) => {
+                slider.addEventListener('input', renderPreview);
+            });
+        });
+    }
+
+    function toggleForm() {
+        const btn = document.getElementById('toggle-form');
+        const content = document.getElementById('form-content');
+        content.classList.toggle('show');
+        btn.classList.toggle('collapsed');
+        btn.classList.toggle('expanded');
+        btn.textContent = content.classList.contains('show') ? 'Hide Form ▲' : 'Show Form ▼';
+    }
+
+    window.addEventListener('load', initProfilePhotoEditors);
+</script>
+
 </body>
 </html>

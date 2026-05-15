@@ -1,0 +1,419 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farm Assessment - Sheet 1 | 1847 Ventures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        header h1 { margin: 0; font-size: 1.6em; }
+        header .breadcrumb {
+            font-size: 0.9em;
+            opacity: 0.85;
+            margin: 8px 0 0 0;
+        }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        
+        .progress-bar {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar .progress {
+            background: #2c7a3a;
+            height: 100%;
+            width: 33%;
+            transition: width 0.3s ease;
+        }
+        
+        .sheet-title {
+            font-size: 1.5em;
+            color: #2c7a3a;
+            margin-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .sheet-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid #2c7a3a;
+        }
+        
+        .section-icon {
+            font-size: 1.4em;
+            margin-right: 8px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            color: #2c7a3a;
+            margin: 0 0 20px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .field-group {
+            margin-bottom: 24px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .field-label {
+            font-size: 0.95em;
+            color: #555;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2c7a3a;
+            box-shadow: 0 0 0 3px rgba(44, 122, 58, 0.1);
+        }
+        
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .radio-option, .checkbox-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        input[type="radio"],
+        input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #2c7a3a;
+        }
+        
+        .radio-option label,
+        .checkbox-option label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+            color: #dc3545;
+            font-size: 0.85em;
+        }
+        
+        .errorlist li::before {
+            content: "⚠ ";
+            margin-right: 4px;
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        button, .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #2c7a3a;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1f5a2a;
+            box-shadow: 0 4px 12px rgba(44, 122, 58, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .messages {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 600px) {
+            header { padding: 15px 20px; }
+            .container { margin: 20px auto; }
+            .form-section { padding: 16px; }
+            .form-buttons { flex-direction: column; }
+            button, .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📋 Farm Data Collection</h1>
+    <div class="breadcrumb">Sheet {{ sheet_number }} of {{ total_sheets }} — Farmer Profile & Location</div>
+</header>
+
+<div class="container">
+    
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <div class="progress-bar">
+        <div class="progress"></div>
+    </div>
+    
+    <h2 class="sheet-title">👤 Farmer Profile & Location</h2>
+    <p class="sheet-subtitle">Observe and record farmer details. Keep it conversational.</p>
+    
+    <form method="POST" style="display: flex; flex-direction: column; gap: 0;">
+        {% csrf_token %}
+        
+        <!-- Section A: Farmer Details -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">👤</span> Farmer Details</h3>
+            
+            <div class="field-group">
+                <label for="{{ form.full_name.id_for_label }}" class="field-label">{{ form.full_name.label }}</label>
+                {{ form.full_name }}
+                <div class="help-text">🗣️ Ask: "What is your full name?"</div>
+                {% if form.full_name.errors %}<ul class="errorlist">{% for e in form.full_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.household_size.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.household_size.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="household_{{ value }}" name="household_size" value="{{ value }}" {% if form.household_size.value == value %}checked{% endif %}>
+                        <label for="household_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "How many people live in your household?"</div>
+                {% if form.household_size.errors %}<ul class="errorlist">{% for e in form.household_size.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.belongs_to_group.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.belongs_to_group.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="group_{{ value }}" name="belongs_to_group" value="{{ value }}" {% if form.belongs_to_group.value == value %}checked{% endif %}>
+                        <label for="group_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Do you belong to a farmers group?"</div>
+                {% if form.belongs_to_group.errors %}<ul class="errorlist">{% for e in form.belongs_to_group.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group" id="group-name-field" style="display: none;">
+                <label for="{{ form.farmer_group_name.id_for_label }}" class="field-label">{{ form.farmer_group_name.label }}</label>
+                {{ form.farmer_group_name }}
+                <div class="help-text">📝 If yes, enter the group name</div>
+                {% if form.farmer_group_name.errors %}<ul class="errorlist">{% for e in form.farmer_group_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Section B: Farm Location -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">📍</span> Farm Location (GPS Required)</h3>
+            
+            <div class="field-group">
+                <label for="id_capture_gps" class="field-label" style="display: flex; align-items: center;">
+                    <button type="button" id="capture-gps-btn" class="btn btn-primary" style="width: auto; margin-bottom: 0;">📍 Tap to Capture GPS Location</button>
+                </label>
+                <div class="help-text" style="margin-top: 12px;">🗣️ Ask: "Is this the correct farm area?" Then confirm yes/no</div>
+            </div>
+            
+            <div class="field-group">
+                <label for="{{ form.location_name.id_for_label }}" class="field-label">{{ form.location_name.label }}</label>
+                {{ form.location_name }}
+                <div class="help-text">📝 This will be auto-filled based on GPS coordinates</div>
+                {% if form.location_name.errors %}<ul class="errorlist">{% for e in form.location_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            {{ form.latitude }}
+            {{ form.longitude }}
+        </div>
+        
+        <!-- Section C: Land Ownership -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">🏠</span> Land Ownership</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.land_ownership.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.land_ownership.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="ownership_{{ value }}" name="land_ownership" value="{{ value }}" {% if form.land_ownership.value == value %}checked{% endif %}>
+                        <label for="ownership_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Who owns this land?"</div>
+                {% if form.land_ownership.errors %}<ul class="errorlist">{% for e in form.land_ownership.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">✓ Save & Continue to Sheet 2</button>
+            <a href="{% url 'agent_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    
+</div>
+
+{{ form.latitude.id_for_label|json_script:"sheet1LatitudeInputId" }}
+{{ form.longitude.id_for_label|json_script:"sheet1LongitudeInputId" }}
+<script>
+    const latitudeInputId = JSON.parse(document.getElementById('sheet1LatitudeInputId').textContent || '""');
+    const longitudeInputId = JSON.parse(document.getElementById('sheet1LongitudeInputId').textContent || '""');
+
+    // Conditional display for farmer group name
+    document.addEventListener('DOMContentLoaded', function() {
+        const groupRadios = document.querySelectorAll('input[name="belongs_to_group"]');
+        const groupNameField = document.getElementById('group-name-field');
+        
+        function updateGroupName() {
+            if (document.getElementById('group_yes').checked) {
+                groupNameField.style.display = 'block';
+            } else {
+                groupNameField.style.display = 'none';
+            }
+        }
+        
+        groupRadios.forEach(radio => {
+            radio.addEventListener('change', updateGroupName);
+        });
+        
+        updateGroupName();
+    });
+
+    // GPS Capture Button
+    document.getElementById('capture-gps-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const latitudeInput = document.getElementById(latitudeInputId);
+                    const longitudeInput = document.getElementById(longitudeInputId);
+                    if (latitudeInput) {
+                        latitudeInput.value = lat;
+                    }
+                    if (longitudeInput) {
+                        longitudeInput.value = lng;
+                    }
+                    alert('✓ GPS location captured!');
+                },
+                function(error) {
+                    alert('⚠️ Could not get GPS location. Please check permissions.');
+                }
+            );
+        } else {
+            alert('⚠️ GPS not available on this device.');
+        }
+    });
+</script>
+
+</body>
+</html>

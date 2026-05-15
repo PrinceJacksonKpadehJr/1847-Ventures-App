@@ -1,0 +1,650 @@
+{% comment %}
+Standalone Data Analysis Template
+- Similar to partner_external_analysis.html
+- Excludes farm portfolio and cross-analysis sections
+- Focuses purely on the uploaded dataset analysis tools and visualizations
+{% endcomment %}
+
+{% load static %}{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Dataset Analysis — 1847 Ventures</title>
+    <style>
+        :root {
+            --ink: #17261d;
+            --muted: #607066;
+            --paper: #f4f2ea;
+            --panel: rgba(255, 255, 255, 0.92);
+            --line: rgba(22, 38, 29, 0.12);
+            --forest: #1f6a43;
+            --forest-deep: #0f4a2b;
+            --warn: #fff1d8;
+            --good: #e3f4e8;
+            --risk: #fde4dc;
+            --shadow: 0 18px 40px rgba(23, 38, 29, 0.14);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(156, 207, 83, 0.2), transparent 30%),
+                linear-gradient(180deg, #f7f5ee 0%, #f1ede3 52%, #ece7dc 100%);
+        }
+
+        .shell {
+            width: min(1180px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .navbar {
+            background: rgba(18, 36, 25, 0.84);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0 20px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .logout {
+            padding: 8px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .shell {
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+        }
+
+        h2, h3 {
+            margin-top: 0;
+        }
+
+        .panel-subtitle {
+            color: var(--muted);
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: linear-gradient(180deg, #2d8c51, #19693d);
+        }
+
+        .btn-secondary {
+            color: var(--ink);
+            background: #fff;
+            border: 1px solid var(--line);
+        }
+
+        .msg {
+            border-radius: 14px;
+            padding: 11px 14px;
+            margin-bottom: 10px;
+            font-size: 0.92rem;
+            border: 1px solid transparent;
+        }
+
+        .msg.info { background: #ecf4ff; border-color: #c8dcff; }
+        .msg.success { background: var(--good); border-color: #b8dec3; }
+        .msg.error { background: var(--risk); border-color: #edc2b2; }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .mini-stat {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .mini-stat strong {
+            display: block;
+        }
+
+        .schema-list {
+            display: grid;
+            gap: 8px;
+            margin: 12px 0 16px;
+        }
+
+        .schema-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 8px 10px;
+            background: #fff;
+            font-size: 0.9rem;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+
+        th, td {
+            border: 1px solid var(--line);
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        thead th {
+            background: #f3f7f1;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 4px 18px rgba(23, 38, 29, 0.07);
+        }
+
+        .chart-card h4 {
+            margin: 0 0 6px;
+            font-size: 0.9rem;
+            color: var(--ink);
+        }
+
+        .chart-card p {
+            margin: 0 0 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .chart-canvas-wrap {
+            position: relative;
+            height: 200px;
+        }
+
+        .standalone-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2d8c51, #9ccf53);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .back-link {
+            color: var(--forest);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 980px) {
+            .mini-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="{% url 'partner_dashboard' %}" style="color:#fff; text-decoration:none; font-weight:700; font-size:1rem;">
+                1847 Ventures Partner
+            </a>
+        </div>
+        <div class="navbar-right">
+            <div class="navbar-user">
+                <span>Welcome,</span>
+                <strong>{{ request.user.username }}</strong>
+            </div>
+            <a class="logout" href="{% url 'logout' %}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="shell">
+        {% if messages %}
+            <div class="message-stack">
+                {% for message in messages %}
+                    <div class="msg {{ message.tags|default:'info' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <a href="{% url 'partner_external_analysis' %}" class="back-link">← Back to External Dataset Intelligence</a>
+
+        <div class="standalone-badge">🔍 Standalone Analysis Mode</div>
+
+        <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 24px;">
+            This dataset is being analyzed independently, separate from your farm portfolio. 
+            All insights, transformations, and visualizations are scoped to this dataset only.
+        </p>
+
+        {% if preview_batch %}
+            <article class="panel" style="margin-bottom: 16px;">
+                <h3>Dataset Overview</h3>
+                <p class="panel-subtitle">
+                    <strong>{{ preview_batch.dataset_name }}</strong> ({{ preview_batch.file_format|upper }})
+                    • {{ preview_batch.stats.rows_after_dedup|default:0 }} cleaned rows
+                    • {{ preview_batch.stats.duplicate_rows_removed|default:0 }} duplicates removed
+                </p>
+
+                <div class="mini-grid">
+                    <div class="mini-stat"><strong>{{ preview_batch.stats.total_rows_read|default:0 }}</strong><span>Total rows read</span></div>
+                    <div class="mini-stat"><strong>{{ preview_batch.stats.rows_with_missing_values|default:0 }}</strong><span>Rows with missing values</span></div>
+                    <div class="mini-stat"><strong>{{ preview_batch.stats.rows_with_inconsistent_values|default:0 }}</strong><span>Rows with inconsistent formats</span></div>
+                    <div class="mini-stat"><strong>{{ preview_batch.rows.count }}</strong><span>Rows stored in preview</span></div>
+                </div>
+
+                <h4 style="margin-top: 18px; margin-bottom: 10px;">Detected Schema</h4>
+                <div class="schema-list">
+                    {% for col in preview_batch.schema %}
+                        <div class="schema-item">
+                            <div><code>{{ col.column }}</code> → {{ col.type }}</div>
+                            <div>Missing: {{ col.missing_count }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="preview-actions">
+                    <a href="{% url 'data_prep_workspace' %}?preview_id={{ preview_batch.id }}" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">🔧 Data Preparation</a>
+                    {% if preview_batch.status == 'draft' %}
+                        <form method="post" action="{% url 'partner_dataset_upload' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="import">
+                            <input type="hidden" name="batch_id" value="{{ preview_batch.id }}">
+                            <button class="btn btn-primary" type="submit">Import cleaned dataset</button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary" type="button" disabled title="This dataset has already been imported.">Imported ✓</button>
+                    {% endif %}
+                </div>
+            </article>
+        {% endif %}
+
+        {% if preview_batch and preview_rows %}
+            <article class="panel" style="margin-bottom: 16px;">
+                <h3>Row Preview (first 20 records)</h3>
+                <p class="panel-subtitle">Review this sample before committing the import.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                {% for col in preview_columns %}
+                                    <th>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview_rows %}
+                                <tr>
+                                    <td>{{ row.row_number }}</td>
+                                    {% for value in row.values %}
+                                        <td>{{ value|default:"-" }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        {% endif %}
+
+        {% if dataset_analytics %}
+            {{ dataset_analytics|json_script:"datasetAnalyticsJson" }}
+
+            <div class="analytics-section" style="margin-top: 28px;">
+                <h2 style="margin-bottom: 14px;">Quick Overview</h2>
+                <p class="panel-subtitle">Simple summary from {{ dataset_analytics.executive_summary.total_columns }} columns and {{ dataset_analytics.executive_summary.total_rows }} rows.</p>
+
+                <div class="chart-grid" style="margin-bottom: 20px;">
+                    {% if dataset_analytics.executive_summary.numeric_stats %}
+                        {% for col, stats in dataset_analytics.executive_summary.numeric_stats.items %}
+                            <article class="chart-card">
+                                <h4>{{ col }}</h4>
+                                <p>Numeric measure • {{ stats.count }} non-null values</p>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                                    <div class="mini-stat">
+                                        <div style="font-size: 1.1rem; font-weight: 700;">{{ stats.min }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--muted);">Min</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div style="font-size: 1.1rem; font-weight: 700;">{{ stats.mean }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--muted);">Mean</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div style="font-size: 1.1rem; font-weight: 700;">{{ stats.max }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--muted);">Max</div>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if dataset_analytics.executive_summary.category_tops %}
+                    <div class="chart-grid">
+                        {% for col, top_vals in dataset_analytics.executive_summary.category_tops.items %}
+                            <article class="chart-card">
+                                <h4>{{ col }}</h4>
+                                <p>Top categories</p>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    {% for item in top_vals %}
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                                            <span>{{ item.label }}</span>
+                                            <strong style="color: var(--forest);">{{ item.count }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="analytics-section" style="margin-top: 28px;">
+                <h2 style="margin-bottom: 14px;">Data Quality Check</h2>
+                <p class="panel-subtitle">Potential issues to be aware of in this dataset.</p>
+
+                {% if dataset_analytics.anomalies %}
+                    <article class="chart-card">
+                        <h4>Detected Anomalies</h4>
+                        <p>Potential outliers based on statistical analysis.</p>
+                        <div class="table-wrap" style="margin-top: 0;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Row</th>
+                                        <th>Column</th>
+                                        <th>Value</th>
+                                        <th>Z-Score</th>
+                                        <th>Severity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in dataset_analytics.anomalies|slice:":10" %}
+                                        <tr>
+                                            <td>{{ item.row_number }}</td>
+                                            <td>{{ item.column }}</td>
+                                            <td>{{ item.value }}</td>
+                                            <td>{{ item.z_score }}</td>
+                                            <td>{{ item.severity|title }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                {% else %}
+                    <div class="mini-stat"><span>No significant anomalies detected in current sample.</span></div>
+                {% endif %}
+            </div>
+
+            {% if dataset_analytics.distribution_data %}
+            <div class="analytics-section" style="margin-top: 28px;">
+                <h2 style="margin-bottom: 14px;">Value Distribution</h2>
+                <p class="panel-subtitle">How values are spread across your dataset.</p>
+                <div class="chart-grid">
+                    {% for item in dataset_analytics.distribution_data %}
+                        <article class="chart-card">
+                            <h4>{{ item.column }}</h4>
+                            <p>
+                                {% if item.chart_type == "histogram" %}Histogram (value distribution){% else %}Value frequency{% endif %}
+                            </p>
+                            <div class="chart-canvas-wrap">
+                                <canvas id="dist-chart-{{ forloop.counter0 }}"
+                                        data-type="{{ item.chart_type }}"
+                                        data-labels="{{ item.labels|join:'|||' }}"
+                                        data-values="{{ item.data|join:',' }}"
+                                        data-col="{{ item.column }}">
+                                </canvas>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if dataset_analytics.trend_data %}
+            <div class="analytics-section" style="margin-top: 28px;">
+                <h2 style="margin-bottom: 14px;">Changes Over Time</h2>
+                <p class="panel-subtitle">How your key numbers move over dates in the dataset.</p>
+                <div class="chart-grid">
+                    {% for item in dataset_analytics.trend_data %}
+                        <article class="chart-card">
+                            <h4>{{ item.value_column }} over {{ item.date_column }}</h4>
+                            <p>Line chart • mean value per date</p>
+                            <div class="chart-canvas-wrap">
+                                <canvas id="trend-chart-{{ forloop.counter0 }}"
+                                        data-labels="{{ item.labels|join:'|||' }}"
+                                        data-values="{{ item.data|join:',' }}">
+                                </canvas>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if dataset_analytics.correlation_pairs %}
+            <div class="analytics-section" style="margin-top: 28px;">
+                <h2 style="margin-bottom: 14px;">Correlations</h2>
+                <p class="panel-subtitle">Pairs of values that tend to rise or fall together.</p>
+                <div class="chart-grid">
+                    {% for item in dataset_analytics.correlation_pairs %}
+                        <article class="chart-card">
+                            <h4>{{ item.col_x }} vs {{ item.col_y }}</h4>
+                            <p>Scatter plot • {{ item.data|length }} data points</p>
+                            <div class="chart-canvas-wrap">
+                                <canvas id="corr-chart-{{ forloop.counter0 }}"
+                                        data-col-x="{{ item.col_x }}"
+                                        data-col-y="{{ item.col_y }}"
+                                        data-points="{{ item.data|length }}">
+                                </canvas>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        {% endif %}{# end dataset_analytics #}
+
+    </div>
+
+    {% if dataset_analytics %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+    (function() {
+        const analytics = JSON.parse(document.getElementById("datasetAnalyticsJson").textContent);
+        const PALETTE = ["#2d8c51","#4db87a","#1f6a43","#9ccf53","#f0c054","#e07b3a","#d9534f","#5bc0de"];
+        
+        function parseLabels(el) {
+            return (el.dataset.labels || "").split("|||").filter(Boolean);
+        }
+
+        function parseValues(el) {
+            return (el.dataset.values || "").split(",").map(Number).filter(v => !isNaN(v));
+        }
+
+        function renderChart(canvas) {
+            const labels = parseLabels(canvas);
+            const values = parseValues(canvas);
+            const points = values.map((value, idx) => ({ x: idx + 1, y: value }));
+
+            if (canvas.id.startsWith("corr-chart-")) {
+                // Scatter plot
+                new Chart(canvas, {
+                    type: "scatter",
+                    data: {
+                        datasets: [{
+                            label: canvas.dataset.colX + " vs " + canvas.dataset.colY,
+                            data: points,
+                            backgroundColor: "rgba(45,140,81,0.45)",
+                            borderColor: "rgba(45,140,81,0.85)",
+                            pointRadius: 4,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { font: { size: 10 } } },
+                            y: { ticks: { font: { size: 10 } } },
+                        },
+                    },
+                });
+            } else if (canvas.id.startsWith("trend-chart-")) {
+                // Line chart
+                new Chart(canvas, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Mean value",
+                            data: values,
+                            borderColor: "#2d8c51",
+                            backgroundColor: "rgba(45,140,81,0.10)",
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            fill: true,
+                            tension: 0.35,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
+                            y: { beginAtZero: false, ticks: { font: { size: 10 } } },
+                        },
+                    },
+                });
+            } else {
+                // Bar/histogram chart
+                new Chart(canvas, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: canvas.dataset.col || "Value",
+                            data: values,
+                            backgroundColor: "rgba(45,140,81,0.72)",
+                            borderColor: "rgba(45,140,81,1)",
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { font: { size: 10 }, maxRotation: 40 } },
+                            y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                        },
+                    },
+                });
+            }
+        }
+
+        document.querySelectorAll("[id^='dist-chart-'], [id^='trend-chart-'], [id^='corr-chart-']").forEach(canvas => {
+            renderChart(canvas);
+        });
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

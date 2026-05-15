@@ -3,20 +3,162 @@
 <html>
 <head>
     <title>Register Farmer — 1847 Ventures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
-        h2 { color: #2c7a3a; }
-        .notice { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; }
-        label { display: block; margin-top: 12px; font-weight: bold; }
-        input[type=text], input[type=email] { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .errorlist { color: #c0392b; list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 0.9em; }
-        button[type=submit] { margin-top: 16px; padding: 10px 24px; background: #2c7a3a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
-        button[type=submit]:hover { background: #235f2d; }
-        .back-link { margin-top: 16px; display: inline-block; color: #2c7a3a; }
+        :root {
+            --green: #2c7a3a;
+            --green-dark: #1f5a2a;
+            --cream: #f6f8f3;
+            --card: #ffffff;
+            --ink: #263127;
+            --muted: #5f6f62;
+            --warning-bg: #fff7df;
+            --warning-border: #e7c14a;
+            --error: #b42020;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--cream); color: var(--ink); }
+        .navbar {
+            background: linear-gradient(120deg, var(--green), var(--green-dark));
+            color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a { color: #fff; text-decoration: none; margin-left: 12px; }
+        .container { max-width: 980px; margin: 30px auto; padding: 0 16px; }
+        .intro {
+            background: #fff;
+            border: 1px solid #dbe5d8;
+            border-left: 4px solid var(--green);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+        .intro h2 { margin: 0 0 8px; color: var(--green); }
+        .intro p { margin: 0; color: var(--muted); }
+
+        .notice {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+        }
+
+        form { display: grid; gap: 14px; }
+        .section {
+            background: var(--card);
+            border-radius: 10px;
+            border: 1px solid #dde6db;
+            padding: 16px;
+        }
+        .section h3 {
+            margin: 0 0 10px;
+            color: var(--green);
+            font-size: 1.08rem;
+        }
+        .q { margin-bottom: 12px; }
+        .q label.main { display: block; font-weight: 600; margin-bottom: 7px; }
+
+        input[type=text], input[type=email] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #c8d4c6;
+            border-radius: 8px;
+        }
+        .choices { display: flex; flex-wrap: wrap; gap: 10px; }
+        .choices label {
+            border: 1px solid #c8d4c6;
+            background: #fbfdf9;
+            border-radius: 999px;
+            padding: 7px 12px;
+            cursor: pointer;
+            font-size: 0.93rem;
+        }
+        .choices input { margin-right: 5px; }
+
+        .image-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+        }
+        .image-choice {
+            position: relative;
+            cursor: pointer;
+        }
+        .image-choice input[type=radio] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .choice-card {
+            border: 2px solid #d4e0d0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+            transition: border-color .2s ease, box-shadow .2s ease, transform .15s ease;
+        }
+        .choice-card img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            display: block;
+            background: #f2f7ef;
+        }
+        .choice-card .txt {
+            padding: 8px 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2b3c2d;
+        }
+        .image-choice input[type=radio]:checked + .choice-card {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(44, 122, 58, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .helper { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+        .errorlist { color: var(--error); list-style: none; padding: 0; margin: 6px 0 0; font-size: 0.88rem; }
+
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .hidden { display: none; }
+
+        .gps-box {
+            padding: 12px;
+            border: 1px dashed #a8bba6;
+            border-radius: 8px;
+            background: #f8fcf7;
+        }
+        .gps-status { margin-top: 8px; color: #3a5f3a; font-size: 0.9rem; }
+
+        .upload {
+            border: 1px dashed #a8bba6;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8fcf7;
+        }
+
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: var(--green); color: #fff; }
+        .btn-primary:hover { background: var(--green-dark); }
+        .btn-light { background: #e7efe5; color: #23472a; }
+
+        @media (max-width: 760px) {
+            .grid2 { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 8px; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
@@ -30,42 +172,505 @@
 </div>
 
 <div class="container">
-    <h2>Register a New Farmer</h2>
-
-    <div class="notice">
-        <strong>Important:</strong> Every farmer must have a <strong>unique email address</strong>.
-        The email will be used to send the farmer a password-setup link once their account is approved by an administrator.
+    <div class="intro">
+        <h2>See → Ask → Select Intake Form</h2>
+        <p>Use observation, simple questions, and category options. Avoid calculations and technical terms.</p>
     </div>
 
-    <div class="card">
-        <form method="POST">
+    <div class="notice">
+        <strong>Important:</strong> GPS capture and photos are required before submission.
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             {% if request_id %}
             <input type="hidden" name="request_id" value="{{ request_id }}">
             {% endif %}
 
-            <label for="id_username">Username</label>
-            <input type="text" id="id_username" name="username"
-                   value="{{ form.username.value|default:'' }}"
-                   placeholder="Enter farmer username" required>
-            {% if form.username.errors %}
-            <ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% if form.non_field_errors %}
+            <ul class="errorlist">
+                {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
             {% endif %}
 
-            <label for="id_email">Email address</label>
-            <input type="email" id="id_email" name="email"
-                   value="{{ form.email.value|default:'' }}"
-                   placeholder="farmer@example.com" required>
-            {% if form.email.errors %}
-            <ul class="errorlist">{% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-            {% endif %}
-            <small style="color:#666;">{{ form.email.help_text }}</small>
+            <div class="section">
+                <h3>Account Setup</h3>
+                <div class="grid2">
+                    <div class="q">
+                        <label class="main" for="id_username">Username</label>
+                        <input type="text" id="id_username" name="username" value="{{ form.username.value|default:'' }}" required>
+                        {% if form.username.errors %}<ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="q">
+                        <label class="main" for="id_email">Email address</label>
+                        <input type="email" id="id_email" name="email" value="{{ form.email.value|default:'' }}" required>
+                        <div class="helper">{{ form.email.help_text }}</div>
+                        {% if form.email.errors %}<ul class="errorlist">{% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+            </div>
 
-            <button type="submit">Register Farmer</button>
-        </form>
+            <div class="section">
+                <h3>SECTION A — Farmer Details 👤</h3>
+                <div class="q">
+                    <label class="main" for="id_full_name">What is your full name?</label>
+                    <input type="text" id="id_full_name" name="full_name" value="{{ form.full_name.value|default:'' }}" required>
+                    {% if form.full_name.errors %}<ul class="errorlist">{% for e in form.full_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">How many people live in your household?</label>
+                    <div class="choices">
+                        {% for value,label in form.household_size.field.choices %}
+                        <label><input type="radio" name="household_size" value="{{ value }}" {% if form.household_size.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.household_size.errors %}<ul class="errorlist">{% for e in form.household_size.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">Do you belong to a farmers group?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="belongs_to_group" value="yes" {% if form.belongs_to_group.value == 'yes' %}checked{% endif %}>Yes</label>
+                        <label><input type="radio" name="belongs_to_group" value="no" {% if form.belongs_to_group.value == 'no' %}checked{% endif %}>No</label>
+                    </div>
+                    {% if form.belongs_to_group.errors %}<ul class="errorlist">{% for e in form.belongs_to_group.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q hidden" id="group-wrap">
+                    <label class="main" for="id_farmer_group_name">Farmers group name</label>
+                    <input type="text" id="id_farmer_group_name" name="farmer_group_name" value="{{ form.farmer_group_name.value|default:'' }}">
+                    {% if form.farmer_group_name.errors %}<ul class="errorlist">{% for e in form.farmer_group_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
 
-        <a class="back-link" href="{% url 'agent_dashboard' %}">&larr; Back to Dashboard</a>
-    </div>
+            <div class="section">
+                <h3>SECTION B — Farm Location 📍</h3>
+                <div class="gps-box">
+                    <button type="button" class="btn btn-light" id="gps-btn">Tap to capture farm location</button>
+                    <div class="gps-status" id="gps-status">GPS not captured yet.</div>
+                </div>
+                <input type="hidden" name="latitude" id="id_latitude" value="{{ form.latitude.value|default:'' }}">
+                <input type="hidden" name="longitude" id="id_longitude" value="{{ form.longitude.value|default:'' }}">
+                <div class="q">
+                    <label class="main" for="id_location_name">Farm area name</label>
+                    <input type="text" id="id_location_name" name="location_name" value="{{ form.location_name.value|default:'' }}" placeholder="Auto-filled from GPS. If missing, enter manually." autocomplete="off">
+                    <div class="helper">If GPS does not return a place name, type the community/area name manually.</div>
+                    <button type="button" class="btn btn-light" id="use-coordinates-label-btn" style="margin-top:8px;">Use coordinates as place label</button>
+                    {% if form.location_name.errors %}<ul class="errorlist">{% for e in form.location_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">Is this the correct farm area?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="location_confirmed" value="yes" {% if form.location_confirmed.value == 'yes' %}checked{% endif %}>Yes</label>
+                        <label><input type="radio" name="location_confirmed" value="no" {% if form.location_confirmed.value == 'no' %}checked{% endif %}>No</label>
+                    </div>
+                    {% if form.location_confirmed.errors %}<ul class="errorlist">{% for e in form.location_confirmed.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">Who owns this land?</label>
+                    <div class="choices">
+                        {% for value,label in form.land_ownership.field.choices %}
+                        <label><input type="radio" name="land_ownership" value="{{ value }}" {% if form.land_ownership.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.land_ownership.errors %}<ul class="errorlist">{% for e in form.land_ownership.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION C — Farm Size & Trees 🌳</h3>
+                <div class="q">
+                    <label class="main" for="id_year_planted">What year were the cocoa trees first planted?</label>
+                    <select id="id_year_planted" name="year_planted" class="form-select" style="width:100%;padding:10px;border:1px solid #c8d4c6;border-radius:8px;background:#fff;">
+                        <option value="">Not sure</option>
+                        {% for value, label in form.year_planted.field.choices %}
+                        {% if value %}<option value="{{ value }}" {% if form.year_planted.value == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endif %}
+                        {% endfor %}
+                    </select>
+                    <div class="helper">Helps calculate tree age and estimate remaining productive lifespan (cocoa: 25–30 years).</div>
+                    {% if form.year_planted.errors %}<ul class="errorlist">{% for e in form.year_planted.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">How big is your farm?</label>
+                    <div class="image-choice-grid">
+                        <label class="image-choice">
+                            <input type="radio" name="farm_size_category" value="small" {% if form.farm_size_category.value == 'small' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_small.svg' %}" alt="Small farm illustration">
+                                <span class="txt">Small (less than 2 acres)</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="farm_size_category" value="medium" {% if form.farm_size_category.value == 'medium' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_medium.svg' %}" alt="Medium farm illustration">
+                                <span class="txt">Medium (2-5 acres)</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="farm_size_category" value="large" {% if form.farm_size_category.value == 'large' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_large.svg' %}" alt="Large farm illustration">
+                                <span class="txt">Large (more than 5 acres)</span>
+                            </span>
+                        </label>
+                    </div>
+                    {% if form.farm_size_category.errors %}<ul class="errorlist">{% for e in form.farm_size_category.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION D — Shade Trees 🌴</h3>
+                <div class="q">
+                    <label class="main">Are there trees other than cocoa on the farm?</label>
+                    <div class="image-choice-grid">
+                        <label class="image-choice">
+                            <input type="radio" name="has_shade_trees" value="none" {% if form.has_shade_trees.value == 'none' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_small.svg' %}" alt="No shade trees visual">
+                                <span class="txt">None</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="has_shade_trees" value="few" {% if form.has_shade_trees.value == 'few' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_medium.svg' %}" alt="Few shade trees visual">
+                                <span class="txt">Few</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="has_shade_trees" value="many" {% if form.has_shade_trees.value == 'many' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/farm_large.svg' %}" alt="Many shade trees visual">
+                                <span class="txt">Many</span>
+                            </span>
+                        </label>
+                    </div>
+                    {% if form.has_shade_trees.errors %}<ul class="errorlist">{% for e in form.has_shade_trees.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q hidden" id="shade-type-wrap">
+                    <label class="main">What types of trees do you see?</label>
+                    <div class="image-choice-grid">
+                        <label class="image-choice">
+                            <input type="radio" name="shade_tree_types" value="fruit" {% if form.shade_tree_types.value == 'fruit' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/tree_young.svg' %}" alt="Fruit trees visual">
+                                <span class="txt">Fruit trees</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="shade_tree_types" value="timber" {% if form.shade_tree_types.value == 'timber' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/tree_old.svg' %}" alt="Timber trees visual">
+                                <span class="txt">Timber trees</span>
+                            </span>
+                        </label>
+                        <label class="image-choice">
+                            <input type="radio" name="shade_tree_types" value="mixed" {% if form.shade_tree_types.value == 'mixed' %}checked{% endif %}>
+                            <span class="choice-card">
+                                <img src="{% static 'Farmers/images/cards/tree_mature.svg' %}" alt="Mixed trees visual">
+                                <span class="txt">Mixed</span>
+                            </span>
+                        </label>
+                    </div>
+                    {% if form.shade_tree_types.errors %}<ul class="errorlist">{% for e in form.shade_tree_types.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION E — Farm Activities 🚜</h3>
+                <div class="q">
+                    <label class="main">Do you use fertilizer?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="uses_fertilizer" value="no" {% if form.uses_fertilizer.value == 'no' %}checked{% endif %}>No</label>
+                        <label><input type="radio" name="uses_fertilizer" value="yes" {% if form.uses_fertilizer.value == 'yes' %}checked{% endif %}>Yes</label>
+                    </div>
+                    {% if form.uses_fertilizer.errors %}<ul class="errorlist">{% for e in form.uses_fertilizer.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div id="fert-wrap" class="hidden">
+                    <div class="q">
+                        <label class="main">How many bags do you use?</label>
+                        <div class="choices">
+                            {% for value,label in form.fertilizer_bag_range.field.choices %}
+                            <label><input type="radio" name="fertilizer_bag_range" value="{{ value }}" {% if form.fertilizer_bag_range.value == value %}checked{% endif %}>{{ label }}</label>
+                            {% endfor %}
+                        </div>
+                        {% if form.fertilizer_bag_range.errors %}<ul class="errorlist">{% for e in form.fertilizer_bag_range.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="q">
+                        <label class="main">How do you apply it?</label>
+                        <div class="choices">
+                            <label><input type="radio" name="fertilizer_application" value="hand" {% if form.fertilizer_application.value == 'hand' %}checked{% endif %}>By hand</label>
+                            <label><input type="radio" name="fertilizer_application" value="machine" {% if form.fertilizer_application.value == 'machine' %}checked{% endif %}>With machine</label>
+                        </div>
+                        {% if form.fertilizer_application.errors %}<ul class="errorlist">{% for e in form.fertilizer_application.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+                <div class="q">
+                    <label class="main">Do you burn farm waste?</label>
+                    <div class="choices">
+                        {% for value,label in form.burns_farm_waste.field.choices %}
+                        <label><input type="radio" name="burns_farm_waste" value="{{ value }}" {% if form.burns_farm_waste.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.burns_farm_waste.errors %}<ul class="errorlist">{% for e in form.burns_farm_waste.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION F — Harvest History 🍫</h3>
+                <p class="helper">Enter the number of cocoa bags harvested each season. More seasons are shown based on the planting year.</p>
+
+                <!-- Year 1 (most recent) — always visible -->
+                <div class="q" id="harvest-y1-wrap">
+                    <label class="main" id="harvest-y1-label">How many bags did you harvest last season?</label>
+                    <div class="choices">
+                        {% for value, label in form.harvest_y1_bags.field.choices %}
+                        <label><input type="radio" name="harvest_y1_bags" value="{{ value }}" {% if form.harvest_y1_bags.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.harvest_y1_bags.errors %}<ul class="errorlist">{% for e in form.harvest_y1_bags.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+
+                <!-- Year 2 — shown when farm is 2+ years old -->
+                <div class="q hidden" id="harvest-y2-wrap">
+                    <label class="main" id="harvest-y2-label">How many bags did you harvest the season before that?</label>
+                    <div class="choices">
+                        {% for value, label in form.harvest_y2_bags.field.choices %}
+                        <label><input type="radio" name="harvest_y2_bags" value="{{ value }}" {% if form.harvest_y2_bags.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.harvest_y2_bags.errors %}<ul class="errorlist">{% for e in form.harvest_y2_bags.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+
+                <!-- Year 3 — shown when farm is 3+ years old -->
+                <div class="q hidden" id="harvest-y3-wrap">
+                    <label class="main" id="harvest-y3-label">How many bags did you harvest the season before that?</label>
+                    <div class="choices">
+                        {% for value, label in form.harvest_y3_bags.field.choices %}
+                        <label><input type="radio" name="harvest_y3_bags" value="{{ value }}" {% if form.harvest_y3_bags.value == value %}checked{% endif %}>{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                    {% if form.harvest_y3_bags.errors %}<ul class="errorlist">{% for e in form.harvest_y3_bags.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION G — Practices & Training 🌱</h3>
+                <div class="q">
+                    <label class="main">Have you received farming training?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="received_training" value="yes" {% if form.received_training.value == 'yes' %}checked{% endif %}>Yes</label>
+                        <label><input type="radio" name="received_training" value="no" {% if form.received_training.value == 'no' %}checked{% endif %}>No</label>
+                    </div>
+                    {% if form.received_training.errors %}<ul class="errorlist">{% for e in form.received_training.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">Do you plant trees on your farm?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="plants_trees" value="yes" {% if form.plants_trees.value == 'yes' %}checked{% endif %}>Yes</label>
+                        <label><input type="radio" name="plants_trees" value="no" {% if form.plants_trees.value == 'no' %}checked{% endif %}>No</label>
+                    </div>
+                    {% if form.plants_trees.errors %}<ul class="errorlist">{% for e in form.plants_trees.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="q">
+                    <label class="main">Do you grow other trees with cocoa?</label>
+                    <div class="choices">
+                        <label><input type="radio" name="practices_agroforestry" value="yes" {% if form.practices_agroforestry.value == 'yes' %}checked{% endif %}>Yes</label>
+                        <label><input type="radio" name="practices_agroforestry" value="no" {% if form.practices_agroforestry.value == 'no' %}checked{% endif %}>No</label>
+                    </div>
+                    {% if form.practices_agroforestry.errors %}<ul class="errorlist">{% for e in form.practices_agroforestry.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>SECTION H — Verification ✅</h3>
+                <div class="grid2">
+                    <div class="q upload">
+                        <label class="main" for="id_photo_of_farmer">Photo of farmer (required)</label>
+                        <input type="file" id="id_photo_of_farmer" name="photo_of_farmer" accept="image/*" required>
+                        {% if form.photo_of_farmer.errors %}<ul class="errorlist">{% for e in form.photo_of_farmer.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="q upload">
+                        <label class="main" for="id_photo_of_farm">Photo of farm (required)</label>
+                        <input type="file" id="id_photo_of_farm" name="photo_of_farm" accept="image/*" required>
+                        {% if form.photo_of_farm.errors %}<ul class="errorlist">{% for e in form.photo_of_farm.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+                <div class="q upload">
+                    <label class="main" for="id_voice_note">Short voice note (optional)</label>
+                    <input type="file" id="id_voice_note" name="voice_note" accept="audio/*">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-primary">Submit Farmer Intake</button>
+                <a class="btn btn-light" href="{% url 'agent_dashboard' %}">&larr; Back to Dashboard</a>
+            </div>
+    </form>
 </div>
+
+<script>
+    function toggle(el, show) {
+        if (show) {
+            el.classList.remove("hidden");
+        } else {
+            el.classList.add("hidden");
+        }
+    }
+
+    function selectedValue(name) {
+        const checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : "";
+    }
+
+    function updateConditionalFields() {
+        const groupWrap = document.getElementById("group-wrap");
+        const shadeWrap = document.getElementById("shade-type-wrap");
+        const fertWrap = document.getElementById("fert-wrap");
+
+        toggle(groupWrap, selectedValue("belongs_to_group") === "yes");
+
+        const shade = selectedValue("has_shade_trees");
+        toggle(shadeWrap, shade === "few" || shade === "many");
+
+        toggle(fertWrap, selectedValue("uses_fertilizer") === "yes");
+    }
+
+    function wireRadios(name) {
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+            r.addEventListener("change", updateConditionalFields);
+        });
+    }
+
+    wireRadios("belongs_to_group");
+    wireRadios("has_shade_trees");
+    wireRadios("uses_fertilizer");
+    updateConditionalFields();
+
+    async function reverseGeocode(lat, lng) {
+        const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lng);
+        const response = await fetch(url, {
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+        if (!response.ok) {
+            throw new Error("Reverse geocoding failed");
+        }
+        const payload = await response.json();
+        const address = payload && payload.address ? payload.address : {};
+        return (
+            address.village ||
+            address.town ||
+            address.city ||
+            address.suburb ||
+            address.county ||
+            payload.display_name ||
+            ""
+        );
+    }
+
+    document.getElementById("gps-btn").addEventListener("click", function() {
+        const status = document.getElementById("gps-status");
+        const locationInput = document.getElementById("id_location_name");
+        if (!navigator.geolocation) {
+            status.textContent = "GPS is not available on this device.";
+            return;
+        }
+        status.textContent = "Capturing location...";
+        navigator.geolocation.getCurrentPosition(
+            async function(position) {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+                document.getElementById("id_latitude").value = lat;
+                document.getElementById("id_longitude").value = lng;
+                status.textContent = "Location captured. Looking up place name...";
+
+                try {
+                    const placeName = await reverseGeocode(lat, lng);
+                    if (placeName) {
+                        locationInput.value = placeName;
+                        status.textContent = "Location captured and place name detected.";
+                    } else {
+                        locationInput.value = "";
+                        locationInput.focus();
+                        status.textContent = "GPS captured, but place name not found. Please enter it manually.";
+                    }
+                } catch (error) {
+                    locationInput.value = "";
+                    locationInput.focus();
+                    status.textContent = "GPS captured, but place lookup failed. Please enter place name manually.";
+                }
+            },
+            function() {
+                status.textContent = "Unable to capture GPS. Check location permissions and try again.";
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    });
+
+    document.getElementById("use-coordinates-label-btn").addEventListener("click", function() {
+        const status = document.getElementById("gps-status");
+        const locationInput = document.getElementById("id_location_name");
+        const lat = (document.getElementById("id_latitude").value || "").trim();
+        const lng = (document.getElementById("id_longitude").value || "").trim();
+
+        if (!lat || !lng) {
+            status.textContent = "Capture GPS coordinates first, then use this fallback button.";
+            return;
+        }
+
+        locationInput.value = "GPS: " + lat + ", " + lng;
+        status.textContent = "Place label set from coordinates.";
+    });
+
+    // --- Dynamic harvest history years ---
+    function updateHarvestYears() {
+        const yearPlantedSelect = document.getElementById("id_year_planted");
+        const yearPlanted = yearPlantedSelect ? parseInt(yearPlantedSelect.value) : 0;
+        const currentYear = new Date().getFullYear();
+        const yearsActive = yearPlanted ? currentYear - yearPlanted : 0;
+
+        const y1label = document.getElementById("harvest-y1-label");
+        const y2wrap = document.getElementById("harvest-y2-wrap");
+        const y2label = document.getElementById("harvest-y2-label");
+        const y3wrap = document.getElementById("harvest-y3-wrap");
+        const y3label = document.getElementById("harvest-y3-label");
+
+        // Y1: always visible; label with actual year if planted year known
+        if (y1label) {
+            y1label.textContent = yearPlanted
+                ? "How many bags did you harvest in " + (currentYear - 1) + "?"
+                : "How many bags did you harvest last season?";
+        }
+
+        // Y2: show if 2+ years of activity
+        if (y2wrap) {
+            if (yearsActive >= 2) {
+                y2wrap.classList.remove("hidden");
+                if (y2label) y2label.textContent = "How many bags did you harvest in " + (currentYear - 2) + "?";
+            } else {
+                y2wrap.classList.add("hidden");
+                y2wrap.querySelectorAll("input[type=radio]").forEach(r => r.checked = false);
+            }
+        }
+
+        // Y3: show if 3+ years of activity
+        if (y3wrap) {
+            if (yearsActive >= 3) {
+                y3wrap.classList.remove("hidden");
+                if (y3label) y3label.textContent = "How many bags did you harvest in " + (currentYear - 3) + "?";
+            } else {
+                y3wrap.classList.add("hidden");
+                y3wrap.querySelectorAll("input[type=radio]").forEach(r => r.checked = false);
+            }
+        }
+    }
+
+    const yearPlantedEl = document.getElementById("id_year_planted");
+    if (yearPlantedEl) {
+        yearPlantedEl.addEventListener("change", updateHarvestYears);
+    }
+    updateHarvestYears();
+</script>
 </body>
 </html>

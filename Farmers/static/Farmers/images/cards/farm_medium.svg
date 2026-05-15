@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <rect width="320" height="180" fill="#e8f4ff"/>
+  <rect y="110" width="320" height="70" fill="#88bb74"/>
+  <rect x="15" y="82" width="170" height="72" rx="8" fill="#73a95f"/>
+  <circle cx="35" cy="75" r="14" fill="#427f42"/>
+  <circle cx="70" cy="70" r="16" fill="#427f42"/>
+  <circle cx="105" cy="75" r="14" fill="#427f42"/>
+  <circle cx="140" cy="70" r="16" fill="#427f42"/>
+  <text x="190" y="35" font-size="20" fill="#2f5e2f" font-family="Arial">Medium Farm</text>
+</svg>

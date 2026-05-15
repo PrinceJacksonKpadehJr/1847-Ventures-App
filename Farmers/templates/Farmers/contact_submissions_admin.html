@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Submissions | 1847 Ventures Admin</title>
+  <style>
+    :root {
+      --green-900: #123827;
+      --green-700: #1d5d3f;
+      --green-100: #ecf7f0;
+      --amber-600: #d07d11;
+      --ink: #202923;
+      --muted: #5f6c63;
+      --border: #d8e5dc;
+      --white: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #f3f8f4 0%, #f8f5eb 100%);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: linear-gradient(135deg, var(--green-900), var(--green-700));
+      color: var(--white);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-light {
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, #ec9f1c, var(--amber-600));
+      color: #fff;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 26px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(16, 44, 29, 0.08);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-header p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid #edf2ee;
+      vertical-align: top;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: var(--green-100);
+      color: #234534;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .empty {
+      padding: 26px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      background: #fbfdfb;
+    }
+
+    .pagination a {
+      color: var(--green-700);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    @media (max-width: 760px) {
+      .topbar h1 {
+        font-size: 0.95rem;
+      }
+
+      .btn {
+        font-size: 0.82rem;
+        padding: 7px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>1847 Ventures Admin | Contact Submissions</h1>
+    <div class="top-actions">
+      <a href="{% url 'admin_dashboard' %}" class="btn btn-light">Back to Dashboard</a>
+      <a href="{% url 'logout' %}" class="btn btn-login">Logout</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <strong>Homepage Contact Requests</strong>
+          <p>These submissions are captured from the public Contact Us form.</p>
+        </div>
+        <div>
+          <strong>Unread Messages:</strong> {{ unread_messages_count }}<br>
+          <strong>Unread Notifications:</strong> {{ unread_notifications_count }}
+        </div>
+      </div>
+
+      {% if submissions %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Nationel</th>
+              <th>Current Resident</th>
+              <th>Reason for Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in submissions %}
+            <tr>
+              <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.email }}</td>
+              <td>{{ row.phone }}</td>
+              <td>{{ row.nationel }}</td>
+              <td>{{ row.current_resident }}</td>
+              <td>{{ row.reason_for_contact }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">No contact submissions yet.</div>
+      {% endif %}
+
+      <div class="pagination">
+        <div>
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+          {% endif %}
+        </div>
+        <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+        <div>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

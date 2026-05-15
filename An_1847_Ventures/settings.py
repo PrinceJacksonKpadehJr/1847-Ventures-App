@@ -2,6 +2,9 @@ STATIC_URL = '/static/'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 
+# Custom error views
+CSRF_FAILURE_VIEW = 'Farmers.views.csrf_failure'
+
 
 """
 Django settings for An_1847_Ventures project.
@@ -15,18 +18,43 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+
+def _load_local_env(env_path):
+    """Load KEY=VALUE pairs from a local .env file into os.environ."""
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local environment variables for development convenience.
+_load_local_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = 'django-insecure-38lfjos=1)73j!useqdr33$vb0*jsk@+2%h&ko^^4l_fda5=)m'
 
-DEBUG = True
+# Set DJANGO_DEBUG=true in .env (or environment) to enable the Django debug error page.
+# Defaults to False so production-style error pages are shown by default.
+DEBUG = os.getenv("DJANGO_DEBUG", "false").strip().lower() in {"1", "true", "yes", "on"}
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -49,6 +77,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'Farmers.middleware.ForcePasswordChangeMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -107,7 +136,10 @@ USE_TZ = True
 
 
 # Static files
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Default primary key field type
@@ -123,19 +155,44 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 25,
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "1847-ventures-cache",
+        "TIMEOUT": 300,
+    }
+}
 
-# Email configuration for sending approval emails
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your-email@gmail.com'       # Replace with your email
-EMAIL_HOST_PASSWORD = 'your-email-password'    # Replace with your password
-DEFAULT_FROM_EMAIL = 'your-email@gmail.com'    # Replace with your email
+
+# Email configuration
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@1847ventures.local")
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "20"))
+
+# Explicit local opt-in for console backend.
+if os.getenv("EMAIL_FORCE_CONSOLE", "false").lower() == "true":
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 AUTH_USER_MODEL = 'Farmers.Farmer'
 
 AUTHENTICATION_BACKENDS = [
     'Farmers.auth_backends.ApprovedUserBackend',
 ]
+
+
+# Microsoft Power BI Embedded configuration
+POWER_BI_TENANT_ID = os.getenv("POWER_BI_TENANT_ID", "")
+POWER_BI_CLIENT_ID = os.getenv("POWER_BI_CLIENT_ID", "")
+POWER_BI_CLIENT_SECRET = os.getenv("POWER_BI_CLIENT_SECRET", "")
+POWER_BI_WORKSPACE_ID = os.getenv("POWER_BI_WORKSPACE_ID", "")
+POWER_BI_REPORT_ID = os.getenv("POWER_BI_REPORT_ID", "")
+POWER_BI_DATASET_ID = os.getenv("POWER_BI_DATASET_ID", "")
+POWER_BI_SCOPE = os.getenv("POWER_BI_SCOPE", "https://analysis.windows.net/powerbi/api/.default")
+POWER_BI_RESOURCE_URL = os.getenv("POWER_BI_RESOURCE_URL", "https://api.powerbi.com")
 

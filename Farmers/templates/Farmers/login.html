@@ -2,55 +2,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <h2 style="text-align:center;">
-    1847 Ventures – Secure Access Portal
-</h2>
-
-<p style="text-align:center;">
-    Please log in to continue
-</p>
-
     <title>Login - 1847 Ventures</title>
     <style>
         body {
             font-family: Arial;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding-top: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            min-height: 100vh;
+            background-image: url('/Farmers/Images/Cocoa_Field_50%_Width.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .page-overlay {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.22));
+            padding: 20px;
+            box-sizing: border-box;
         }
         .login-box {
-            background: white;
-            width: 350px;
-            margin: auto;
+            background: rgba(255, 255, 255, 0.95);
+            width: 380px;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+            border-radius: 14px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            backdrop-filter: blur(1px);
+        }
+        .portal-title {
+            margin: 0;
+            color: #1f3d2f;
+            font-size: 1.35rem;
+        }
+        .portal-subtitle {
+            margin: 8px 0 18px;
+            color: #2f4f3f;
+            font-size: 0.95rem;
         }
         input {
             width: 90%;
             padding: 10px;
             margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
         }
         button {
-            padding: 10px 20px;
-            background: green;
+            padding: 12px 24px;
+            background: linear-gradient(180deg, #35b96c 0%, #1f8b49 100%);
             color: white;
             border: none;
             cursor: pointer;
+            border-radius: 8px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            box-shadow: 0 6px 0 #146634, 0 10px 20px rgba(0, 0, 0, 0.28);
+            transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+        }
+        button:hover {
+            filter: brightness(1.06);
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #146634, 0 6px 12px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
 <body>
+<div class="page-overlay">
+    <div class="login-box">
+        <h2 class="portal-title">1847 Ventures - Secure Access Portal</h2>
+        <p class="portal-subtitle">Please log in to continue</p>
 
-<div class="login-box">
-    <h2>Login</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Login</button>
+        </form>
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
-
+        <p style="margin-top: 14px; font-size: 0.9rem;">
+            Can't access your account?
+            <a href="{% url 'request_password_reset_from_admin' %}">Request a password reset link from admin</a>
+        </p>
+    </div>
 </div>
 
 </body>

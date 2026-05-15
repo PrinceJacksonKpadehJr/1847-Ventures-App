@@ -1,0 +1,412 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farm Assessment - Sheet 2 | 1847 Ventures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        header h1 { margin: 0; font-size: 1.6em; }
+        header .breadcrumb {
+            font-size: 0.9em;
+            opacity: 0.85;
+            margin: 8px 0 0 0;
+        }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        
+        .progress-bar {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar .progress {
+            background: #2c7a3a;
+            height: 100%;
+            width: 66%;
+            transition: width 0.3s ease;
+        }
+        
+        .sheet-title {
+            font-size: 1.5em;
+            color: #2c7a3a;
+            margin-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .sheet-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid #2c7a3a;
+        }
+        
+        .section-icon { font-size: 1.4em; margin-right: 8px; }
+        
+        .section-title {
+            font-weight: bold;
+            color: #2c7a3a;
+            margin: 0 0 20px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .field-group {
+            margin-bottom: 24px;
+        }
+        
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: #333; }
+        
+        .field-label { font-size: 0.95em; color: #555; }
+        
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #2c7a3a;
+        }
+        
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .radio-option, .checkbox-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .radio-option label, .checkbox-option label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        .conditional-field {
+            margin-left: 24px;
+            padding-left: 12px;
+            border-left: 2px solid #ddd;
+            display: none;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+            color: #dc3545;
+            font-size: 0.85em;
+        }
+        
+        .errorlist li::before { content: "⚠ "; margin-right: 4px; }
+        
+        .form-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        button, .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #2c7a3a;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1f5a2a;
+            box-shadow: 0 4px 12px rgba(44, 122, 58, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover { background: #5a6268; }
+        
+        @media (max-width: 600px) {
+            header { padding: 15px 20px; }
+            .container { margin: 20px auto; }
+            .form-section { padding: 16px; }
+            .form-buttons { flex-direction: column; }
+            button, .btn { width: 100%; }
+            .conditional-field { margin-left: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📋 Farm Data Collection</h1>
+    <div class="breadcrumb">Sheet {{ sheet_number }} of {{ total_sheets }} — Farm Assessment</div>
+</header>
+
+<div class="container">
+    
+    <div class="progress-bar">
+        <div class="progress"></div>
+    </div>
+    
+    <h2 class="sheet-title">🌳 Farm Assessment</h2>
+    <p class="sheet-subtitle">Observe the farm. Use estimation, not measurements.</p>
+    
+    <form method="POST" style="display: flex; flex-direction: column; gap: 0;">
+        {% csrf_token %}
+        
+        <!-- Section A: Farm Size -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">📏</span> Farm Size</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.farm_size_category.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.farm_size_category.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="size_{{ value }}" name="farm_size_category" value="{{ value }}" {% if form.farm_size_category.value == value %}checked{% endif %}>
+                        <label for="size_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">👀 See: Look around. Is this a small patch, medium plot, or large field?</div>
+                {% if form.farm_size_category.errors %}<ul class="errorlist">{% for e in form.farm_size_category.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Section B: Cocoa Trees -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">🌳</span> Cocoa Trees</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.cocoa_tree_age.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.cocoa_tree_age.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="age_{{ value }}" name="cocoa_tree_age" value="{{ value }}" {% if form.cocoa_tree_age.value == value %}checked{% endif %}>
+                        <label for="age_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">👀 See: Look at the cocoa tree height and condition. Are most trees young/small, mature/medium, or old/tall?</div>
+                {% if form.cocoa_tree_age.errors %}<ul class="errorlist">{% for e in form.cocoa_tree_age.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Section C: Shade Trees (Carbon Critical) -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">🌴</span> Shade Trees (Carbon Critical)</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.has_shade_trees.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.has_shade_trees.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="shade_{{ value }}" name="has_shade_trees" value="{{ value }}" {% if form.has_shade_trees.value == value %}checked{% endif %}>
+                        <label for="shade_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">👀 See: Are there other trees (bananas, fruit, timber) besides cocoa?</div>
+                {% if form.has_shade_trees.errors %}<ul class="errorlist">{% for e in form.has_shade_trees.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group conditional-field" id="shade-types-field">
+                <label class="field-label">{{ form.shade_tree_types.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.shade_tree_types.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="treetype_{{ value }}" name="shade_tree_types" value="{{ value }}" {% if form.shade_tree_types.value == value %}checked{% endif %}>
+                        <label for="treetype_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "What types of trees do you see?" (Select dominant type)</div>
+            </div>
+        </div>
+        
+        <!-- Section D: Fertilizer Use -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">💧</span> Fertilizer Application</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.uses_fertilizer.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.uses_fertilizer.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="fert_{{ value }}" name="uses_fertilizer" value="{{ value }}" {% if form.uses_fertilizer.value == value %}checked{% endif %}>
+                        <label for="fert_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Do you use fertilizer on this farm?"</div>
+                {% if form.uses_fertilizer.errors %}<ul class="errorlist">{% for e in form.uses_fertilizer.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group conditional-field" id="fertilizer-app-field">
+                <label class="field-label">{{ form.fertilizer_application.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.fertilizer_application.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="app_{{ value }}" name="fertilizer_application" value="{{ value }}" {% if form.fertilizer_application.value == value %}checked{% endif %}>
+                        <label for="app_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "How do you apply it?"</div>
+            </div>
+        </div>
+        
+        <!-- Section E: Farm Burning -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">🔥</span> Farm Waste Management</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.burns_farm_waste.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.burns_farm_waste.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="burn_{{ value }}" name="burns_farm_waste" value="{{ value }}" {% if form.burns_farm_waste.value == value %}checked{% endif %}>
+                        <label for="burn_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Do you burn farm waste (leaves, branches, pods)?"</div>
+                {% if form.burns_farm_waste.errors %}<ul class="errorlist">{% for e in form.burns_farm_waste.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Section F: Practices & Training -->
+        <div class="form-section">
+            <h3 class="section-title"><span class="section-icon">🌱</span> Practices & Training</h3>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.practices_agroforestry.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.practices_agroforestry.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="agro_{{ value }}" name="practices_agroforestry" value="{{ value }}" {% if form.practices_agroforestry.value == value %}checked{% endif %}>
+                        <label for="agro_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Do you grow other trees with cocoa?" (Agroforestry)</div>
+                {% if form.practices_agroforestry.errors %}<ul class="errorlist">{% for e in form.practices_agroforestry.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.received_training.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.received_training.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="train_{{ value }}" name="received_training" value="{{ value }}" {% if form.received_training.value == value %}checked{% endif %}>
+                        <label for="train_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Have you received farming training?"</div>
+                {% if form.received_training.errors %}<ul class="errorlist">{% for e in form.received_training.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            
+            <div class="field-group">
+                <label class="field-label">{{ form.plants_trees.label }}</label>
+                <div class="radio-group">
+                    {% for value, label in form.plants_trees.field.choices %}
+                    <div class="radio-option">
+                        <input type="radio" id="plant_{{ value }}" name="plants_trees" value="{{ value }}" {% if form.plants_trees.value == value %}checked{% endif %}>
+                        <label for="plant_{{ value }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="help-text">🗣️ Ask: "Do you plant trees on your farm?"</div>
+                {% if form.plants_trees.errors %}<ul class="errorlist">{% for e in form.plants_trees.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">✓ Save & Continue to Sheet 3</button>
+            <a href="{% url 'agent_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const shadeRadios = document.querySelectorAll('input[name="has_shade_trees"]');
+        const shadeTypesField = document.getElementById('shade-types-field');
+        
+        const fertilizerRadios = document.querySelectorAll('input[name="uses_fertilizer"]');
+        const fertilizerAppField = document.getElementById('fertilizer-app-field');
+        
+        function updateConditionals() {
+            // Show shade tree types if not "none"
+            const shadeValue = Array.from(shadeRadios).find(r => r.checked)?.value;
+            shadeTypesField.classList.toggle('show', shadeValue && shadeValue !== 'none');
+            
+            // Show fertilizer application if "yes"
+            const fertValue = Array.from(fertilizerRadios).find(r => r.checked)?.value;
+            fertilizerAppField.classList.toggle('show', fertValue === 'yes');
+        }
+        
+        shadeRadios.forEach(radio => radio.addEventListener('change', updateConditionals));
+        fertilizerRadios.forEach(radio => radio.addEventListener('change', updateConditionals));
+        
+        updateConditionals();
+    });
+</script>
+
+</body>
+</html>

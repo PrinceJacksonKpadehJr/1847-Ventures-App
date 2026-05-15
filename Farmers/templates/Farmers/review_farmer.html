@@ -10,16 +10,23 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
         h2 { color: #1a4f27; }
         .card {
             background: white; border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,.1); padding: 28px; margin-bottom: 20px;
         }
+        .grid-two {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
         .info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
         .info-row:last-child { border-bottom: none; }
         .info-label { width: 160px; font-weight: bold; color: #555; flex-shrink: 0; }
         .info-value { color: #222; }
+        .info-value a { color: #2c7a3a; text-decoration: none; }
+        .info-value a:hover { text-decoration: underline; }
         label { display: block; margin-top: 14px; font-weight: bold; color: #333; }
         textarea, input[type=text] {
             width: 100%; padding: 10px; margin-top: 5px;
@@ -41,6 +48,67 @@
         .back-link { display: inline-block; margin-top: 14px; color: #2c7a3a; text-decoration: none; }
         .back-link:hover { text-decoration: underline; }
         .section-title { color: #2c7a3a; margin-top: 0; }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .timeline {
+            display: grid;
+            gap: 14px;
+        }
+        .timeline-item {
+            border-left: 4px solid #2c7a3a;
+            padding: 10px 0 10px 14px;
+            background: #fafcf9;
+            border-radius: 6px;
+        }
+        .timeline-meta {
+            color: #68806d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .timeline-title {
+            font-weight: 700;
+            color: #1f4f2a;
+            margin-bottom: 4px;
+        }
+        .timeline-detail {
+            color: #2e2e2e;
+        }
+        .photo-card {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fafafa;
+        }
+        .photo-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            background: #e9efe8;
+        }
+        .photo-card .caption {
+            padding: 10px 12px;
+            font-weight: bold;
+            color: #35503b;
+        }
+        .muted { color: #777; }
+        .status-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-ok { background: #e5f5e7; color: #216a2f; }
+        .status-warn { background: #fff4d8; color: #8a6500; }
+        @media (max-width: 800px) {
+            .grid-two { grid-template-columns: 1fr; }
+            .info-row { flex-direction: column; gap: 4px; }
+            .info-label { width: auto; }
+        }
     </style>
 </head>
 <body>
@@ -95,6 +163,222 @@
                 {% endif %}
             </span>
         </div>
+    </div>
+
+    <div class="grid-two">
+        <div class="card">
+            <h3 class="section-title">Location and Profile Intake</h3>
+            {% if sheet1 %}
+            <div class="info-row">
+                <span class="info-label">Full Name</span>
+                <span class="info-value">{{ sheet1.full_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Household Size</span>
+                <span class="info-value">{{ sheet1.get_household_size_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Farmer Group</span>
+                <span class="info-value">
+                    {% if sheet1.belongs_to_group == "yes" %}
+                        Yes{% if sheet1.farmer_group_name %} - {{ sheet1.farmer_group_name }}{% endif %}
+                    {% else %}
+                        No
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Farm Area</span>
+                <span class="info-value">{{ sheet1.location_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">GPS Captured</span>
+                <span class="info-value">
+                    {% if sheet1.gps_captured %}
+                        <span class="status-pill status-ok">Yes</span>
+                    {% else %}
+                        <span class="status-pill status-warn">No</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Coordinates</span>
+                <span class="info-value">
+                    {% if sheet1.latitude and sheet1.longitude %}
+                        {{ sheet1.latitude }}, {{ sheet1.longitude }}
+                        <br>
+                        <a href="https://www.google.com/maps?q={{ sheet1.latitude }},{{ sheet1.longitude }}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+                    {% else %}
+                        —
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Land Ownership</span>
+                <span class="info-value">{{ sheet1.get_land_ownership_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Collected By</span>
+                <span class="info-value">{{ sheet1.collected_by.username|default:"—" }}</span>
+            </div>
+            {% else %}
+            <p class="muted">No profile and location intake has been captured yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">Farm Assessment</h3>
+            {% if sheet2 %}
+            <div class="info-row">
+                <span class="info-label">Farm Size</span>
+                <span class="info-value">{{ sheet2.get_farm_size_category_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Cocoa Tree Age</span>
+                <span class="info-value">{{ sheet2.get_cocoa_tree_age_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Shade Trees</span>
+                <span class="info-value">{{ sheet2.get_has_shade_trees_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Shade Tree Type</span>
+                <span class="info-value">{{ sheet2.get_shade_tree_types_display|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Uses Fertilizer</span>
+                <span class="info-value">{{ sheet2.get_uses_fertilizer_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fertilizer Range</span>
+                <span class="info-value">{{ sheet2.get_fertilizer_bag_range_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fertilizer Application</span>
+                <span class="info-value">{{ sheet2.get_fertilizer_application_display|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Burns Farm Waste</span>
+                <span class="info-value">{{ sheet2.get_burns_farm_waste_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Practices Agroforestry</span>
+                <span class="info-value">{{ sheet2.get_practices_agroforestry_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Received Training</span>
+                <span class="info-value">{{ sheet2.get_received_training_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Plants Trees</span>
+                <span class="info-value">{{ sheet2.get_plants_trees_display }}</span>
+            </div>
+            {% else %}
+            <p class="muted">No farm assessment data has been captured yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">Evidence and Verification</h3>
+        {% if sheet3 %}
+        <div class="grid-two" style="margin-bottom: 20px;">
+            <div>
+                <div class="info-row">
+                    <span class="info-label">Last Harvest</span>
+                    <span class="info-value">{{ sheet3.get_last_harvest_bags_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Harvest vs Last Year</span>
+                    <span class="info-value">{{ sheet3.get_harvest_compared_to_last_year_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Photos Complete</span>
+                    <span class="info-value">
+                        {% if sheet3.photos_complete %}
+                            <span class="status-pill status-ok">Yes</span>
+                        {% else %}
+                            <span class="status-pill status-warn">No</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data Validated</span>
+                    <span class="info-value">
+                        {% if sheet3.data_validated %}
+                            <span class="status-pill status-ok">Validated</span>
+                        {% else %}
+                            <span class="status-pill status-warn">Needs Review</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Validation Notes</span>
+                    <span class="info-value">{{ sheet3.validation_notes|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Voice Note</span>
+                    <span class="info-value">
+                        {% if sheet3.voice_note %}
+                            <a href="{{ sheet3.voice_note.url }}" target="_blank" rel="noopener noreferrer">Open voice note</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <div class="photo-grid">
+                    {% if sheet3.photo_of_farmer %}
+                    <div class="photo-card">
+                        <img src="{{ sheet3.photo_of_farmer.url }}" alt="Farmer photo">
+                        <div class="caption">Farmer Photo</div>
+                    </div>
+                    {% endif %}
+                    {% if sheet3.photo_of_farm %}
+                    <div class="photo-card">
+                        <img src="{{ sheet3.photo_of_farm.url }}" alt="Farm photo">
+                        <div class="caption">Farm Photo</div>
+                    </div>
+                    {% endif %}
+                    {% if sheet3.photo_of_cocoa_trees %}
+                    <div class="photo-card">
+                        <img src="{{ sheet3.photo_of_cocoa_trees.url }}" alt="Cocoa trees photo">
+                        <div class="caption">Cocoa Trees</div>
+                    </div>
+                    {% endif %}
+                    {% if sheet3.photo_of_shade_trees %}
+                    <div class="photo-card">
+                        <img src="{{ sheet3.photo_of_shade_trees.url }}" alt="Shade trees photo">
+                        <div class="caption">Shade Trees</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if not sheet3.photo_of_farmer and not sheet3.photo_of_farm and not sheet3.photo_of_cocoa_trees and not sheet3.photo_of_shade_trees %}
+        <p class="muted">No evidence photos have been uploaded yet.</p>
+        {% endif %}
+        {% else %}
+        <p class="muted">No verification or evidence data has been captured yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3 class="section-title">Activity Log</h3>
+        {% if activity_log %}
+        <div class="timeline">
+            {% for item in activity_log %}
+            <div class="timeline-item">
+                <div class="timeline-meta">{{ item.timestamp|date:"Y-m-d H:i" }}{% if item.kind %} · {{ item.kind|title }}{% endif %}</div>
+                <div class="timeline-title">{{ item.title }}</div>
+                <div class="timeline-detail">{{ item.detail }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">No activity has been recorded for this farmer yet.</p>
+        {% endif %}
     </div>
 
     {% if action == "reject" %}

@@ -102,6 +102,191 @@
         }
         .btn-logout:hover { background: rgba(255,255,255,0.28); }
 
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .profile-trigger {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 140;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+        }
+        .sidebar-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .sidebar-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(320px, 88vw);
+            height: 100vh;
+            background: #0f2d1f;
+            color: #e7f4eb;
+            z-index: 150;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.3);
+            padding: 20px 18px;
+            overflow-y: auto;
+        }
+        .sidebar-panel.open { transform: translateX(0); }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .sidebar-close {
+            border: 1px solid rgba(255,255,255,0.25);
+            background: transparent;
+            color: #e7f4eb;
+            border-radius: 6px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .admin-profile-block {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .admin-photo {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.18);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .admin-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .sidebar-label {
+            display: block;
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+            color: #b9d3c0;
+        }
+        .sidebar-file-input {
+            width: 100%;
+            margin-bottom: 8px;
+            color: #dcebe1;
+        }
+        .photo-editor {
+            display: none;
+            margin: 8px 0 10px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+        }
+        .photo-editor.active { display: block; }
+        .photo-preview-frame {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.35);
+            margin: 0 auto 10px;
+            background: rgba(255,255,255,0.12);
+            position: relative;
+        }
+        .photo-preview-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .photo-editor label {
+            display: block;
+            font-size: 0.76rem;
+            color: #b9d3c0;
+            margin: 6px 0 2px;
+        }
+        .photo-editor input[type="range"] {
+            width: 100%;
+        }
+        .photo-controls {
+            display: none;
+            margin-top: 8px;
+        }
+        .photo-controls.active {
+            display: block;
+        }
+        .sidebar-nav {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .sidebar-link {
+            display: block;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #e7f4eb;
+            text-decoration: none;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .sidebar-link:hover { background: rgba(255,255,255,0.16); }
+        .users-category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .user-category-card {
+            border: 1px solid #e3ece6;
+            border-radius: 10px;
+            padding: 12px;
+            background: #fbfdfb;
+        }
+        .user-category-title {
+            font-size: 0.92rem;
+            color: #1f4b2b;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* ===== PAGE LAYOUT ===== */
         .page-wrapper {
             max-width: 1160px;
@@ -384,6 +569,7 @@
             .card { padding: 18px 14px 16px; }
             .page-header-img { display: none; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .navbar-right .navbar-user { display: none; }
         }
     </style>
 </head>
@@ -391,25 +577,97 @@
 
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar">
-    <a class="navbar-brand" href="#">
-        <!-- Replace with: <img class="navbar-logo" src="{% static 'Farmers/images/logo.png' %}" alt="1847 Logo"> -->
-        <div class="navbar-logo" style="background:#a8d5b0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#0e3320;">18</div>
-        <span class="navbar-title">1847 <span>Ventures</span></span>
-    </a>
+    <div class="navbar-left">
+        <button type="button" class="profile-trigger" onclick="toggleSidebar()" title="Open admin menu">
+            {% if admin_profile.profile_photo %}
+            <img src="{{ admin_profile.profile_photo.url }}" alt="Admin photo">
+            {% else %}
+            {{ request.user.username|slice:":2"|upper }}
+            {% endif %}
+        </button>
+        <a class="navbar-brand" href="#">
+            <img class="navbar-logo" src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo">
+            <span class="navbar-title">1847 <span>Ventures</span></span>
+        </a>
+    </div>
     <div class="navbar-right">
         <div class="navbar-user">
             <span>Welcome,</span>
             <strong>{{ request.user.username }}</strong>
         </div>
+        <a href="{% url 'inbox' %}" style="color:rgba(255,255,255,.85);text-decoration:none;font-size:.9rem;position:relative;">💬 Messages{% if unread_notifications_count %}<span style="position:absolute;top:-6px;right:-8px;background:#e07c00;color:white;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ unread_notifications_count }}</span>{% endif %}</a>
+        {% if request.user.is_superuser %}
+        <a class="btn-logout" href="{% url 'superuser_dashboard_selector' %}">Switch Dashboard</a>
+        {% endif %}
         {% if unread_count > 0 %}
         <div class="notif-bell" title="{{ unread_count }} unread notifications">
             🔔
             <span class="notif-badge">{{ unread_count }}</span>
         </div>
         {% endif %}
-        <a class="btn-logout" href="{% url 'logout' %}">Logout</a>
     </div>
 </nav>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar-panel" id="adminSidebar">
+    <div class="sidebar-header">
+        <h3>Admin Menu</h3>
+        <button type="button" class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="admin-profile-block">
+        <div class="admin-photo">
+            {% if admin_profile.profile_photo %}
+            <img src="{{ admin_profile.profile_photo.url }}" alt="Profile photo">
+            {% else %}
+            {{ request.user.username|slice:":2"|upper }}
+            {% endif %}
+        </div>
+        <p style="font-weight:700; margin-bottom:2px;">{{ request.user.get_full_name|default:request.user.username }}</p>
+        <p style="font-size:0.82rem; color:#b9d3c0; margin-bottom:10px;">Admin</p>
+
+        <form method="post" action="{% url 'upload_admin_profile_photo' %}" enctype="multipart/form-data" class="profile-photo-upload-form">
+            {% csrf_token %}
+            <button class="action-btn btn-sm btn-blue photo-toggle-btn" type="button">
+                {% if admin_profile.profile_photo %}Change Photo{% else %}Upload Photo{% endif %}
+            </button>
+            <div class="photo-controls">
+                <label class="sidebar-label" for="profile_photo_input">Choose photo</label>
+                <input id="profile_photo_input" class="sidebar-file-input" type="file" name="profile_photo" accept="image/*">
+                <input type="hidden" name="profile_zoom" value="1" class="profile-zoom-field">
+                <input type="hidden" name="profile_shift_x" value="0" class="profile-shift-x-field">
+                <input type="hidden" name="profile_shift_y" value="0" class="profile-shift-y-field">
+                <div class="photo-editor" aria-live="polite">
+                    <div class="photo-preview-frame">
+                        <canvas class="photo-preview-canvas" width="108" height="108"></canvas>
+                    </div>
+                    <label>Zoom</label>
+                    <input type="range" min="1" max="3" step="0.05" value="1" class="photo-zoom-slider">
+                    <label>Move left / right</label>
+                    <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-x-slider">
+                    <label>Move up / down</label>
+                    <input type="range" min="-100" max="100" step="1" value="0" class="photo-shift-y-slider">
+                </div>
+                <button class="action-btn btn-sm btn-blue" type="submit">Save Photo</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="sidebar-nav">
+        {% if request.user.is_superuser %}
+        <a class="sidebar-link" href="{% url 'superuser_dashboard_selector' %}">Dashboard Selector</a>
+        {% endif %}
+        <a class="sidebar-link" href="#" onclick="openUsersCategory('admin'); return false;">Users: Admins</a>
+        <a class="sidebar-link" href="#" onclick="openUsersCategory('field_agent'); return false;">Users: Field Agents</a>
+        <a class="sidebar-link" href="#" onclick="openUsersCategory('investor'); return false;">Users: Partners</a>
+        <a class="sidebar-link" href="#" onclick="openUsersCategory('farmer'); return false;">Users: Farmers</a>
+        <a class="sidebar-link" href="#" onclick="hideUsersSection(); return false;">Hide Users Section</a>
+        <a class="sidebar-link" href="{% url 'create_user' %}?role=field_agent">Create Field Agent</a>
+        <a class="sidebar-link" href="{% url 'assign_farmer_request' %}">Assign Farmer Registration</a>
+        <a class="sidebar-link" href="{% url 'contact_submissions_admin' %}">Contact Submissions</a>
+        <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
+    </div>
+</aside>
 
 <!-- ===== PAGE ===== -->
 <div class="page-wrapper">
@@ -462,6 +720,11 @@
             <div class="stat-number">{{ stats.total_admins }}</div>
             <div class="stat-label">Admins</div>
         </div>
+        <div class="stat-card blue">
+            <div class="stat-icon">👥</div>
+            <div class="stat-number">{{ stats.total_users }}</div>
+            <div class="stat-label">System Users</div>
+        </div>
     </div>
 
     <!-- ===== QUICK ACTIONS ===== -->
@@ -485,10 +748,155 @@
             <a class="action-btn btn-orange" href="{% url 'assign_farmer_request' %}">
                 <span class="btn-icon">📋</span> Assign Farmer Registration
             </a>
+            <a class="action-btn btn-green" href="{% url 'contact_submissions_admin' %}">
+                <span class="btn-icon">📨</span> Contact Submissions
+            </a>
+            <a class="action-btn btn-blue" href="{% url 'dataset_audit_log_viewer' %}">
+                <span class="btn-icon">🔍</span> View Dataset Audit Logs
+            </a>
         </div>
         <div class="action-note">
             <strong>Note:</strong> Admins cannot directly create farmer accounts.
             Use <em>Assign Farmer Registration</em> to delegate registration to a field agent.
+        </div>
+    </div>
+
+    <!-- ===== USERS (ON DEMAND) ===== -->
+    <div class="card" id="users-by-category" style="display:none;">
+        <div class="card-header">
+            <div>
+                <div class="card-title"><span class="icon">👥</span> Users by Category</div>
+                <div class="card-subtitle">Users are grouped by role. Reset link action appears only after a user request.</div>
+            </div>
+            <div>
+                <span class="badge badge-approved" id="selectedCategoryLabel">No category selected</span>
+            </div>
+        </div>
+
+        <div class="users-category-grid">
+            <div class="user-category-card user-category-item" data-category="admin" style="display:none;">
+                <div class="user-category-title">
+                    <span>Admins</span>
+                    <span class="badge badge-approved">{{ users_by_category.admin|length }}</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Username</th><th>Email</th><th>Action</th></tr></thead>
+                        <tbody>
+                            {% for user_obj in users_by_category.admin %}
+                            <tr>
+                                <td><a href="{% url 'review_farmer' user_obj.pk %}" style="color:#1f6a43; font-weight:700; text-decoration:none;">{{ user_obj.username }}</a></td>
+                                <td>{{ user_obj.email|default:"—" }}</td>
+                                <td>
+                                    {% if user_obj.id in pending_reset_request_user_ids %}
+                                    <form method="post" action="{% url 'generate_password_reset_link' user_obj.pk %}">{% csrf_token %}
+                                        <button class="action-btn btn-sm btn-blue" type="submit">Reset Link</button>
+                                    </form>
+                                    {% else %}
+                                    <span style="color:#8aa294; font-size:0.82rem;">No request</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3">No admin users.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="user-category-card user-category-item" data-category="field_agent" style="display:none;">
+                <div class="user-category-title">
+                    <span>Field Agents</span>
+                    <span class="badge badge-approved">{{ users_by_category.field_agent|length }}</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Username</th><th>Email</th><th>Action</th></tr></thead>
+                        <tbody>
+                            {% for user_obj in users_by_category.field_agent %}
+                            <tr>
+                                <td>{{ user_obj.username }}</td>
+                                <td>{{ user_obj.email|default:"—" }}</td>
+                                <td>
+                                    {% if user_obj.id in pending_reset_request_user_ids %}
+                                    <form method="post" action="{% url 'generate_password_reset_link' user_obj.pk %}">{% csrf_token %}
+                                        <button class="action-btn btn-sm btn-blue" type="submit">Reset Link</button>
+                                    </form>
+                                    {% else %}
+                                    <span style="color:#8aa294; font-size:0.82rem;">No request</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3">No field agents.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="user-category-card user-category-item" data-category="investor" style="display:none;">
+                <div class="user-category-title">
+                    <span>Partners</span>
+                    <span class="badge badge-approved">{{ users_by_category.investor|length }}</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Username</th><th>Email</th><th>Action</th></tr></thead>
+                        <tbody>
+                            {% for user_obj in users_by_category.investor %}
+                            <tr>
+                                <td>{{ user_obj.username }}</td>
+                                <td>{{ user_obj.email|default:"—" }}</td>
+                                <td>
+                                    {% if user_obj.id in pending_reset_request_user_ids %}
+                                    <form method="post" action="{% url 'generate_password_reset_link' user_obj.pk %}">{% csrf_token %}
+                                        <button class="action-btn btn-sm btn-blue" type="submit">Reset Link</button>
+                                    </form>
+                                    {% else %}
+                                    <span style="color:#8aa294; font-size:0.82rem;">No request</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3">No partner users.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="user-category-card user-category-item" data-category="farmer" style="display:none;">
+                <div class="user-category-title">
+                    <span>Farmers</span>
+                    <span class="badge badge-pending">{{ users_by_category.farmer|length }}</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Username</th><th>Email</th><th>Action</th></tr></thead>
+                        <tbody>
+                            {% for user_obj in users_by_category.farmer %}
+                            <tr>
+                                <td>{{ user_obj.username }}</td>
+                                <td>{{ user_obj.email|default:"—" }}</td>
+                                <td>
+                                    {% if user_obj.id in pending_reset_request_user_ids %}
+                                    <form method="post" action="{% url 'generate_password_reset_link' user_obj.pk %}">{% csrf_token %}
+                                        <button class="action-btn btn-sm btn-blue" type="submit">Reset Link</button>
+                                    </form>
+                                    {% else %}
+                                    <span style="color:#8aa294; font-size:0.82rem;">No request</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3">No farmers yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -523,7 +931,7 @@
                 <tbody>
                     {% for farmer in pending_farmers %}
                     <tr>
-                        <td><strong>{{ farmer.username }}</strong></td>
+                        <td><strong><a href="{% url 'review_farmer' farmer.pk %}" style="color:#1f6a43; text-decoration:none;">{{ farmer.username }}</a></strong></td>
                         <td>{{ farmer.email }}</td>
                         <td>
                             {% if farmer.profile.created_by_agent %}
@@ -536,6 +944,10 @@
                         <td><span class="badge badge-pending">Pending</span></td>
                         <td>
                             <div class="td-actions">
+                                <a class="action-btn btn-sm btn-blue"
+                                   href="{% url 'review_farmer' farmer.pk %}">
+                                    View Details
+                                </a>
                                 <a class="action-btn btn-sm btn-green"
                                    href="{% url 'approve_farmer' farmer.pk %}"
                                    onclick="return confirm('Approve farmer {{ farmer.username }}?')">
@@ -607,5 +1019,152 @@
     </div>
 
 </div><!-- /page-wrapper -->
+<script>
+    const categoryLabels = {
+        admin: 'Admins',
+        field_agent: 'Field Agents',
+        investor: 'Partners',
+        farmer: 'Farmers',
+    };
+
+    function toggleSidebar() {
+        document.getElementById('adminSidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    function closeSidebar() {
+        document.getElementById('adminSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+    }
+
+    function openUsersCategory(category) {
+        const section = document.getElementById('users-by-category');
+        const cards = document.querySelectorAll('.user-category-item');
+        const label = document.getElementById('selectedCategoryLabel');
+
+        section.style.display = 'block';
+        cards.forEach((card) => {
+            card.style.display = card.dataset.category === category ? 'block' : 'none';
+        });
+        label.textContent = categoryLabels[category] || 'Selected category';
+
+        closeSidebar();
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function hideUsersSection() {
+        const section = document.getElementById('users-by-category');
+        const cards = document.querySelectorAll('.user-category-item');
+        const label = document.getElementById('selectedCategoryLabel');
+
+        section.style.display = 'none';
+        cards.forEach((card) => {
+            card.style.display = 'none';
+        });
+        label.textContent = 'No category selected';
+
+        closeSidebar();
+    }
+
+    // Always reset users panel on refresh/new load.
+    window.addEventListener('load', () => {
+        hideUsersSection();
+        initProfilePhotoEditors();
+    });
+
+    function initProfilePhotoEditors() {
+        document.querySelectorAll('.profile-photo-upload-form').forEach((form) => {
+            const fileInput = form.querySelector('input[name="profile_photo"]');
+            const toggleBtn = form.querySelector('.photo-toggle-btn');
+            const controls = form.querySelector('.photo-controls');
+            const editor = form.querySelector('.photo-editor');
+            const previewCanvas = form.querySelector('.photo-preview-canvas');
+            const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+            const zoomSlider = form.querySelector('.photo-zoom-slider');
+            const shiftXSlider = form.querySelector('.photo-shift-x-slider');
+            const shiftYSlider = form.querySelector('.photo-shift-y-slider');
+            const zoomField = form.querySelector('.profile-zoom-field');
+            const shiftXField = form.querySelector('.profile-shift-x-field');
+            const shiftYField = form.querySelector('.profile-shift-y-field');
+            let previewUrl = null;
+            let previewImage = null;
+
+            if (!fileInput || !editor || !previewCanvas || !previewCtx || !toggleBtn || !controls) {
+                return;
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                controls.classList.toggle('active');
+            });
+
+            const renderPreview = () => {
+                const zoom = parseFloat(zoomSlider.value || '1');
+                const shiftX = parseFloat(shiftXSlider.value || '0');
+                const shiftY = parseFloat(shiftYSlider.value || '0');
+                zoomField.value = String(zoom);
+                shiftXField.value = String(shiftX);
+                shiftYField.value = String(shiftY);
+
+                if (!previewImage) {
+                    return;
+                }
+
+                const width = previewImage.naturalWidth || previewImage.width;
+                const height = previewImage.naturalHeight || previewImage.height;
+                const minSide = Math.min(width, height);
+                const cropSize = Math.max(Math.floor(minSide / zoom), 1);
+                const maxDx = (width - cropSize) / 2;
+                const maxDy = (height - cropSize) / 2;
+                const centerX = (width / 2) + (shiftX / 100) * maxDx;
+                const centerY = (height / 2) + (shiftY / 100) * maxDy;
+                let left = Math.round(centerX - (cropSize / 2));
+                let top = Math.round(centerY - (cropSize / 2));
+                left = Math.max(0, Math.min(left, width - cropSize));
+                top = Math.max(0, Math.min(top, height - cropSize));
+
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                previewCtx.drawImage(
+                    previewImage,
+                    left,
+                    top,
+                    cropSize,
+                    cropSize,
+                    0,
+                    0,
+                    previewCanvas.width,
+                    previewCanvas.height
+                );
+            };
+
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) {
+                    editor.classList.remove('active');
+                    previewImage = null;
+                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    return;
+                }
+                if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl);
+                }
+                previewUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    previewImage = img;
+                    zoomSlider.value = '1';
+                    shiftXSlider.value = '0';
+                    shiftYSlider.value = '0';
+                    editor.classList.add('active');
+                    renderPreview();
+                };
+                img.src = previewUrl;
+            });
+
+            [zoomSlider, shiftXSlider, shiftYSlider].forEach((slider) => {
+                slider.addEventListener('input', renderPreview);
+            });
+        });
+    }
+</script>
 </body>
 </html>

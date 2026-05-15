@@ -1,92 +1,659 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>1847 Ventures Platform</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1847 Ventures | Cocoa. Carbon. Communities.</title>
     <style>
+        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap");
+
+        :root {
+            --forest-900: #0f341f;
+            --forest-700: #1b5a34;
+            --forest-500: #2f7c4b;
+            --sun-500: #ef9f1f;
+            --sun-600: #cf8010;
+            --sand-100: #f8f5eb;
+            --sand-200: #efe9d8;
+            --charcoal: #1a211c;
+            --white: #ffffff;
+            --muted: #5a665d;
+            --ring: rgba(239, 159, 31, 0.28);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-lg: 0 24px 40px rgba(17, 43, 28, 0.16);
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
+            margin: 0;
+            font-family: "Manrope", sans-serif;
+            color: var(--charcoal);
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.68), transparent 34%),
+                radial-gradient(circle at 85% 8%, rgba(239, 159, 31, 0.12), transparent 28%),
+                linear-gradient(180deg, #edf7ef 0%, #f7f3e7 46%, #f2ecdd 100%);
+            line-height: 1.6;
         }
 
-        h1 {
-            margin-top: 30px;
+        .page-shell {
+            width: min(1180px, 94vw);
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
         }
 
-        .container {
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            backdrop-filter: blur(10px);
+            background: rgba(16, 53, 31, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.28s ease, border-color 0.28s ease;
+        }
+
+        .site-header.scrolled {
+            background: linear-gradient(135deg, #7b3f00 0%, #5a2e06 100%);
+            border-bottom: 1px solid rgba(255, 233, 204, 0.2);
+        }
+
+        .site-header-inner {
+            width: min(1180px, 94vw);
+            margin: 0 auto;
             display: flex;
-            justify-content: center;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            gap: 1rem;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            color: var(--white);
+            text-decoration: none;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.02rem;
+            font-weight: 700;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             flex-wrap: wrap;
-            margin-top: 40px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.86);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover { color: var(--white); }
+
+        .btn-login {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            border: 0;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--sun-500), var(--sun-600));
+            color: var(--white);
+            font-weight: 700;
+            font-size: 0.92rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 999px;
+            box-shadow: 0 10px 20px rgba(173, 108, 13, 0.26);
+            transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+        }
+
+        .site-header.scrolled .btn-login {
+            background: linear-gradient(135deg, #2c7a3a 0%, #1f5a2a 100%);
+            box-shadow: 0 10px 20px rgba(24, 86, 47, 0.28);
+        }
+
+        .btn-login:hover,
+        .btn-login:focus-visible {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 24px rgba(173, 108, 13, 0.32);
+            outline: none;
+        }
+
+        .hero {
+            padding: clamp(3.2rem, 8vw, 6.5rem) 0 3.2rem;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(47, 124, 75, 0.12);
+            border: 1px solid rgba(47, 124, 75, 0.2);
+            color: var(--forest-700);
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            line-height: 1.18;
+        }
+
+        .hero h1 {
+            margin-top: 1rem;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #133f28;
+        }
+
+        .hero p {
+            margin: 1rem 0 0;
+            color: #2c4635;
+            max-width: 62ch;
+            font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+        }
+
+        .hero-media {
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(27, 90, 52, 0.16);
+            border-radius: var(--radius-lg);
+            padding: 0.8rem;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(10px);
+            animation: rise 0.9s ease both;
+        }
+
+        .hero-media video {
+            width: 100%;
+            border-radius: calc(var(--radius-lg) - 8px);
+            display: block;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            background: #163d26;
+        }
+
+        .stats {
+            margin-top: 1.2rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid rgba(18, 58, 35, 0.08);
+            border-radius: 12px;
+            padding: 0.85rem;
+        }
+
+        .stat-card strong {
+            display: block;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.1rem;
+            color: var(--forest-700);
+        }
+
+        .stat-card span {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .section {
+            margin: 2.5rem 0;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(19, 63, 40, 0.1);
+            border-radius: var(--radius-lg);
+            padding: clamp(1.2rem, 3vw, 2rem);
+            box-shadow: 0 18px 30px rgba(20, 40, 28, 0.08);
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.3rem;
+            align-items: start;
         }
 
         .card {
-            margin: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 200px;
-            transition: 0.3s;
+            background: linear-gradient(180deg, var(--sand-100), var(--sand-200));
+            border: 1px solid rgba(22, 67, 42, 0.08);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
         }
 
-        .card:hover {
-            transform: scale(1.05);
+        .card h3 {
+            font-size: 1.2rem;
+            color: #15432a;
+            margin-bottom: 0.55rem;
         }
 
-        .card img {
+        .card p {
+            margin: 0;
+            color: #37483d;
+            font-size: 0.95rem;
+        }
+
+        .gallery {
+            margin-top: 1.1rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .gallery img {
             width: 100%;
-            height: 150px;
-            object-fit: contain;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 1px solid rgba(18, 58, 35, 0.08);
         }
 
-        .card a {
-            text-decoration: none;
-            color: black;
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
+        .impact-grid {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+
+        .impact-item {
+            background: #ffffff;
+            border: 1px solid rgba(18, 58, 35, 0.08);
+            border-radius: 12px;
+            padding: 0.95rem;
+        }
+
+        .impact-item h4 {
+            margin: 0 0 0.35rem;
+            font-family: "Space Grotesk", sans-serif;
+            color: #1d4e31;
+            font-size: 0.95rem;
+        }
+
+        .impact-item p {
+            margin: 0;
+            color: #46584d;
+            font-size: 0.88rem;
+        }
+
+        .notice {
+            margin-top: 0.8rem;
+            padding: 0.75rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+
+        .notice.success {
+            background: #e9f8ed;
+            border-color: #8bd6a0;
+            color: #15572c;
+        }
+
+        .notice.error {
+            background: #fff0f0;
+            border-color: #e9a8a8;
+            color: #7a2121;
+        }
+
+        .contact-wrap {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 1.1rem;
+            align-items: start;
+        }
+
+        .contact-panel {
+            background: linear-gradient(150deg, #124126, #1f6e40);
+            color: var(--white);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+        }
+
+        .contact-panel p {
+            margin: 0.45rem 0 0;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .contact-form {
+            background: #ffffff;
+            border: 1px solid rgba(18, 58, 35, 0.1);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .field.full { grid-column: 1 / -1; }
+
+        .field label {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #274e39;
+        }
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            border: 1px solid #cad8ce;
+            background: #fbfdfb;
+            border-radius: 10px;
+            padding: 0.7rem 0.78rem;
+            font-size: 0.94rem;
+            font-family: "Manrope", sans-serif;
+            color: #1f2f25;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .field textarea { resize: vertical; min-height: 110px; }
+
+        .field input:focus,
+        .field textarea:focus {
+            outline: none;
+            border-color: var(--sun-500);
+            box-shadow: 0 0 0 4px var(--ring);
+            background: #fff;
+        }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #174c2e, #2a7948);
+            color: #fff;
+            font-weight: 700;
+            padding: 0.72rem 1.45rem;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover { filter: brightness(1.05); }
+
+        .footer-login {
+            margin: 2rem 0 3rem;
+            padding: 1.4rem;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(120deg, #0f341f, #1a5b36);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            color: #fff;
+        }
+
+        .footer-login p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.87);
+            font-size: 0.95rem;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(22px); }
+            to { opacity: 1; transform: translateY(10px); }
+        }
+
+        @media (max-width: 980px) {
+            .hero,
+            .split,
+            .contact-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .stats,
+            .gallery,
+            .impact-grid,
+            .field-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .site-header-inner {
+                padding: 0.75rem 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
+            }
+
+            .brand {
+                font-size: 0.95rem;
+            }
+
+            .stats,
+            .gallery,
+            .impact-grid,
+            .field-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-login {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
-
 <body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a href="#top" class="brand">
+                <img class="brand-mark" src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures logo">
+                <span>1847 Ventures</span>
+            </a>
+            <nav class="nav-links">
+                <a href="#about">About</a>
+                <a href="#mission">Mission &amp; Vision</a>
+                <a href="#impact">Impact</a>
+                <a href="#contact">Contact Us</a>
+            </nav>
+            <a class="btn-login" href="{% url 'login' %}">Login Portal</a>
+        </div>
+    </header>
 
-    <h1>Welcome to 1847 Ventures</h1>
-    <h3>Sustainable Cocoa Management System</h3>
+    <main class="page-shell" id="top">
+        <section class="hero" id="about">
+            <div>
+                <span class="eyebrow">Regenerative Cocoa Platform</span>
+                <h1>Building Liberia's most trusted cocoa and carbon value chain.</h1>
+                <p>
+                    1847 Ventures empowers farmers, investors, and communities through traceable Grade 1A cocoa exports,
+                    climate-smart agroforestry, and transparent digital operations.
+                </p>
+                <p>
+                    Our model blends premium cocoa production with high-integrity carbon opportunities,
+                    creating resilient farmer income and long-term value for global partners.
+                </p>
+                <div class="stats">
+                    <div class="stat-card">
+                        <strong>4,500+</strong>
+                        <span>Farmers supported today</span>
+                    </div>
+                    <div class="stat-card">
+                        <strong>10,000+</strong>
+                        <span>Farmers in near-term expansion</span>
+                    </div>
+                    <div class="stat-card">
+                        <strong>5,000 ha</strong>
+                        <span>Planned flagship estate footprint</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-media">
+                <video controls preload="metadata" poster="{% static 'Farmers/homepage/nimba-clusters.jpg' %}">
+                    <source src="{% static 'Farmers/homepage/1847-documentary.mp4' %}" type="video/mp4">
+                    Your browser does not support the documentary video.
+                </video>
+            </div>
+        </section>
 
-   <div class="container">
+        <section class="section" id="mission">
+            <div class="split">
+                <article class="card">
+                    <h3>Our Mission</h3>
+                    <p>
+                        To unlock Liberia's potential as a globally competitive cocoa origin through regenerative agroforestry,
+                        inclusive value chains, and digital traceability that improves farmer incomes and environmental resilience.
+                    </p>
+                </article>
+                <article class="card">
+                    <h3>Our Vision</h3>
+                    <p>
+                        To become West Africa's most impactful cocoa and carbon enterprise by creating prosperity for farmers,
+                        restoring biodiversity, and setting a new benchmark for ethical cocoa investment.
+                    </p>
+                </article>
+            </div>
+            <div class="gallery" aria-label="1847 Ventures field gallery">
+                <img src="{% static 'Farmers/homepage/agroforestry.jpg' %}" alt="Agroforestry cocoa landscape">
+                <img src="{% static 'Farmers/homepage/gari-sacks.jpg' %}" alt="Agriculture market logistics">
+                <img src="{% static 'Farmers/homepage/happy-farmers.jpg' %}" alt="Farmers in cocoa communities">
+            </div>
+        </section>
 
-    <div class="card">
-        <a href="{% url 'login' %}">
-            <img src="{% static 'Farmers/images/farmer.png' %}" alt="Farmer">
-            Farmer
-        </a>
-    </div>
+        <section class="section" id="impact">
+            <h2>Why This Model Works</h2>
+            <p>
+                Every cocoa pod we source is backed by cooperative governance, transparent farm-level records,
+                and practical services that strengthen household resilience.
+            </p>
+            <div class="impact-grid">
+                <article class="impact-item">
+                    <h4>Agroforestry That Heals</h4>
+                    <p>Cocoa is cultivated beneath forest canopies to protect biodiversity and reduce deforestation pressure.</p>
+                </article>
+                <article class="impact-item">
+                    <h4>Traceability by Design</h4>
+                    <p>Digital tracking supports compliance with ESG and EUDR requirements from farm to export.</p>
+                </article>
+                <article class="impact-item">
+                    <h4>Community-First Scale</h4>
+                    <p>Clusters combine agronomy support, market access, and local capacity building for long-term growth.</p>
+                </article>
+            </div>
+        </section>
 
-    <div class="card">
-        <a href="{% url 'login' %}">
-            <img src="{% static 'Farmers/images/farmer.png' %}" alt="Field Agent">
-            Field Agent
-        </a>
-    </div>
+        <section class="section" id="contact">
+            <div class="contact-wrap">
+                <div class="contact-panel">
+                    <h2>Contact Us</h2>
+                    <p>
+                        Share your interest with our team. Your submission goes directly to 1847 Ventures admins for follow-up.
+                    </p>
+                    <p>
+                        We welcome partnership inquiries, technical collaboration, and strategic investment conversations.
+                    </p>
+                </div>
 
-    <div class="card">
-        <a href="{% url 'login' %}">
-            <img src="{% static 'Farmers/images/farmer.png' %}" alt="Partner">
-            Partner
-        </a>
-    </div>
+                <form method="post" class="contact-form">
+                    {% csrf_token %}
 
-    <div class="card">
-        <a href="/admin/">
-            <img src="{% static 'Farmers/images/farmer.png' %}" alt="Admin">
-            Admin
-        </a>
-    </div>
+                    {% if messages %}
+                        {% for msg in messages %}
+                            <div class="notice {% if msg.tags %}{{ msg.tags }}{% endif %}">{{ msg }}</div>
+                        {% endfor %}
+                    {% endif %}
 
-</div>
+                    {% if contact_form.non_field_errors %}
+                        {% for err in contact_form.non_field_errors %}
+                            <div class="notice error">{{ err }}</div>
+                        {% endfor %}
+                    {% endif %}
 
+                    <div class="field-grid">
+                        <div class="field">
+                            <label for="id_name">Name</label>
+                            <input type="text" id="id_name" name="name" value="{{ contact_form.name.value|default:'' }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="id_email">Email</label>
+                            <input type="email" id="id_email" name="email" value="{{ contact_form.email.value|default:'' }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="id_phone">Phone</label>
+                            <input type="text" id="id_phone" name="phone" value="{{ contact_form.phone.value|default:'' }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="id_nationel">Nationel</label>
+                            <input type="text" id="id_nationel" name="nationel" value="{{ contact_form.nationel.value|default:'' }}" required>
+                        </div>
+                        <div class="field full">
+                            <label for="id_current_resident">Current Resident</label>
+                            <input type="text" id="id_current_resident" name="current_resident" value="{{ contact_form.current_resident.value|default:'' }}" required>
+                        </div>
+                        <div class="field full">
+                            <label for="id_reason_for_contact">Reason For Contact</label>
+                            <textarea id="id_reason_for_contact" name="reason_for_contact" required>{{ contact_form.reason_for_contact.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Submit to Admin</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="footer-login" aria-label="Secondary login call to action">
+            <div>
+                <h3>Already part of the platform?</h3>
+                <p>Access your dashboard to continue field operations, partner reporting, or portfolio management.</p>
+            </div>
+            <a class="btn-login" href="{% url 'login' %}">Login</a>
+        </section>
+    </main>
+
+    <script>
+        (function() {
+            const header = document.querySelector('.site-header');
+            if (!header) return;
+
+            const updateHeaderState = () => {
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            };
+
+            updateHeaderState();
+            window.addEventListener('scroll', updateHeaderState, { passive: true });
+        })();
+    </script>
 </body>
 </html>

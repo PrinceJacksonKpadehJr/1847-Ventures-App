@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Dashboard Switch</title>
+    <style>
+        :root {
+            --ink: #162419;
+            --muted: #5f6f64;
+            --line: rgba(22, 36, 25, 0.14);
+            --panel: #ffffff;
+            --forest: #1f6a43;
+            --forest-deep: #0f4a2b;
+            --risk: #7d2316;
+            --risk-bg: #fde4dc;
+            --shadow: 0 18px 36px rgba(16, 30, 21, 0.15);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at 8% 0%, rgba(156, 207, 83, 0.2), transparent 26%),
+                radial-gradient(circle at 90% 100%, rgba(219, 205, 166, 0.3), transparent 28%),
+                linear-gradient(180deg, #f7f5ee 0%, #efe9dc 100%);
+            padding: 16px;
+        }
+
+        .card {
+            width: min(520px, 100%);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            padding: 22px;
+        }
+
+        .eyebrow {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 1.4rem;
+        }
+
+        p {
+            margin: 0 0 14px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            padding: 12px 14px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .error {
+            margin: 0 0 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--risk-bg);
+            color: var(--risk);
+            border: 1px solid rgba(125, 35, 22, 0.22);
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button,
+        .link-btn {
+            min-height: 40px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        button {
+            border: 0;
+            color: #fff;
+            background: linear-gradient(180deg, var(--forest), var(--forest-deep));
+        }
+
+        .link-btn {
+            color: var(--ink);
+            border: 1px solid var(--line);
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="eyebrow">Superuser Verification</div>
+        <h1>Confirm dashboard switch</h1>
+        <p>Enter your password to continue to <strong>{{ target_label }}</strong>.</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ target }}">
+            <label for="dashboardPassword">Password</label>
+            <input id="dashboardPassword" name="password" type="password" autocomplete="current-password" required>
+            <div class="actions">
+                <button type="submit">Verify and Continue</button>
+                <a class="link-btn" href="{% url 'superuser_dashboard_selector' %}">Cancel</a>
+            </div>
+        </form>
+    </main>
+</body>
+</html>
