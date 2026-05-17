@@ -118,6 +118,35 @@
             border: 1px solid var(--line);
             background: #fff;
         }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 16px 14px;
+                border-radius: 14px;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            p {
+                font-size: 0.9rem;
+            }
+
+            .actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .actions button,
+            .actions .link-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>

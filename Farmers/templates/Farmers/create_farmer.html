@@ -155,9 +155,77 @@
         .btn-primary:hover { background: var(--green-dark); }
         .btn-light { background: #e7efe5; color: #23472a; }
 
+        @media (max-width: 980px) {
+            .container {
+                margin: 20px auto;
+            }
+            .section {
+                padding: 14px;
+            }
+            .image-choice-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 760px) {
             .grid2 { grid-template-columns: 1fr; }
-            .navbar { flex-direction: column; gap: 8px; align-items: flex-start; }
+            .navbar {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+                padding: 12px;
+            }
+            .navbar a {
+                margin-left: 10px;
+                font-size: 0.9rem;
+            }
+            .container {
+                margin: 14px auto;
+                padding: 0 10px;
+            }
+            .intro,
+            .notice,
+            .section {
+                border-radius: 8px;
+            }
+            .choices {
+                gap: 8px;
+            }
+            .choices label {
+                font-size: 0.88rem;
+                padding: 6px 10px;
+            }
+            .image-choice-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .choice-card img {
+                height: 120px;
+            }
+            .actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+            .actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 520px) {
+            h3 {
+                font-size: 1rem;
+            }
+            input[type=text], input[type=email], select {
+                padding: 9px;
+            }
+            .gps-box,
+            .upload {
+                padding: 10px;
+            }
+            .helper {
+                font-size: 0.82rem;
+            }
         }
     </style>
 </head>

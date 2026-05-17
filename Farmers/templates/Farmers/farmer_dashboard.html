@@ -404,6 +404,35 @@
             .landing-hero { grid-template-columns: 1fr; }
             .split-cards { grid-template-columns: 1fr; }
         }
+
+        @media (max-width: 640px) {
+            .content { padding: 12px 10px 16px; }
+            .content-shell { width: 100%; }
+            .top-row {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .top-chip {
+                font-size: .78rem;
+                padding: 6px 10px;
+            }
+            .hero,
+            .section,
+            .card { padding: .9rem; }
+            .field-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .mobile-toggle {
+                width: 100%;
+                text-align: left;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            th,
+            td { padding: .52rem .5rem; }
+        }
     </style>
 </head>
 <body>

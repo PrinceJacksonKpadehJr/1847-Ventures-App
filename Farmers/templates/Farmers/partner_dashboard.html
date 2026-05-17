@@ -630,9 +630,38 @@
                 transform: translateX(0);
             }
 
+            .workspace-view-scroll {
+                padding: 16px;
+            }
+
+            .section-heading,
+            .section-content {
+                padding: 16px;
+            }
+
+            .workspace-tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                gap: 8px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .workspace-tab {
+                flex: 0 0 auto;
+                padding: 10px 12px;
+                font-size: 0.88rem;
+            }
+
+            .live-preview-drawer {
+                width: min(96vw, 420px);
+                right: calc(-1 * min(96vw, 420px));
+            }
+
             .visualization-studio {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr auto;
+                height: auto;
+                min-height: 72vh;
             }
 
             .studio-right {
@@ -640,10 +669,60 @@
                 grid-row: 3;
                 margin-top: 12px;
                 resize: none;
+                min-width: 0;
             }
 
             .studio-bottom {
                 grid-column: 1;
+            }
+
+            .dataset-grid-pagination {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .navbar {
+                padding: 0 12px;
+            }
+
+            .navbar-user {
+                display: none;
+            }
+
+            .workspace-view-scroll {
+                padding: 12px;
+            }
+
+            .metric-grid,
+            .overview-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .panel {
+                padding: 14px;
+            }
+
+            .section-heading h2 {
+                font-size: 1.1rem;
+            }
+
+            .studio-top {
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .dataset-grid-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .dataset-grid-toolbar input,
+            .dataset-grid-toolbar select,
+            .btn {
+                width: 100%;
             }
         }
 

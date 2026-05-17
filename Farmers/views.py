@@ -4405,6 +4405,16 @@ def review_farmer(request, farmer_id):
 
     farmer = get_object_or_404(Farmer, pk=farmer_id, profile__role='farmer')
     deletion_request = _open_deletion_request_for_admin(farmer, request.user)
+    action = (request.GET.get("action") or "").strip().lower()
+    delete_stage = ""
+
+    # Keep deletion panel visible for actionable/request states, even without explicit query param.
+    if farmer.profile.is_approved and deletion_request:
+        if deletion_request.status in {"otp_pending", "pending_partner_approval", "rejected"}:
+            action = "delete_request"
+        if deletion_request.status == "otp_pending":
+            delete_stage = "otp"
+
     return render(request, "Farmers/review_farmer.html", {
         "farmer": farmer,
         "sheet1": getattr(farmer, "assessment_sheet1", None),
@@ -4412,6 +4422,8 @@ def review_farmer(request, farmer_id):
         "sheet3": getattr(farmer, "assessment_sheet3", None),
         "activity_log": _build_farmer_activity_log(farmer),
         "deletion_request": deletion_request,
+        "action": action,
+        "delete_stage": delete_stage,
     })
 
 
@@ -4427,7 +4439,7 @@ def initiate_farmer_deletion_request(request, farmer_id):
     farmer = get_object_or_404(Farmer, pk=farmer_id, profile__role='farmer')
     if not farmer.profile.is_approved:
         messages.error(request, "Deletion workflow is available only for farmers already active in the system.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     password = request.POST.get("admin_password", "")
     if not request.user.check_password(password):
@@ -4446,7 +4458,7 @@ def initiate_farmer_deletion_request(request, farmer_id):
     active_request = _open_deletion_request_for_admin(farmer, request.user)
     if active_request and active_request.status == "pending_partner_approval":
         messages.info(request, "This farmer deletion is already awaiting partner approval.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     otp_code = _build_otp_code()
     otp_expires_at = timezone.now() + timezone.timedelta(minutes=10)
@@ -4467,7 +4479,7 @@ def initiate_farmer_deletion_request(request, farmer_id):
     email_sent, email_error = _send_deletion_otp_email(request.user, farmer, otp_code)
     if not email_sent:
         messages.error(request, f"Could not send OTP email: {email_error or 'unknown email backend error'}")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     messages.success(request, "OTP sent to your admin email. Enter it to submit deletion for partner approval.")
     return render(request, "Farmers/review_farmer.html", {
@@ -4495,20 +4507,20 @@ def verify_farmer_deletion_otp(request, farmer_id):
     deletion_request = _open_deletion_request_for_admin(farmer, request.user)
     if not deletion_request or deletion_request.status != "otp_pending":
         messages.error(request, "No OTP-pending deletion request was found for this farmer.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     otp = request.POST.get("otp_code", "").strip()
     if not otp:
         messages.error(request, "Enter the OTP sent to your email.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     if not deletion_request.otp_expires_at or deletion_request.otp_expires_at < timezone.now():
         messages.error(request, "OTP expired. Start deletion again to receive a new OTP.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     if not check_password(otp, deletion_request.otp_hash):
         messages.error(request, "Invalid OTP. Please try again.")
-        return redirect("review_farmer", farmer_id=farmer.pk)
+        return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
     deletion_request.status = "pending_partner_approval"
     deletion_request.otp_hash = ""
@@ -4530,7 +4542,7 @@ def verify_farmer_deletion_otp(request, farmer_id):
         )
 
     messages.success(request, "Deletion request submitted to partner for final approval.")
-    return redirect("review_farmer", farmer_id=farmer.pk)
+    return redirect(f"{reverse('review_farmer', kwargs={'farmer_id': farmer.pk})}?action=delete_request")
 
 
 @login_required
