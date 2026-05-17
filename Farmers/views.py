@@ -20,10 +20,11 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import SetPasswordForm
 from django.urls import Resolver404, resolve, reverse, reverse_lazy
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpResponseForbidden, JsonResponse
 from django.utils import timezone
 from django.db import transaction
-from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
+from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmerDeletionRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -35,7 +36,7 @@ from django.core.mail import send_mail
 from django.core.files.base import ContentFile
 from django.utils.dateparse import parse_date
 from PIL import Image, ImageOps
-from .forms import FarmerCreateByAgentForm, CreateUserForm, FarmerRegistrationRequestForm, PasswordResetRequestForm, HomeContactForm, FarmAssessmentSheet1Form, FarmAssessmentSheet2Form, FarmAssessmentSheet3Form, InvestorDatasetUploadForm
+from .forms import FarmerCreateByAgentForm, CreateUserForm, FarmerRegistrationRequestForm, PasswordResetRequestForm, HomeContactForm, FarmAssessmentSheet1Form, FarmAssessmentSheet2Form, FarmAssessmentSheet3Form, InvestorDatasetUploadForm, FarmerActivitySubmissionForm
 from .import_pipeline import parse_and_clean_dataset, DatasetImportError
 from .semantic_modeling import build_dynamic_semantic_model, detect_dataset_domain
 from .data_prep import DataPrepHistory, ColumnOperations, RowOperations, LivePreviewGenerator
@@ -101,6 +102,14 @@ HARVEST_TREND_SCORE = {
 POWER_BI_TOKEN_CACHE_TTL_SECONDS = 3300
 APPROVED_SUPERUSER_PARTNER_ROUTE_PREFIXES = ("partner_",)
 APPROVED_SUPERUSER_PARTNER_PATH_PREFIXES = ("/api/farmers/partner/",)
+SUPERUSER_SCOPE_PREFIXES = {
+    "admin": ("/api/farmers/admin/", "/api/farmers/governance/"),
+    "partner": ("/api/farmers/partner/",),
+    "agent": ("/api/farmers/agent/",),
+    "farmer": ("/api/farmers/farmer/",),
+    "messages": ("/api/farmers/messages/",),
+    "django_admin": ("/admin/",),
+}
 
 ENTERPRISE_WORKSPACE_PAGES = [
     {"id": "investor-dashboard", "label": "Investor Dashboard"},
@@ -255,19 +264,30 @@ def _build_farmer_activity_log(farmer):
         )
 
     for item in farmer.activities.all().order_by("-date", "-id"):
+        detail_bits = [
+            f"Quantity: {item.quantity}" if item.quantity is not None else "",
+            f"Inputs: {item.inputs_used}" if item.inputs_used else "",
+            f"Additional trees: {item.additional_trees_added}" if item.additional_trees_added else "",
+            f"Tool change: {item.tool_changed_from or 'N/A'} -> {item.tool_changed_to}" if item.tool_changed_to else "",
+            f"Habit change: {item.habit_changed_from or 'N/A'} -> {item.habit_changed_to}" if item.habit_changed_to else "",
+            item.notes or "",
+        ]
+
+        status_detail = (
+            f"Field verification: {item.get_verification_status_display()} | "
+            f"Admin review: {item.get_admin_approval_status_display()}"
+        )
+
         activity_log.append(
             {
-                "timestamp": timezone.make_aware(datetime.combine(item.date, datetime.min.time())),
+                "timestamp": item.verified_at or item.admin_reviewed_at or timezone.make_aware(datetime.combine(item.date, datetime.min.time())),
                 "title": f"Farm activity: {item.get_activity_type_display()}",
                 "detail": " | ".join(
-                    part for part in [
-                        f"Quantity: {item.quantity}" if item.quantity is not None else "",
-                        f"Inputs: {item.inputs_used}" if item.inputs_used else "",
-                        item.notes or "",
-                    ]
+                    part for part in detail_bits
                     if part
                 ) or "Recorded farm activity.",
                 "kind": "farm-activity",
+                "status": status_detail,
             }
         )
 
@@ -1568,6 +1588,14 @@ def _is_allowed_superuser_target(target_url):
     if target_path in allowed_paths:
         return True
 
+    # Auto-allow approved in-app scopes so dashboard subpages are always reachable after selection.
+    if _superuser_gate_scope_for_path(target_path):
+        try:
+            resolve(target_path)
+            return True
+        except Resolver404:
+            return False
+
     # Auto-allow approved partner routes so newly added partner pages do not require manual link updates.
     try:
         match = resolve(target_path)
@@ -1580,11 +1608,30 @@ def _is_allowed_superuser_target(target_url):
     return is_approved_partner_name and is_approved_partner_path
 
 
+def _superuser_gate_scope_for_path(path):
+    normalized_path = (path or "").strip()
+    for scope, prefixes in SUPERUSER_SCOPE_PREFIXES.items():
+        if any(normalized_path.startswith(prefix) for prefix in prefixes):
+            return scope
+    return ""
+
+
+def _is_path_allowed_for_superuser_scope(path, scope):
+    prefixes = SUPERUSER_SCOPE_PREFIXES.get(scope, ())
+    if not prefixes:
+        return False
+    return any((path or "").startswith(prefix) for prefix in prefixes)
+
+
 def _enforce_superuser_dashboard_gate(request):
     if not request.user.is_superuser:
         return None
 
     current_path = request.path
+    allowed_scope = request.session.get("superuser_gate_allowed_scope", "")
+    if _is_path_allowed_for_superuser_scope(current_path, allowed_scope):
+        return None
+
     allowed_path = request.session.get("superuser_gate_allowed_path", "")
     if allowed_path == current_path:
         return None
@@ -1621,6 +1668,7 @@ def superuser_dashboard_gate(request):
         return HttpResponseForbidden("Invalid dashboard target")
 
     target_path = parse.urlsplit(target).path
+    target_scope = _superuser_gate_scope_for_path(target_path)
     selected = next((item for item in _superuser_dashboard_links() if parse.urlsplit(item["url"]).path == target_path), None)
     target_label = selected["label"] if selected else "Selected dashboard"
 
@@ -1628,6 +1676,7 @@ def superuser_dashboard_gate(request):
         password = request.POST.get("password", "")
         if request.user.check_password(password):
             request.session["superuser_gate_allowed_path"] = target_path
+            request.session["superuser_gate_allowed_scope"] = target_scope
             return redirect(target)
         messages.error(request, "Incorrect password. Please try again.")
 
@@ -1651,11 +1700,109 @@ def farmer_dashboard(request):
     unread_notifications_count = Notification.objects.filter(
         recipient=request.user, is_read=False
     ).count()
+
+    activity_form = FarmerActivitySubmissionForm()
+    recent_activities = request.user.activities.select_related("verified_by", "admin_reviewed_by").order_by("-created_at")[:12]
+    activity_stats = {
+        "total": request.user.activities.count(),
+        "pending_verification": request.user.activities.filter(verification_status="pending").count(),
+        "verified_waiting_admin": request.user.activities.filter(verification_status="verified", admin_approval_status="pending").count(),
+        "approved": request.user.activities.filter(admin_approval_status="approved").count(),
+    }
+
+    sheet2 = getattr(request.user, "assessment_sheet2", None)
+    farmer_profile = {
+        "full_name": getattr(getattr(request.user, "assessment_sheet1", None), "full_name", ""),
+        "location": getattr(getattr(request.user, "assessment_sheet1", None), "location_name", ""),
+        "farm_size": sheet2.get_farm_size_category_display() if sheet2 else "",
+        "has_shade_trees": sheet2.get_has_shade_trees_display() if sheet2 else "",
+    }
+    sheet3 = getattr(request.user, "assessment_sheet3", None)
+    farmer_profile_photo_url = ""
+    if getattr(profile, "profile_photo", None):
+        farmer_profile_photo_url = profile.profile_photo.url
+    elif sheet3 and getattr(sheet3, "photo_of_farmer", None):
+        farmer_profile_photo_url = sheet3.photo_of_farmer.url
+
     return render(
         request,
         "Farmers/farmer_dashboard.html",
-        {"unread_notifications_count": unread_notifications_count},
+        {
+            "unread_notifications_count": unread_notifications_count,
+            "activity_form": activity_form,
+            "recent_activities": recent_activities,
+            "activity_stats": activity_stats,
+            "farmer_profile": farmer_profile,
+            "farmer_profile_photo_url": farmer_profile_photo_url,
+        },
     )
+
+
+@login_required
+def submit_farmer_activity(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    if not request.user.is_superuser and profile.role != "farmer":
+        return HttpResponseForbidden("Access Denied")
+
+    if request.method != "POST":
+        return redirect("farmer_dashboard")
+
+    activity_form = FarmerActivitySubmissionForm(request.POST)
+    if not activity_form.is_valid():
+        messages.error(request, "Please fix the highlighted activity fields and submit again.")
+        unread_notifications_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        sheet3 = getattr(request.user, "assessment_sheet3", None)
+        farmer_profile_photo_url = ""
+        if getattr(profile, "profile_photo", None):
+            farmer_profile_photo_url = profile.profile_photo.url
+        elif sheet3 and getattr(sheet3, "photo_of_farmer", None):
+            farmer_profile_photo_url = sheet3.photo_of_farmer.url
+        return render(
+            request,
+            "Farmers/farmer_dashboard.html",
+            {
+                "unread_notifications_count": unread_notifications_count,
+                "activity_form": activity_form,
+                "recent_activities": request.user.activities.order_by("-created_at")[:12],
+                "activity_stats": {
+                    "total": request.user.activities.count(),
+                    "pending_verification": request.user.activities.filter(verification_status="pending").count(),
+                    "verified_waiting_admin": request.user.activities.filter(verification_status="verified", admin_approval_status="pending").count(),
+                    "approved": request.user.activities.filter(admin_approval_status="approved").count(),
+                },
+                "farmer_profile": {
+                    "full_name": getattr(getattr(request.user, "assessment_sheet1", None), "full_name", ""),
+                    "location": getattr(getattr(request.user, "assessment_sheet1", None), "location_name", ""),
+                    "farm_size": getattr(getattr(request.user, "assessment_sheet2", None), "get_farm_size_category_display", lambda: "")(),
+                    "has_shade_trees": getattr(getattr(request.user, "assessment_sheet2", None), "get_has_shade_trees_display", lambda: "")(),
+                },
+                "farmer_profile_photo_url": farmer_profile_photo_url,
+            },
+        )
+
+    created_by_agent = getattr(profile, "created_by_agent", None)
+    if not created_by_agent:
+        messages.error(request, "No field agent is linked to your account yet. Contact support before submitting activities.")
+        return redirect("farmer_dashboard")
+
+    activity = activity_form.save(commit=False)
+    activity.farmer = request.user
+    activity.verification_status = "pending"
+    activity.admin_approval_status = "pending"
+    activity.save()
+
+    Message.objects.create(
+        sender=request.user,
+        receiver=created_by_agent,
+        content=(
+            f"Farmer activity submitted by '{request.user.username}'. "
+            f"Please verify: {activity.get_activity_type_display()} on {activity.date}."
+        ),
+    )
+
+    messages.success(request, "Activity submitted. Your field agent must verify it before admin review.")
+    return redirect("farmer_dashboard")
 
 
 @login_required
@@ -1680,10 +1827,15 @@ def agent_dashboard(request):
     unread_notifications_count = Notification.objects.filter(
         recipient=request.user, is_read=False
     ).count()
+    pending_activity_verifications = FarmActivity.objects.filter(
+        farmer__profile__created_by_agent=request.user,
+        verification_status="pending",
+    ).select_related("farmer").order_by("-created_at")
     return render(request, "Farmers/agent_dashboard.html", {
         "agent_profile": agent_profile,
         "farmers": farmers,
         "pending_requests": pending_requests,
+        "pending_activity_verifications": pending_activity_verifications,
         "total_farmers": total_farmers,
         "approved_farmers": approved_farmers,
         "pending_approval": pending_approval,
@@ -1691,6 +1843,94 @@ def agent_dashboard(request):
         "unread_messages_count": Message.objects.filter(receiver=request.user, is_read=False).count(),
         "unread_notifications_count": unread_notifications_count,
     })
+
+
+@login_required
+def verify_farmer_activity(request, activity_id):
+    if not _user_has_role(request.user, {"field_agent"}):
+        return HttpResponseForbidden("Access Denied")
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    activity = get_object_or_404(
+        FarmActivity,
+        pk=activity_id,
+        farmer__profile__created_by_agent=request.user,
+    )
+
+    activity.verification_status = "verified"
+    activity.verified_by = request.user
+    activity.verified_at = timezone.now()
+    activity.agent_verification_notes = request.POST.get("agent_note", "").strip()
+    activity.admin_approval_status = "pending"
+    activity.save(update_fields=[
+        "verification_status",
+        "verified_by",
+        "verified_at",
+        "agent_verification_notes",
+        "admin_approval_status",
+        "updated_at",
+    ])
+
+    admin_users = Farmer.objects.filter(profile__role="admin", is_active=True)
+    AdminNotification.objects.bulk_create([
+        AdminNotification(
+            recipient=admin_user,
+            notification_type="info",
+            message=(
+                f"Field agent {request.user.username} verified activity for farmer "
+                f"{activity.farmer.username}: {activity.get_activity_type_display()}."
+            ),
+            related_farmer=activity.farmer,
+        )
+        for admin_user in admin_users
+    ])
+
+    messages.success(request, f"Activity for {activity.farmer.username} verified and sent to admin for approval.")
+    return redirect("agent_dashboard")
+
+
+@login_required
+def reject_farmer_activity_verification(request, activity_id):
+    if not _user_has_role(request.user, {"field_agent"}):
+        return HttpResponseForbidden("Access Denied")
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    activity = get_object_or_404(
+        FarmActivity,
+        pk=activity_id,
+        farmer__profile__created_by_agent=request.user,
+    )
+
+    rejection_note = request.POST.get("agent_note", "").strip() or "Needs correction before verification."
+    activity.verification_status = "rejected"
+    activity.verified_by = request.user
+    activity.verified_at = timezone.now()
+    activity.agent_verification_notes = rejection_note
+    activity.admin_approval_status = "rejected"
+    activity.save(update_fields=[
+        "verification_status",
+        "verified_by",
+        "verified_at",
+        "agent_verification_notes",
+        "admin_approval_status",
+        "updated_at",
+    ])
+
+    Message.objects.create(
+        sender=request.user,
+        receiver=activity.farmer,
+        content=(
+            f"Your activity update ({activity.get_activity_type_display()} on {activity.date}) "
+            f"needs correction before admin review. Note: {rejection_note}"
+        ),
+    )
+
+    messages.warning(request, f"Activity for {activity.farmer.username} was returned for correction.")
+    return redirect("agent_dashboard")
 
 
 def _prepare_profile_photo(photo, post_data):
@@ -1784,6 +2024,7 @@ def create_farmer(request):
                 profile.role = "farmer"
                 profile.is_approved = False
                 profile.created_by_agent = request.user
+                profile.profile_photo = form.cleaned_data["photo_of_farmer"]
                 profile.save()
 
                 FarmAssessmentSheet1.objects.update_or_create(
@@ -1931,6 +2172,9 @@ def partner_dashboard(request):
     context["unread_notifications_count"] = Notification.objects.filter(
         recipient=request.user, is_read=False
     ).count()
+    context["pending_farmer_deletion_requests"] = FarmerDeletionRequest.objects.filter(
+        status="pending_partner_approval"
+    ).select_related("farmer", "requested_by")[:40]
 
     return render(request, "Farmers/partner_dashboard.html", context)
 
@@ -3650,6 +3894,52 @@ def _require_admin(request):
     return None
 
 
+def _require_partner(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    if request.user.is_superuser:
+        return None
+    if not hasattr(request.user, 'profile') or request.user.profile.role not in ('investor', 'analyst'):
+        return HttpResponseForbidden("Access Denied")
+    return None
+
+
+def _build_otp_code():
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+def _send_deletion_otp_email(admin_user, farmer, otp_code):
+    if not admin_user.email:
+        return False, "Admin account has no email configured."
+
+    sender_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    try:
+        send_mail(
+            subject="1847 Ventures Farmer Deletion OTP",
+            message=(
+                f"Hello {admin_user.get_full_name() or admin_user.username},\n\n"
+                f"OTP for deleting farmer account '{farmer.username}' is:\n"
+                f"{otp_code}\n\n"
+                "This OTP expires in 10 minutes.\n"
+                "If you did not request this action, contact support immediately."
+            ),
+            from_email=sender_email,
+            recipient_list=[admin_user.email],
+            fail_silently=False,
+        )
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _open_deletion_request_for_admin(farmer, admin_user):
+    return FarmerDeletionRequest.objects.filter(
+        farmer=farmer,
+        requested_by=admin_user,
+        status__in=["otp_pending", "pending_partner_approval"],
+    ).order_by("-created_at").first()
+
+
 @login_required
 def admin_dashboard(request):
     denied = _require_admin(request)
@@ -3669,6 +3959,11 @@ def admin_dashboard(request):
         recipient=request.user
     ).order_by('-created_at')[:20]
 
+    pending_activity_approvals = FarmActivity.objects.filter(
+        verification_status="verified",
+        admin_approval_status="pending",
+    ).select_related("farmer", "verified_by").order_by("-verified_at", "-created_at")
+
     unread_count = AdminNotification.objects.filter(
         recipient=request.user, is_read=False
     ).count()
@@ -3687,6 +3982,7 @@ def admin_dashboard(request):
     stats = {
         'total_farmers': Farmer.objects.filter(profile__role='farmer').count(),
         'pending_approvals': pending_farmers.count(),
+        'pending_activity_approvals': pending_activity_approvals.count(),
         'total_agents': Farmer.objects.filter(profile__role='field_agent').count(),
         'total_partners': Farmer.objects.filter(profile__role='investor').count(),
         'total_admins': Farmer.objects.filter(profile__role='admin').count(),
@@ -3700,6 +3996,7 @@ def admin_dashboard(request):
         "admin_profile": admin_profile,
         "pending_farmers": pending_farmers,
         "notifications": notifications,
+        "pending_activity_approvals": pending_activity_approvals,
         "unread_count": unread_count,
         "unread_messages_count": Message.objects.filter(receiver=request.user, is_read=False).count(),
         "unread_notifications_count": unread_notifications_count,
@@ -3708,6 +4005,95 @@ def admin_dashboard(request):
         "users_by_category": users_by_category,
         "stats": stats,
     })
+
+
+@login_required
+def approve_farmer_activity(request, activity_id):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    activity = get_object_or_404(
+        FarmActivity,
+        pk=activity_id,
+        verification_status="verified",
+    )
+
+    activity.admin_approval_status = "approved"
+    activity.admin_reviewed_by = request.user
+    activity.admin_reviewed_at = timezone.now()
+    activity.admin_review_notes = request.POST.get("admin_note", "").strip()
+    activity.save(update_fields=[
+        "admin_approval_status",
+        "admin_reviewed_by",
+        "admin_reviewed_at",
+        "admin_review_notes",
+        "updated_at",
+    ])
+
+    Message.objects.create(
+        sender=request.user,
+        receiver=activity.farmer,
+        content=(
+            f"Your activity update ({activity.get_activity_type_display()} on {activity.date}) "
+            "has been approved by admin."
+        ),
+    )
+    messages.success(request, f"Activity for {activity.farmer.username} approved.")
+    return redirect("admin_dashboard")
+
+
+@login_required
+def reject_farmer_activity_approval(request, activity_id):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    activity = get_object_or_404(
+        FarmActivity,
+        pk=activity_id,
+        verification_status="verified",
+    )
+
+    review_note = request.POST.get("admin_note", "").strip() or "Admin review requested updates."
+    activity.admin_approval_status = "rejected"
+    activity.admin_reviewed_by = request.user
+    activity.admin_reviewed_at = timezone.now()
+    activity.admin_review_notes = review_note
+    activity.save(update_fields=[
+        "admin_approval_status",
+        "admin_reviewed_by",
+        "admin_reviewed_at",
+        "admin_review_notes",
+        "updated_at",
+    ])
+
+    if activity.verified_by:
+        Message.objects.create(
+            sender=request.user,
+            receiver=activity.verified_by,
+            content=(
+                f"Admin rejected verified activity for farmer {activity.farmer.username} "
+                f"({activity.get_activity_type_display()}). Note: {review_note}"
+            ),
+        )
+
+    Message.objects.create(
+        sender=request.user,
+        receiver=activity.farmer,
+        content=(
+            f"Your activity update ({activity.get_activity_type_display()} on {activity.date}) "
+            f"was not approved. Note: {review_note}"
+        ),
+    )
+    messages.warning(request, f"Activity for {activity.farmer.username} was rejected.")
+    return redirect("admin_dashboard")
 
 
 @login_required
@@ -4018,13 +4404,211 @@ def review_farmer(request, farmer_id):
         return denied
 
     farmer = get_object_or_404(Farmer, pk=farmer_id, profile__role='farmer')
+    deletion_request = _open_deletion_request_for_admin(farmer, request.user)
     return render(request, "Farmers/review_farmer.html", {
         "farmer": farmer,
         "sheet1": getattr(farmer, "assessment_sheet1", None),
         "sheet2": getattr(farmer, "assessment_sheet2", None),
         "sheet3": getattr(farmer, "assessment_sheet3", None),
         "activity_log": _build_farmer_activity_log(farmer),
+        "deletion_request": deletion_request,
     })
+
+
+@login_required
+def initiate_farmer_deletion_request(request, farmer_id):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    farmer = get_object_or_404(Farmer, pk=farmer_id, profile__role='farmer')
+    if not farmer.profile.is_approved:
+        messages.error(request, "Deletion workflow is available only for farmers already active in the system.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    password = request.POST.get("admin_password", "")
+    if not request.user.check_password(password):
+        messages.error(request, "Password confirmation failed. Deletion request was not started.")
+        return render(request, "Farmers/review_farmer.html", {
+            "farmer": farmer,
+            "sheet1": getattr(farmer, "assessment_sheet1", None),
+            "sheet2": getattr(farmer, "assessment_sheet2", None),
+            "sheet3": getattr(farmer, "assessment_sheet3", None),
+            "activity_log": _build_farmer_activity_log(farmer),
+            "deletion_request": _open_deletion_request_for_admin(farmer, request.user),
+            "action": "delete_request",
+            "delete_stage": "password",
+        })
+
+    active_request = _open_deletion_request_for_admin(farmer, request.user)
+    if active_request and active_request.status == "pending_partner_approval":
+        messages.info(request, "This farmer deletion is already awaiting partner approval.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    otp_code = _build_otp_code()
+    otp_expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+    if active_request:
+        deletion_request = active_request
+    else:
+        deletion_request = FarmerDeletionRequest(farmer=farmer, requested_by=request.user)
+
+    deletion_request.status = "otp_pending"
+    deletion_request.otp_hash = make_password(otp_code)
+    deletion_request.otp_expires_at = otp_expires_at
+    deletion_request.otp_verified_at = None
+    deletion_request.partner_reviewer = None
+    deletion_request.rejection_reason = ""
+    deletion_request.save()
+
+    email_sent, email_error = _send_deletion_otp_email(request.user, farmer, otp_code)
+    if not email_sent:
+        messages.error(request, f"Could not send OTP email: {email_error or 'unknown email backend error'}")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    messages.success(request, "OTP sent to your admin email. Enter it to submit deletion for partner approval.")
+    return render(request, "Farmers/review_farmer.html", {
+        "farmer": farmer,
+        "sheet1": getattr(farmer, "assessment_sheet1", None),
+        "sheet2": getattr(farmer, "assessment_sheet2", None),
+        "sheet3": getattr(farmer, "assessment_sheet3", None),
+        "activity_log": _build_farmer_activity_log(farmer),
+        "deletion_request": deletion_request,
+        "action": "delete_request",
+        "delete_stage": "otp",
+    })
+
+
+@login_required
+def verify_farmer_deletion_otp(request, farmer_id):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    farmer = get_object_or_404(Farmer, pk=farmer_id, profile__role='farmer')
+    deletion_request = _open_deletion_request_for_admin(farmer, request.user)
+    if not deletion_request or deletion_request.status != "otp_pending":
+        messages.error(request, "No OTP-pending deletion request was found for this farmer.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    otp = request.POST.get("otp_code", "").strip()
+    if not otp:
+        messages.error(request, "Enter the OTP sent to your email.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    if not deletion_request.otp_expires_at or deletion_request.otp_expires_at < timezone.now():
+        messages.error(request, "OTP expired. Start deletion again to receive a new OTP.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    if not check_password(otp, deletion_request.otp_hash):
+        messages.error(request, "Invalid OTP. Please try again.")
+        return redirect("review_farmer", farmer_id=farmer.pk)
+
+    deletion_request.status = "pending_partner_approval"
+    deletion_request.otp_hash = ""
+    deletion_request.otp_verified_at = timezone.now()
+    deletion_request.save(update_fields=["status", "otp_hash", "otp_verified_at", "updated_at"])
+
+    partner_users = Farmer.objects.filter(
+        profile__role__in=["investor", "analyst"],
+        is_active=True,
+    )
+    for partner_user in partner_users:
+        Message.objects.create(
+            sender=request.user,
+            receiver=partner_user,
+            content=(
+                f"Farmer deletion approval needed for '{farmer.username}' ({farmer.email}). "
+                "Please review in Partner Dashboard > Admin & Data Governance."
+            ),
+        )
+
+    messages.success(request, "Deletion request submitted to partner for final approval.")
+    return redirect("review_farmer", farmer_id=farmer.pk)
+
+
+@login_required
+def partner_approve_farmer_deletion(request, deletion_request_id):
+    denied = _require_partner(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    deletion_request = get_object_or_404(
+        FarmerDeletionRequest,
+        pk=deletion_request_id,
+        status="pending_partner_approval",
+    )
+    farmer = deletion_request.farmer
+    admin_user = deletion_request.requested_by
+    field_agent = getattr(getattr(farmer, "profile", None), "created_by_agent", None)
+    farmer_username = farmer.username
+
+    with transaction.atomic():
+        if field_agent and field_agent.is_active:
+            Message.objects.create(
+                sender=request.user,
+                receiver=field_agent,
+                content=(
+                    f"Farmer account '{farmer_username}' was permanently deleted after partner approval."
+                ),
+            )
+
+        AdminNotification.objects.filter(related_farmer=farmer).delete()
+        FarmerDeletionRequest.objects.filter(farmer=farmer).delete()
+        farmer.delete()
+
+    if admin_user and admin_user.is_active:
+        Message.objects.create(
+            sender=request.user,
+            receiver=admin_user,
+            content=f"Deletion approved and completed for farmer '{farmer_username}'.",
+        )
+
+    messages.success(request, "Farmer deletion approved and completed permanently.")
+    return redirect("partner_dashboard")
+
+
+@login_required
+def partner_reject_farmer_deletion(request, deletion_request_id):
+    denied = _require_partner(request)
+    if denied:
+        return denied
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    deletion_request = get_object_or_404(
+        FarmerDeletionRequest,
+        pk=deletion_request_id,
+        status="pending_partner_approval",
+    )
+    reason = request.POST.get("reason", "").strip() or "No reason provided."
+    deletion_request.status = "rejected"
+    deletion_request.partner_reviewer = request.user
+    deletion_request.rejection_reason = reason
+    deletion_request.save(update_fields=["status", "partner_reviewer", "rejection_reason", "updated_at"])
+
+    if deletion_request.requested_by and deletion_request.requested_by.is_active:
+        Message.objects.create(
+            sender=request.user,
+            receiver=deletion_request.requested_by,
+            content=(
+                f"Partner rejected deletion request for farmer '{deletion_request.farmer.username}'. "
+                f"Reason: {reason}"
+            ),
+        )
+
+    messages.info(request, "Farmer deletion request rejected.")
+    return redirect("partner_dashboard")
 
 
 def _send_farmer_password_setup_email(request, farmer):
@@ -4319,6 +4903,10 @@ def farm_assessment_sheet3(request, farmer_id):
                 assessment.photos_complete = True
             
             assessment.save()
+            farmer_profile, _ = UserProfile.objects.get_or_create(user=farmer)
+            if assessment.photo_of_farmer:
+                farmer_profile.profile_photo = assessment.photo_of_farmer
+                farmer_profile.save(update_fields=["profile_photo"])
             messages.success(
                 request,
                 "✅ Assessment Complete! All three sheets have been submitted successfully."

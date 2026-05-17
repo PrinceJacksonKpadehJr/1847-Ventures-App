@@ -1,34 +1,648 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Farmer Dashboard — 1847 Ventures</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard | 1847 Ventures</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-        .navbar { background: #2c7a3a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; }
-        .navbar a { color: white; text-decoration: none; margin-left: 15px; }
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
-        h2 { color: #2c7a3a; }
+        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap");
+
+        :root {
+            --forest-900: #0f341f;
+            --forest-700: #1b5a34;
+            --forest-500: #2f7c4b;
+            --sun-500: #ef9f1f;
+            --sand-100: #f8f5eb;
+            --sand-200: #efe9d8;
+            --charcoal: #1a211c;
+            --white: #ffffff;
+            --muted: #5a665d;
+            --ring: rgba(239, 159, 31, 0.28);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Manrope", sans-serif;
+            color: var(--charcoal);
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.68), transparent 34%),
+                radial-gradient(circle at 85% 8%, rgba(239, 159, 31, 0.12), transparent 28%),
+                linear-gradient(180deg, #edf7ef 0%, #f7f3e7 46%, #f2ecdd 100%);
+            min-height: 100vh;
+        }
+
+            .layout {
+                display: grid;
+                grid-template-columns: 300px 1fr;
+                min-height: 100vh;
+        }
+
+            .sidebar {
+                background: #0f2d1f;
+                color: #e7f4eb;
+                padding: 18px 14px;
+                border-right: 1px solid rgba(255,255,255,.1);
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            .sidebar-header {
+            display: flex;
+            align-items: center;
+                gap: 10px;
+                margin-bottom: 14px;
+        }
+
+            .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+                color: #fff;
+            text-decoration: none;
+            font-family: "Space Grotesk", sans-serif;
+                font-size: .95rem;
+            font-weight: 700;
+        }
+
+        .brand-mark {
+                width: 36px;
+                height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+        }
+
+            .profile-card {
+                background: rgba(255,255,255,.08);
+                border: 1px solid rgba(255,255,255,.16);
+                border-radius: 12px;
+                padding: 12px;
+                margin-bottom: 12px;
+                text-align: center;
+            }
+
+            .profile-photo {
+                width: 86px;
+                height: 86px;
+                margin: 0 auto 10px;
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,.35);
+                overflow: hidden;
+            display: flex;
+            align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,.14);
+                font-weight: 700;
+                font-size: 1.1rem;
+        }
+
+            .profile-photo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .sidebar-label {
+                font-size: .8rem;
+                color: #b9d3c0;
+                display: block;
+                margin-bottom: 6px;
+                text-align: left;
+            }
+
+            .sidebar-file-input {
+                width: 100%;
+                color: #dcebe1;
+                margin-bottom: 8px;
+            }
+
+            .sidebar-btn,
+            .sidebar-link {
+                display: block;
+                width: 100%;
+                text-align: left;
+                border: 1px solid rgba(255,255,255,.15);
+                background: rgba(255,255,255,.08);
+                color: #e7f4eb;
+                border-radius: 8px;
+                padding: 10px 12px;
+                text-decoration: none;
+                font-size: .9rem;
+                font-weight: 700;
+                cursor: pointer;
+                margin-bottom: 8px;
+            }
+
+            .sidebar-btn.active { background: rgba(255,255,255,.2); }
+            .sidebar-link:hover,
+            .sidebar-btn:hover { background: rgba(255,255,255,.16); }
+
+            .content {
+                padding: 18px;
+            }
+
+            .content-shell {
+                width: min(1160px, 98%);
+                margin: 0 auto;
+            }
+
+            .top-row {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .top-chip {
+                color: #fff;
+                background: rgba(16,53,31,.9);
+                border: 1px solid rgba(255,255,255,.15);
+                border-radius: 999px;
+                padding: 8px 12px;
+                text-decoration: none;
+                font-weight: 700;
+                font-size: .85rem;
+            }
+
+            .view-panel { display: none; }
+            .view-panel.active { display: block; }
+
+        .hero {
+            background: rgba(255,255,255,.65);
+            border: 1px solid rgba(27,90,52,.16);
+            border-radius: var(--radius-lg);
+            padding: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: rgba(47, 124, 75, 0.12);
+            border: 1px solid rgba(47, 124, 75, 0.2);
+            color: var(--forest-700);
+            padding: .3rem .7rem;
+            border-radius: 999px;
+            font-size: .76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3 { font-family: "Space Grotesk", sans-serif; margin: 0; }
+
+        h1 { margin-top: .8rem; color: #133f28; font-size: clamp(1.5rem, 2.4vw, 2.1rem); }
+
+        .muted { color: #435649; }
+
+        .stats-grid {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .75rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid rgba(18, 58, 35, 0.08);
+            border-radius: 12px;
+            padding: 0.85rem;
+        }
+
+        .stat-card strong {
+            display: block;
+            font-size: 1.4rem;
+            color: var(--forest-700);
+            line-height: 1;
+        }
+
+        .section {
+            margin-top: 1rem;
+            background: rgba(255,255,255,.7);
+            border: 1px solid rgba(19,63,40,.1);
+            border-radius: var(--radius-lg);
+            padding: 1.15rem;
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .9rem;
+        }
+
+        .card {
+            background: linear-gradient(180deg, var(--sand-100), var(--sand-200));
+            border: 1px solid rgba(22, 67, 42, 0.08);
+            border-radius: var(--radius-md);
+            padding: .95rem;
+        }
+
+        .card h3 {
+            font-size: 1.04rem;
+            color: #15432a;
+            margin-bottom: .5rem;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .7rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: .3rem;
+        }
+
+        .field.full { grid-column: 1 / -1; }
+
+        .field label { font-size: .83rem; font-weight: 700; color: #274e39; }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            border: 1px solid #cad8ce;
+            background: #fbfdfb;
+            border-radius: 10px;
+            padding: .62rem .72rem;
+            font-size: .93rem;
+            font-family: "Manrope", sans-serif;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            outline: none;
+            border-color: var(--sun-500);
+            box-shadow: 0 0 0 3px var(--ring);
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #174c2e, #2a7948);
+            color: #fff;
+            font-weight: 700;
+            padding: .66rem 1.2rem;
+            cursor: pointer;
+        }
+
+        .btn:hover { filter: brightness(1.06); }
+
+        .notice {
+            margin-bottom: .8rem;
+            padding: .65rem .8rem;
+            border-radius: 10px;
+            border: 1px solid #8bd6a0;
+            background: #e9f8ed;
+            color: #15572c;
+            font-size: .9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .9rem;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td { text-align: left; padding: .62rem .6rem; border-bottom: 1px solid #edf2ed; }
+        thead { background: #f1f8f2; }
+
+        .badge {
+            display: inline-flex;
+            padding: .2rem .52rem;
+            border-radius: 999px;
+            font-size: .73rem;
+            font-weight: 700;
+        }
+
+        .pending { background: #fff3cd; color: #7a5900; }
+        .verified { background: #d4f5de; color: #145c2c; }
+        .rejected { background: #f9d6d3; color: #842029; }
+
+        .landing-hero {
+            display: grid;
+            grid-template-columns: 1.1fr .9fr;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .landing-media {
+            border-radius: 16px;
+            border: 1px solid rgba(18,58,35,.1);
+            background: linear-gradient(140deg, #134028, #2f7c4b);
+            color: #fff;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .landing-media h3 {
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+
+        .split-cards {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .impact {
+            background: #fff;
+            border: 1px solid rgba(18,58,35,.08);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .impact h4 {
+            margin: 0 0 4px;
+            font-family: "Space Grotesk", sans-serif;
+            color: #1d4e31;
+            font-size: .95rem;
+        }
+
+        .mobile-toggle {
+            display: none;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,.15);
+            background: rgba(15,45,31,.95);
+            color: #fff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed;
+                z-index: 100;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                transition: transform .2s ease;
+                width: min(300px, 88vw);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .mobile-toggle { display: inline-block; }
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .split { grid-template-columns: 1fr; }
+            .landing-hero { grid-template-columns: 1fr; }
+            .split-cards { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-<div class="navbar">
-    <strong style="display:flex; align-items:center; gap:10px;">
-        <img src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.4);">
-        1847 Ventures — Farmer Dashboard
-    </strong>
-    <div>
-        Logged in as {{ request.user.username }}
-        <a href="{% url 'inbox' %}" style="color:white;margin-left:15px;">💬 Messages{% if unread_notifications_count %}<span style="background:red;padding:2px 6px;border-radius:3px;font-size:11px;margin-left:4px;">{{ unread_notifications_count }}</span>{% endif %}</a>
-        {% if request.user.is_superuser %}<a href="{% url 'superuser_dashboard_selector' %}">Switch Dashboard</a>{% endif %}
-        <a href="{% url 'logout' %}">Logout</a>
-    </div>
+<div class="layout">
+    <aside class="sidebar" id="farmerSidebar">
+        <div class="sidebar-header">
+            <a class="brand" href="#">
+                <img class="brand-mark" src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo">
+                <span>Farmer Portal</span>
+            </a>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-photo">
+                {% if farmer_profile_photo_url %}
+                <img src="{{ farmer_profile_photo_url }}" alt="Farmer profile photo">
+                {% else %}
+                {{ request.user.username|slice:":2"|upper }}
+                {% endif %}
+            </div>
+            <p style="font-weight:700; margin-bottom:4px;">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p style="font-size:.82rem; color:#b9d3c0; margin-top:0;">Farmer Account</p>
+            <p style="font-size:.78rem; color:#b9d3c0; margin:8px 0 0; text-align:left;">
+                Profile photo is managed by your field agent.
+            </p>
+        </div>
+
+        <button class="sidebar-btn active" id="showLandingBtn" type="button" onclick="showPanel('landing')">Landing Page</button>
+        <button class="sidebar-btn" id="showWorkspaceBtn" type="button" onclick="showPanel('workspace')">Farmer Dashboard</button>
+        <a class="sidebar-link" href="{% url 'inbox' %}">Messages{% if unread_notifications_count %} ({{ unread_notifications_count }}){% endif %}</a>
+        {% if request.user.is_superuser %}<a class="sidebar-link" href="{% url 'superuser_dashboard_selector' %}">Switch Dashboard</a>{% endif %}
+        <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
+    </aside>
+
+    <main class="content">
+        <div class="content-shell">
+            <button class="mobile-toggle" type="button" onclick="toggleMobileSidebar()">Menu</button>
+            <div class="top-row">
+                <span class="top-chip">{{ request.user.username }}</span>
+                <a class="top-chip" href="{% url 'inbox' %}">Messages</a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="notice">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <section class="view-panel active" id="landingPanel">
+                <div class="hero landing-hero">
+                    <div>
+                        <span class="eyebrow">1847 Ventures</span>
+                        <h1>Cocoa. Carbon. Communities.</h1>
+                        <p class="muted">Your account now opens on the same landing-page style experience. Use the left menu to open Farmer Dashboard when you need to submit activities or track approvals.</p>
+                        <div class="stats-grid" style="margin-top:12px;">
+                            <div class="stat-card"><strong>{{ activity_stats.total }}</strong><span>Total Activities</span></div>
+                            <div class="stat-card"><strong>{{ activity_stats.approved }}</strong><span>Approved</span></div>
+                            <div class="stat-card"><strong>{{ activity_stats.pending_verification }}</strong><span>Pending Verification</span></div>
+                            <div class="stat-card"><strong>{{ activity_stats.verified_waiting_admin }}</strong><span>Pending Admin</span></div>
+                        </div>
+                    </div>
+                    <div class="landing-media">
+                        <div>
+                            <h3>Field to Finance Visibility</h3>
+                            <p style="margin:0; color: rgba(255,255,255,.88);">Track what you changed on your farm and see each step from field-agent verification to final admin approval.</p>
+                        </div>
+                        <div style="font-weight:700; font-size:.95rem;">"Every update you submit powers better decisions."</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 style="font-size:1.16rem; color:#15432a; margin-bottom:.6rem;">Impact Areas</h2>
+                    <div class="split-cards">
+                        <div class="impact">
+                            <h4>Farm Productivity</h4>
+                            <p class="muted">Track additional tree planting, better tools, and agronomic habits over time.</p>
+                        </div>
+                        <div class="impact">
+                            <h4>Carbon and Shade</h4>
+                            <p class="muted">Capture tree and agroforestry improvements that support climate-friendly farming.</p>
+                        </div>
+                        <div class="impact">
+                            <h4>Approval Pipeline</h4>
+                            <p class="muted">Each activity follows a clear path: farmer submit, field agent verify, admin approve.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="view-panel" id="workspacePanel">
+                <section class="hero">
+                    <span class="eyebrow">Farm Activity Workspace</span>
+                    <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
+                    <p class="muted">Track your profile and activity updates. Every activity is verified by your field agent before it is sent to admin for approval.</p>
+                    <div class="stats-grid">
+                        <div class="stat-card"><strong>{{ activity_stats.total }}</strong><span>Total Activities</span></div>
+                        <div class="stat-card"><strong>{{ activity_stats.pending_verification }}</strong><span>Pending Agent Verification</span></div>
+                        <div class="stat-card"><strong>{{ activity_stats.verified_waiting_admin }}</strong><span>Pending Admin Approval</span></div>
+                        <div class="stat-card"><strong>{{ activity_stats.approved }}</strong><span>Approved Updates</span></div>
+                    </div>
+                </section>
+
+                <section class="section split">
+                    <article class="card">
+                        <h3>Farmer Profile</h3>
+                        <p><strong>Name:</strong> {{ farmer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}</p>
+                        <p><strong>Email:</strong> {{ request.user.email|default:"-" }}</p>
+                        <p><strong>Farm Area:</strong> {{ farmer_profile.location|default:"-" }}</p>
+                        <p><strong>Farm Size:</strong> {{ farmer_profile.farm_size|default:"-" }}</p>
+                        <p><strong>Shade Trees:</strong> {{ farmer_profile.has_shade_trees|default:"-" }}</p>
+                    </article>
+
+                    <article class="card">
+                        <h3>Submit New Activity</h3>
+                        {% if activity_form.errors %}
+                        <div class="notice" style="border-color:#e9a8a8;background:#fff0f0;color:#7a2121;">Please correct the highlighted activity form fields.</div>
+                        {% endif %}
+                        <form method="post" action="{% url 'submit_farmer_activity' %}">
+                            {% csrf_token %}
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label for="id_activity_type">Activity Type</label>
+                                    {{ activity_form.activity_type }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_date">Date</label>
+                                    {{ activity_form.date }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_additional_trees_added">Additional Trees Added</label>
+                                    {{ activity_form.additional_trees_added }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_quantity">Quantity</label>
+                                    {{ activity_form.quantity }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_tool_changed_from">Tool Changed From</label>
+                                    {{ activity_form.tool_changed_from }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_tool_changed_to">Tool Changed To</label>
+                                    {{ activity_form.tool_changed_to }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_habit_changed_from">Habit Changed From</label>
+                                    {{ activity_form.habit_changed_from }}
+                                </div>
+                                <div class="field">
+                                    <label for="id_habit_changed_to">Habit Changed To</label>
+                                    {{ activity_form.habit_changed_to }}
+                                </div>
+                                <div class="field full">
+                                    <label for="id_inputs_used">Inputs Used</label>
+                                    {{ activity_form.inputs_used }}
+                                </div>
+                                <div class="field full">
+                                    <label for="id_notes">Notes</label>
+                                    {{ activity_form.notes }}
+                                </div>
+                            </div>
+                            <button class="btn" type="submit">Submit for Verification</button>
+                        </form>
+                    </article>
+                </section>
+
+                <section class="section">
+                    <h2 style="font-size:1.16rem; color:#15432a; margin-bottom:.7rem;">Activity Pipeline</h2>
+                    {% if recent_activities %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Activity</th>
+                                <th>Field Agent Verification</th>
+                                <th>Admin Approval</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in recent_activities %}
+                            <tr>
+                                <td>{{ activity.date|date:"Y-m-d" }}</td>
+                                <td>{{ activity.get_activity_type_display }}</td>
+                                <td>
+                                    <span class="badge {% if activity.verification_status == 'verified' %}verified{% elif activity.verification_status == 'rejected' %}rejected{% else %}pending{% endif %}">
+                                        {{ activity.get_verification_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if activity.admin_approval_status == 'approved' %}verified{% elif activity.admin_approval_status == 'rejected' %}rejected{% else %}pending{% endif %}">
+                                        {{ activity.get_admin_approval_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if activity.additional_trees_added %}Trees: {{ activity.additional_trees_added }}<br>{% endif %}
+                                    {% if activity.tool_changed_to %}Tool: {{ activity.tool_changed_from|default:"-" }} -> {{ activity.tool_changed_to }}<br>{% endif %}
+                                    {% if activity.habit_changed_to %}Habit: {{ activity.habit_changed_from|default:"-" }} -> {{ activity.habit_changed_to }}<br>{% endif %}
+                                    {{ activity.notes|default:"-" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                        <p class="muted">No activities submitted yet.</p>
+                    {% endif %}
+                </section>
+            </section>
+        </div>
+    </main>
 </div>
-<div class="container">
-    <h2>Welcome, {{ request.user.username }}</h2>
-    <div class="card">
-        <p>Your account is active. Farm details and activities will appear here.</p>
-    </div>
-</div>
+
+<script>
+    function showPanel(panel) {
+        const landing = document.getElementById('landingPanel');
+        const workspace = document.getElementById('workspacePanel');
+        const landingBtn = document.getElementById('showLandingBtn');
+        const workspaceBtn = document.getElementById('showWorkspaceBtn');
+
+        if (panel === 'workspace') {
+            workspace.classList.add('active');
+            landing.classList.remove('active');
+            workspaceBtn.classList.add('active');
+            landingBtn.classList.remove('active');
+        } else {
+            landing.classList.add('active');
+            workspace.classList.remove('active');
+            landingBtn.classList.add('active');
+            workspaceBtn.classList.remove('active');
+        }
+
+        const sidebar = document.getElementById('farmerSidebar');
+        sidebar.classList.remove('open');
+    }
+
+    function toggleMobileSidebar() {
+        document.getElementById('farmerSidebar').classList.toggle('open');
+    }
+</script>
 </body>
 </html>

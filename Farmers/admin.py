@@ -17,6 +17,7 @@ from .models import (
     Announcement,
     Message,
     DatasetAuditLog,
+    FarmerDeletionRequest,
 )
 
 
@@ -143,3 +144,10 @@ class DatasetAuditLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(FarmerDeletionRequest)
+class FarmerDeletionRequestAdmin(admin.ModelAdmin):
+    list_display = ("farmer", "requested_by", "status", "partner_reviewer", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("farmer__username", "requested_by__username", "partner_reviewer__username")

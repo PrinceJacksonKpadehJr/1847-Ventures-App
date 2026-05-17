@@ -28,7 +28,7 @@
         .info-value a { color: #2c7a3a; text-decoration: none; }
         .info-value a:hover { text-decoration: underline; }
         label { display: block; margin-top: 14px; font-weight: bold; color: #333; }
-        textarea, input[type=text] {
+        textarea, input[type=text], input[type=password] {
             width: 100%; padding: 10px; margin-top: 5px;
             border: 1px solid #ccc; border-radius: 4px; font-size: 1em;
         }
@@ -373,6 +373,9 @@
                 <div class="timeline-meta">{{ item.timestamp|date:"Y-m-d H:i" }}{% if item.kind %} · {{ item.kind|title }}{% endif %}</div>
                 <div class="timeline-title">{{ item.title }}</div>
                 <div class="timeline-detail">{{ item.detail }}</div>
+                {% if item.status %}
+                <div class="timeline-meta">{{ item.status }}</div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -381,7 +384,48 @@
         {% endif %}
     </div>
 
-    {% if action == "reject" %}
+    {% if farmer.profile.is_approved %}
+    <div class="card">
+        <h3 class="section-title">Actions</h3>
+        <a class="btn btn-info" href="{% url 'inbox' %}?with={{ farmer.pk }}">💬 Message Farmer</a>
+        <a class="btn btn-danger" href="{% url 'review_farmer' farmer.pk %}?action=delete_request">🗑️ Delete Farmer</a>
+        {% if deletion_request %}
+        <p class="muted" style="margin-top:12px;">
+            Current deletion request status: <strong>{{ deletion_request.get_status_display }}</strong>
+            {% if deletion_request.status == 'rejected' and deletion_request.rejection_reason %}
+            <br>Partner reason: {{ deletion_request.rejection_reason }}
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+
+    {% if action == "delete_request" %}
+    <div class="card">
+        <h3 class="section-title">Secure Farmer Deletion</h3>
+        {% if deletion_request and deletion_request.status == "pending_partner_approval" %}
+            <p class="muted">This deletion request has already been submitted to a partner for final approval.</p>
+        {% elif delete_stage == "otp" or deletion_request and deletion_request.status == "otp_pending" %}
+            <p class="muted">Enter the OTP sent to your admin email to submit this deletion for partner approval.</p>
+            <form method="POST" action="{% url 'verify_farmer_deletion_otp' farmer.pk %}">
+                {% csrf_token %}
+                <label for="id_otp_code">OTP Code</label>
+                <input id="id_otp_code" name="otp_code" type="text" maxlength="6" placeholder="Enter 6-digit OTP" required>
+                <button class="btn btn-danger" type="submit">Submit to Partner Approval</button>
+            </form>
+        {% else %}
+            <p class="muted">To start deletion, confirm your admin password. OTP verification will be required next.</p>
+            <form method="POST" action="{% url 'initiate_farmer_deletion_request' farmer.pk %}">
+                {% csrf_token %}
+                <label for="id_admin_password">Admin Password</label>
+                <input id="id_admin_password" name="admin_password" type="password" placeholder="Enter your password" required>
+                <button class="btn btn-danger" type="submit">Send OTP</button>
+            </form>
+        {% endif %}
+        <a class="back-link" href="{% url 'review_farmer' farmer.pk %}">&larr; Back to Review</a>
+    </div>
+    {% endif %}
+
+    {% elif action == "reject" %}
     <!-- Reject Form -->
     <div class="card">
         <h3 class="section-title">Reject Farmer</h3>
@@ -417,7 +461,7 @@
     </div>
 
     {% else %}
-    <!-- Default: show all actions -->
+    <!-- Default: show pre-approval actions -->
     <div class="card">
         <h3 class="section-title">Actions</h3>
         <a class="btn btn-primary"

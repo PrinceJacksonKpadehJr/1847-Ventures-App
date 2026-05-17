@@ -460,6 +460,54 @@
         {% endfor %}
     </ul>
     {% endif %}
+
+    {% if pending_activity_verifications %}
+    <div class="section">
+        <h3 class="section-title">
+            <span class="icon">✅</span>
+            Activity Verification Queue
+            <span class="badge badge-request">{{ pending_activity_verifications|length }}</span>
+        </h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Farmer</th>
+                    <th>Date</th>
+                    <th>Activity</th>
+                    <th>Details</th>
+                    <th>Verification Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in pending_activity_verifications %}
+                <tr>
+                    <td><strong>{{ activity.farmer.username }}</strong></td>
+                    <td>{{ activity.date|date:"M d, Y" }}</td>
+                    <td>{{ activity.get_activity_type_display }}</td>
+                    <td>
+                        {% if activity.additional_trees_added %}Trees added: {{ activity.additional_trees_added }}<br>{% endif %}
+                        {% if activity.tool_changed_to %}Tool: {{ activity.tool_changed_from|default:"-" }} → {{ activity.tool_changed_to }}<br>{% endif %}
+                        {% if activity.habit_changed_to %}Habit: {{ activity.habit_changed_from|default:"-" }} → {{ activity.habit_changed_to }}<br>{% endif %}
+                        {{ activity.notes|default:"No notes" }}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'verify_farmer_activity' activity.pk %}" style="margin-bottom:8px;">
+                            {% csrf_token %}
+                            <input type="text" name="agent_note" placeholder="Verification note (optional)" style="width:100%; margin-bottom:6px;">
+                            <button class="btn btn-primary btn-sm" type="submit">Verify & Send to Admin</button>
+                        </form>
+                        <form method="post" action="{% url 'reject_farmer_activity_verification' activity.pk %}">
+                            {% csrf_token %}
+                            <input type="text" name="agent_note" placeholder="Reason for correction" style="width:100%; margin-bottom:6px;">
+                            <button class="btn btn-danger btn-sm" type="submit">Return for Correction</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
     
     <!-- Profile Section -->
     <div class="profile-card">

@@ -1252,6 +1252,51 @@
                                 <p>Dashboard layout, analysis filters, and drill state remain persisted via analysis-state and profile layout controls.</p>
                             </article>
                         </div>
+
+                        <article class="panel" style="margin-top: 16px;">
+                            <h3>Farmer Deletion Final Approvals</h3>
+                            <p class="panel-subtitle">Approve or reject admin-submitted deletion requests after OTP verification.</p>
+                            {% if pending_farmer_deletion_requests %}
+                            <div style="overflow-x:auto; margin-top: 10px;">
+                                <table class="dataset-grid-table" style="min-width: 900px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Farmer</th>
+                                            <th>Email</th>
+                                            <th>Requested By Admin</th>
+                                            <th>Requested At</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in pending_farmer_deletion_requests %}
+                                        <tr>
+                                            <td>{{ item.farmer.username }}</td>
+                                            <td>{{ item.farmer.email|default:"—" }}</td>
+                                            <td>{{ item.requested_by.username }}</td>
+                                            <td>{{ item.created_at|date:"M d, Y H:i" }}</td>
+                                            <td>
+                                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                                    <form method="post" action="{% url 'partner_approve_farmer_deletion' item.pk %}">
+                                                        {% csrf_token %}
+                                                        <button class="btn btn-primary" type="submit" onclick="return confirm('Approve permanent deletion for {{ item.farmer.username }}?')">Approve Deletion</button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'partner_reject_farmer_deletion' item.pk %}">
+                                                        {% csrf_token %}
+                                                        <input type="text" name="reason" placeholder="Reason for rejection" required style="padding:8px 10px; border:1px solid #d3dee4; border-radius:8px; min-width: 200px;">
+                                                        <button class="btn btn-warning" type="submit">Reject</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p style="margin-top:10px; color: var(--muted);">No farmer deletion requests are awaiting partner approval.</p>
+                            {% endif %}
+                        </article>
                     </div>
                 </section>
 

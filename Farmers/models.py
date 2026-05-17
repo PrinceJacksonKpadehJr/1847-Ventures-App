@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from django.db import IntegrityError
 import uuid
 
@@ -180,10 +181,25 @@ class Investment(models.Model):
 # =================================================
 class FarmActivity(models.Model):
     ACTIVITY_CHOICES = [
+        ("additional_trees", "Additional Trees Added"),
+        ("tool_change", "Change of Tool"),
+        ("habit_change", "Change of Habit"),
         ("planting", "Planting"),
         ("pruning", "Pruning"),
         ("spraying", "Spraying"),
         ("harvesting", "Harvesting"),
+    ]
+
+    VERIFICATION_STATUS_CHOICES = [
+        ("pending", "Pending Field Agent Verification"),
+        ("verified", "Verified by Field Agent"),
+        ("rejected", "Rejected by Field Agent"),
+    ]
+
+    ADMIN_APPROVAL_STATUS_CHOICES = [
+        ("pending", "Pending Admin Approval"),
+        ("approved", "Approved by Admin"),
+        ("rejected", "Rejected by Admin"),
     ]
 
     farmer = models.ForeignKey(
@@ -197,6 +213,44 @@ class FarmActivity(models.Model):
     inputs_used = models.TextField(blank=True, null=True)
     quantity = models.FloatField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    additional_trees_added = models.PositiveIntegerField(default=0)
+    tool_changed_from = models.CharField(max_length=150, blank=True)
+    tool_changed_to = models.CharField(max_length=150, blank=True)
+    habit_changed_from = models.CharField(max_length=200, blank=True)
+    habit_changed_to = models.CharField(max_length=200, blank=True)
+
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_STATUS_CHOICES,
+        default="pending",
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="verified_farm_activities",
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    agent_verification_notes = models.TextField(blank=True)
+
+    admin_approval_status = models.CharField(
+        max_length=20,
+        choices=ADMIN_APPROVAL_STATUS_CHOICES,
+        default="pending",
+    )
+    admin_reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admin_reviewed_farm_activities",
+    )
+    admin_reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_review_notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.farmer.username} - {self.activity_type}"
@@ -433,6 +487,45 @@ class PasswordResetRequest(models.Model):
 
     def __str__(self):
         return f"Password reset request for {self.user.username} ({self.status})"
+
+
+class FarmerDeletionRequest(models.Model):
+    STATUS_CHOICES = [
+        ("otp_pending", "OTP Pending"),
+        ("pending_partner_approval", "Pending Partner Approval"),
+        ("rejected", "Rejected"),
+    ]
+
+    farmer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="deletion_requests",
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="farmer_deletion_requests_created",
+    )
+    partner_reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="farmer_deletion_requests_reviewed",
+    )
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="otp_pending")
+    otp_hash = models.CharField(max_length=255, blank=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
+    otp_verified_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Deletion request: {self.farmer.username} ({self.status})"
 
 
 class InvestorDatasetImport(models.Model):

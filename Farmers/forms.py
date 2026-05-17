@@ -1,7 +1,7 @@
 from django import forms
 from pathlib import Path
 from .models import (
-    Farmer, UserProfile, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
+    Farmer, UserProfile, FarmActivity, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
 )
 
 
@@ -335,6 +335,55 @@ class InvestorDatasetUploadForm(forms.Form):
         if extension not in {".csv", ".xlsx", ".json"}:
             raise forms.ValidationError("Unsupported file type. Upload .csv, .xlsx, or .json files only.")
         return data_file
+
+
+class FarmerActivitySubmissionForm(forms.ModelForm):
+    class Meta:
+        model = FarmActivity
+        fields = [
+            "activity_type",
+            "date",
+            "additional_trees_added",
+            "tool_changed_from",
+            "tool_changed_to",
+            "habit_changed_from",
+            "habit_changed_to",
+            "inputs_used",
+            "quantity",
+            "notes",
+        ]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "inputs_used": forms.Textarea(attrs={"rows": 2, "placeholder": "Fertilizer, pruning tools, labor support, etc."}),
+            "notes": forms.Textarea(attrs={"rows": 3, "placeholder": "Brief activity notes from this week."}),
+            "tool_changed_from": forms.TextInput(attrs={"placeholder": "Previous tool (optional)"}),
+            "tool_changed_to": forms.TextInput(attrs={"placeholder": "Current tool"}),
+            "habit_changed_from": forms.TextInput(attrs={"placeholder": "Previous habit (optional)"}),
+            "habit_changed_to": forms.TextInput(attrs={"placeholder": "New habit"}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        activity_type = cleaned_data.get("activity_type")
+
+        additional_trees_added = cleaned_data.get("additional_trees_added") or 0
+        tool_changed_to = (cleaned_data.get("tool_changed_to") or "").strip()
+        habit_changed_to = (cleaned_data.get("habit_changed_to") or "").strip()
+
+        if activity_type == "additional_trees" and additional_trees_added <= 0:
+            self.add_error("additional_trees_added", "Enter how many additional trees were added.")
+
+        if activity_type == "tool_change" and not tool_changed_to:
+            self.add_error("tool_changed_to", "Enter the new tool now being used.")
+
+        if activity_type == "habit_change" and not habit_changed_to:
+            self.add_error("habit_changed_to", "Enter the new farming habit.")
+
+        cleaned_data["tool_changed_from"] = (cleaned_data.get("tool_changed_from") or "").strip()
+        cleaned_data["tool_changed_to"] = tool_changed_to
+        cleaned_data["habit_changed_from"] = (cleaned_data.get("habit_changed_from") or "").strip()
+        cleaned_data["habit_changed_to"] = habit_changed_to
+        return cleaned_data
 
 
 # =================================================

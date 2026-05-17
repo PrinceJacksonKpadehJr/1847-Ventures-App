@@ -706,6 +706,11 @@
             <div class="stat-label">Pending Approvals</div>
         </div>
         <div class="stat-card blue">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number">{{ stats.pending_activity_approvals }}</div>
+            <div class="stat-label">Activity Reviews</div>
+        </div>
+        <div class="stat-card blue">
             <div class="stat-icon">🧑‍🌾</div>
             <div class="stat-number">{{ stats.total_agents }}</div>
             <div class="stat-label">Field Agents</div>
@@ -785,7 +790,7 @@
                         <tbody>
                             {% for user_obj in users_by_category.admin %}
                             <tr>
-                                <td><a href="{% url 'review_farmer' user_obj.pk %}" style="color:#1f6a43; font-weight:700; text-decoration:none;">{{ user_obj.username }}</a></td>
+                                <td>{{ user_obj.username }}</td>
                                 <td>{{ user_obj.email|default:"—" }}</td>
                                 <td>
                                     {% if user_obj.id in pending_reset_request_user_ids %}
@@ -878,9 +883,10 @@
                         <tbody>
                             {% for user_obj in users_by_category.farmer %}
                             <tr>
-                                <td>{{ user_obj.username }}</td>
+                                <td><a href="{% url 'review_farmer' user_obj.pk %}" style="color:#1f6a43; font-weight:700; text-decoration:none;">{{ user_obj.username }}</a></td>
                                 <td>{{ user_obj.email|default:"—" }}</td>
                                 <td>
+                                    <a class="action-btn btn-sm btn-green" href="{% url 'review_farmer' user_obj.pk %}" style="margin-bottom:6px;">Review Profile</a>
                                     {% if user_obj.id in pending_reset_request_user_ids %}
                                     <form method="post" action="{% url 'generate_password_reset_link' user_obj.pk %}">{% csrf_token %}
                                         <button class="action-btn btn-sm btn-blue" type="submit">Reset Link</button>
@@ -898,6 +904,73 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">
+                    <span class="icon">🧾</span>
+                    Verified Farmer Activities Awaiting Approval
+                    {% if stats.pending_activity_approvals > 0 %}
+                    <span class="badge-count">{{ stats.pending_activity_approvals }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-subtitle">Field agents verify first. Admin performs final review and approval.</div>
+            </div>
+        </div>
+
+        {% if pending_activity_approvals %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Farmer Profile</th>
+                        <th>Date</th>
+                        <th>Activity</th>
+                        <th>Agent</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in pending_activity_approvals %}
+                    <tr>
+                        <td><a href="{% url 'review_farmer' activity.farmer.pk %}" style="color:#1f6a43; font-weight:700; text-decoration:none;">{{ activity.farmer.username }}</a></td>
+                        <td>{{ activity.date|date:"M d, Y" }}</td>
+                        <td>{{ activity.get_activity_type_display }}</td>
+                        <td>{{ activity.verified_by.username|default:"—" }}</td>
+                        <td>
+                            {% if activity.additional_trees_added %}Trees: {{ activity.additional_trees_added }}<br>{% endif %}
+                            {% if activity.tool_changed_to %}Tool: {{ activity.tool_changed_from|default:"-" }} → {{ activity.tool_changed_to }}<br>{% endif %}
+                            {% if activity.habit_changed_to %}Habit: {{ activity.habit_changed_from|default:"-" }} → {{ activity.habit_changed_to }}<br>{% endif %}
+                            {{ activity.notes|default:"No notes" }}
+                        </td>
+                        <td>
+                            <div class="td-actions">
+                                <a class="action-btn btn-sm btn-blue" href="{% url 'review_farmer' activity.farmer.pk %}">Review Profile</a>
+                                <form method="post" action="{% url 'approve_farmer_activity' activity.pk %}">
+                                    {% csrf_token %}
+                                    <button class="action-btn btn-sm btn-green" type="submit">Approve</button>
+                                </form>
+                                <form method="post" action="{% url 'reject_farmer_activity_approval' activity.pk %}">
+                                    {% csrf_token %}
+                                    <input type="text" name="admin_note" placeholder="Reason" style="margin-bottom:5px; width:140px;">
+                                    <button class="action-btn btn-sm btn-red" type="submit">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>No verified activity updates are waiting for admin approval.</p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- ===== PENDING FARMER APPROVALS ===== -->
