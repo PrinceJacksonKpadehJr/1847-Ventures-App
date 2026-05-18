@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -375,6 +376,36 @@
             font-size: .95rem;
         }
 
+        .meta-summary {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .meta-item {
+            background: #fff;
+            border: 1px solid rgba(18,58,35,.1);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .meta-item .label {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #547563;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+
+        .meta-item .value {
+            margin-top: 4px;
+            font-size: .94rem;
+            color: #1a3f2b;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
         .mobile-toggle {
             display: none;
             margin-bottom: 10px;
@@ -421,6 +452,7 @@
             .card { padding: .9rem; }
             .field-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr; }
+            .meta-summary { grid-template-columns: 1fr; }
             .mobile-toggle {
                 width: 100%;
                 text-align: left;
@@ -454,14 +486,15 @@
                 {% endif %}
             </div>
             <p style="font-weight:700; margin-bottom:4px;">{{ request.user.get_full_name|default:request.user.username }}</p>
-            <p style="font-size:.82rem; color:#b9d3c0; margin-top:0;">Farmer Account</p>
+            <p style="font-size:.82rem; color:#b9d3c0; margin-top:0;">FARMER</p>
             <p style="font-size:.78rem; color:#b9d3c0; margin:8px 0 0; text-align:left;">
-                Profile photo is managed by your field agent.
+                <strong style="color:#e4f1e8;">Farm Area:</strong> {{ farmer_profile.location|default:"-" }}<br>
+                <strong style="color:#e4f1e8;">Farm Size:</strong> {{ farmer_profile.farm_size|default:"-" }}
             </p>
         </div>
 
-        <button class="sidebar-btn active" id="showLandingBtn" type="button" onclick="showPanel('landing')">Landing Page</button>
-        <button class="sidebar-btn" id="showWorkspaceBtn" type="button" onclick="showPanel('workspace')">Farmer Dashboard</button>
+        <button class="sidebar-btn active" id="showLandingBtn" type="button" onclick="showPanel('landing')">HOME</button>
+        <button class="sidebar-btn" id="showWorkspaceBtn" type="button" onclick="showPanel('workspace')">MY PROFILE</button>
         <a class="sidebar-link" href="{% url 'inbox' %}">Messages{% if unread_notifications_count %} ({{ unread_notifications_count }}){% endif %}</a>
         {% if request.user.is_superuser %}<a class="sidebar-link" href="{% url 'superuser_dashboard_selector' %}">Switch Dashboard</a>{% endif %}
         <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
@@ -486,7 +519,8 @@
                     <div>
                         <span class="eyebrow">1847 Ventures</span>
                         <h1>Cocoa. Carbon. Communities.</h1>
-                        <p class="muted">Your account now opens on the same landing-page style experience. Use the left menu to open Farmer Dashboard when you need to submit activities or track approvals.</p>
+                        <p class="muted">Our Vision: 
+To become West Africa's most impactful cocoa and carbon enterprise by creating prosperity for farmers, restoring biodiversity, and setting a new benchmark for ethical cocoa investment.</p>
                         <div class="stats-grid" style="margin-top:12px;">
                             <div class="stat-card"><strong>{{ activity_stats.total }}</strong><span>Total Activities</span></div>
                             <div class="stat-card"><strong>{{ activity_stats.approved }}</strong><span>Approved</span></div>
@@ -497,9 +531,39 @@
                     <div class="landing-media">
                         <div>
                             <h3>Field to Finance Visibility</h3>
-                            <p style="margin:0; color: rgba(255,255,255,.88);">Track what you changed on your farm and see each step from field-agent verification to final admin approval.</p>
+                            <p style="margin:0; color: rgba(255,255,255,.88);">The more accurate your activities, the better the insights you'll gain for growth and success.</p>
                         </div>
                         <div style="font-weight:700; font-size:.95rem;">"Every update you submit powers better decisions."</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 style="font-size:1.16rem; color:#15432a; margin-bottom:.6rem;">Profile  Summary</h2>
+                    <div class="meta-summary">
+                        <div class="meta-item">
+                            <div class="label">Farmer Name</div>
+                            <div class="value">{{ farmer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="label">Username</div>
+                            <div class="value">{{ request.user.username }}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="label">Email</div>
+                            <div class="value">{{ request.user.email|default:"-" }}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="label">Farm Area</div>
+                            <div class="value">{{ farmer_profile.location|default:"-" }}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="label">Farm Size Category</div>
+                            <div class="value">{{ farmer_profile.farm_size|default:"-" }}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="label">Shade Trees</div>
+                            <div class="value">{{ farmer_profile.has_shade_trees|default:"-" }}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -516,7 +580,6 @@
                         </div>
                         <div class="impact">
                             <h4>Approval Pipeline</h4>
-                            <p class="muted">Each activity follows a clear path: farmer submit, field agent verify, admin approve.</p>
                         </div>
                     </div>
                 </div>
@@ -526,7 +589,7 @@
                 <section class="hero">
                     <span class="eyebrow">Farm Activity Workspace</span>
                     <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
-                    <p class="muted">Track your profile and activity updates. Every activity is verified by your field agent before it is sent to admin for approval.</p>
+                    <p class="muted">Track your profile and activity updates. Every activity is verified by your field agent.</p>
                     <div class="stats-grid">
                         <div class="stat-card"><strong>{{ activity_stats.total }}</strong><span>Total Activities</span></div>
                         <div class="stat-card"><strong>{{ activity_stats.pending_verification }}</strong><span>Pending Agent Verification</span></div>
@@ -550,7 +613,7 @@
                         {% if activity_form.errors %}
                         <div class="notice" style="border-color:#e9a8a8;background:#fff0f0;color:#7a2121;">Please correct the highlighted activity form fields.</div>
                         {% endif %}
-                        <form method="post" action="{% url 'submit_farmer_activity' %}">
+                        <form method="post" action="{% url 'submit_farmer_activity' %}" data-offline-queue="true" data-offline-label="Farmer activity submission" data-offline-success-message="Activity submitted successfully." data-offline-queue-message="No network right now. This activity was saved offline and will sync automatically." data-offline-reset-on-queue="true">
                             {% csrf_token %}
                             <div class="field-grid">
                                 <div class="field">
@@ -673,5 +736,6 @@
         document.getElementById('farmerSidebar').classList.toggle('open');
     }
 </script>
+<script src="{% static 'Farmers/js/offline_form_queue.js' %}?v=20260518-queuefix"></script>
 </body>
 </html>

@@ -5,12 +5,14 @@ from django.conf import settings
 from django.views.static import serve
 import os
 
-from Farmers.views import home, CustomLoginView, CustomLogoutView, request_password_reset_from_admin, page_not_found
+from Farmers.views import home, app_download, CustomLoginView, CustomLogoutView, request_password_reset_from_admin, page_not_found, service_worker
 
 handler404 = 'Farmers.views.page_not_found'
 
 urlpatterns = [
     path('', home, name='home'),
+    path('app-download/', app_download, name='app_download'),
+    path('sw.js', service_worker, name='service_worker'),
 
     # Auth at root level
     path('login/', CustomLoginView.as_view(), name='login'),

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -231,18 +232,25 @@
 
             async function requestDatasetRefresh() {
                 showStatus("info", "Triggering Power BI dataset refresh...");
-                const response = await fetch("{% url 'partner_powerbi_refresh_dataset' %}", {
+                const outcome = await window.OfflineActionQueue.runAction({
+                    url: "{% url 'partner_powerbi_refresh_dataset' %}",
                     method: "POST",
-                    credentials: "same-origin",
+                    payloadType: 'none',
                     headers: {
                         "X-CSRFToken": getCsrfToken(),
                         "Accept": "application/json",
                     },
+                    label: 'Trigger Power BI dataset refresh',
+                    queueMessage: 'Dataset refresh request saved offline and will sync automatically.',
+                    reloadOnSuccess: false,
                 });
-                const payload = await response.json();
-                if (!response.ok || !payload.ok) {
-                    throw new Error(payload.error || "Dataset refresh failed.");
+
+                if (outcome && outcome.queued) {
+                    showStatus("success", "Dataset refresh was queued offline and will be submitted when network access returns.");
+                    return;
                 }
+
+                const payload = outcome.result && outcome.result.json ? outcome.result.json : {};
                 const requestId = payload.refresh && payload.refresh.requestId ? payload.refresh.requestId : "submitted";
                 showStatus("success", `Dataset refresh ${requestId} has been submitted.`);
             }
@@ -265,5 +273,6 @@
                 .catch((err) => showStatus("error", err.message || "Unable to initialize embedded report."));
         })();
     </script>
+    <script src="{% static 'Farmers/js/offline_form_queue.js' %}"></script>
 </body>
 </html>

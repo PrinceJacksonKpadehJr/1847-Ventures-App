@@ -627,7 +627,7 @@
         {% if notifications %}
           {% for notif in notifications %}
           <div style="padding:12px 20px;border-bottom:1px solid #f0f2f5;background:{% if not notif.is_read %}#fffbf0{% else %}white{% endif %};cursor:pointer;"
-               onclick="fetch('{% url 'mark_notification_read' notif.id %}', {method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(()=>location.reload())">
+            onclick="queueNotificationRead('{% url 'mark_notification_read' notif.id %}'); return false;">
             <div style="font-size:.88rem;font-weight:600;color:#1a1a2e;">{{ notif.title }}</div>
             <div style="font-size:.78rem;color:#777;margin-top:2px;">{{ notif.message|truncatechars:60 }}</div>
             <div style="font-size:.72rem;color:#aaa;margin-top:3px;">{{ notif.created_at|date:"M d, g:i A" }}</div>
@@ -797,6 +797,29 @@ function goToConversation() {
   window.location.href = '?with=' + sel.value;
 }
 
+function queueNotificationRead(url) {
+  if (!window.OfflineActionQueue) {
+    return;
+  }
+
+  window.OfflineActionQueue.runAction({
+    url: url,
+    method: 'POST',
+    payloadType: 'none',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    label: 'Mark notification as read',
+    queueMessage: 'Notification update saved offline and will sync automatically.',
+    reloadOnSuccess: true,
+    onImmediateSuccess: function () {
+      window.location.reload();
+    }
+  }).then(function (outcome) {
+    if (outcome && outcome.queued) {
+      window.location.reload();
+    }
+  });
+}
+
 // If there's an active announcement tab item, switch to it
 {% if selected_announcement %}
 document.addEventListener('DOMContentLoaded', function() {
@@ -805,5 +828,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 {% endif %}
 </script>
+<script src="{% static 'Farmers/js/offline_form_queue.js' %}"></script>
 </body>
 </html>

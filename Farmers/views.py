@@ -21,7 +21,7 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.urls import Resolver404, resolve, reverse, reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password, check_password
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db import transaction
 from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmerDeletionRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
@@ -1416,12 +1416,29 @@ def mark_notification_read(request, notification_id):
 def dashboard(request):
     return render(request, "Farmers/dashboard.html")
 
+
+def service_worker(request):
+    """Serve the PWA service worker at /sw.js (root scope required)."""
+    content = render(request, "Farmers/sw.js").content
+    return HttpResponse(content, content_type="application/javascript")
+
+
 def home(request):
+    is_ajax_request = request.headers.get("x-requested-with") == "XMLHttpRequest"
+
     if request.method == "POST":
         form = HomeContactForm(request.POST)
         if form.is_valid():
             admin_users = Farmer.objects.filter(profile__role="admin", is_active=True)
             if not admin_users.exists():
+                if is_ajax_request:
+                    return JsonResponse(
+                        {
+                            "ok": False,
+                            "message": "No active admin is available to receive your request right now.",
+                        },
+                        status=503,
+                    )
                 messages.error(request, "No active admin is available to receive your request right now.")
             else:
                 payload = form.cleaned_data
@@ -1464,12 +1481,40 @@ def home(request):
                         fail_silently=True,
                     )
 
+                if is_ajax_request:
+                    return JsonResponse(
+                        {
+                            "ok": True,
+                            "message": "Thank you. Your request has been submitted to the admin team.",
+                        }
+                    )
+
                 messages.success(request, "Thank you. Your request has been submitted to the admin team.")
                 return redirect("home")
+        elif is_ajax_request:
+            errors = {
+                field: [str(error) for error in field_errors]
+                for field, field_errors in form.errors.items()
+            }
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Please correct the highlighted fields and try again.",
+                    "errors": errors,
+                },
+                status=400,
+            )
     else:
         form = HomeContactForm()
 
     return render(request, "Farmers/home.html", {"contact_form": form})
+
+
+def app_download(request):
+    target = (request.GET.get("target") or "desktop").strip().lower()
+    if target not in {"desktop", "android"}:
+        target = "desktop"
+    return render(request, "Farmers/app_download.html", {"target": target})
 
 class CustomLoginView(LoginView):
     template_name = "Farmers/login.html"
@@ -2604,6 +2649,7 @@ def _build_partner_data_import_context(user, upload_form=None, preview_id=""):
 
     preview_rows = []
     preview_columns = []
+    active_schema = []
     if preview_batch:
         all_rows = [row.payload for row in preview_batch.rows.order_by("row_number")[:10000]]
         live_preview = LivePreviewGenerator.generate_preview(
@@ -2612,7 +2658,8 @@ def _build_partner_data_import_context(user, upload_form=None, preview_id=""):
             column_metadata=preview_batch.column_metadata or {},
             row_operations=preview_batch.row_operations or {},
         )
-        preview_columns = [item.get("column") for item in (live_preview.get("schema") or [])]
+        active_schema = live_preview.get("schema") or []
+        preview_columns = [item.get("column") for item in active_schema]
         for idx, row in enumerate((live_preview.get("rows") or [])[:20], start=1):
             preview_rows.append(
                 {
@@ -2678,6 +2725,7 @@ def _build_partner_data_import_context(user, upload_form=None, preview_id=""):
         "preview_batch": preview_batch,
         "preview_rows": preview_rows,
         "preview_columns": preview_columns,
+        "active_schema": active_schema,
         "semantic_model": semantic_model,
         "dataset_analytics": dataset_analytics,
         "initial_analysis_state": initial_analysis_state,

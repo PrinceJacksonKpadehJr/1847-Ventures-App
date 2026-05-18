@@ -736,6 +736,35 @@
         modal.classList.add('active');
     }
 
+    function runQueuedDataPrepAction(url, formData, successMessage, queueLabel, onImmediateSuccess) {
+        if (!window.OfflineActionQueue) {
+            showFriendlyError('Offline queue is unavailable.');
+            return;
+        }
+
+        window.OfflineActionQueue.runFormDataAction({
+            url: url,
+            formData: formData,
+            headers: { 'X-CSRFToken': csrfToken },
+            label: queueLabel,
+            queueMessage: 'No network right now. This data prep action was saved offline and will sync automatically.',
+            reloadOnSuccess: true,
+            onImmediateSuccess: function (result) {
+                if (typeof onImmediateSuccess === 'function') {
+                    onImmediateSuccess(result.json || {});
+                }
+            },
+            onImmediateError: function (error) {
+                const data = error.result && error.result.json ? error.result.json : {};
+                showFriendlyError(data.error || data.message || 'Could not apply the requested change.');
+            }
+        }).then((outcome) => {
+            if (outcome && outcome.queued) {
+                showFloatingToast(successMessage + ' Queued for sync.', 'success');
+            }
+        }).catch(() => showFriendlyError('Could not apply the requested change.'));
+    }
+
     function executeColumnOperation() {
         const { type, operation, column } = currentModalOp;
         const formData = new FormData();
@@ -751,22 +780,11 @@
             formData.append('semantic_tag', document.getElementById('semanticTag').value);
         }
 
-        fetch('{% url "data_prep_column_operation" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-                closeModal('columnModal');
-                showFloatingToast('Column update applied.', 'success');
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_column_operation" %}', formData, 'Column update applied.', 'Column update', function (data) {
+            updatePreview(data.preview);
+            closeModal('columnModal');
+            showFloatingToast('Column update applied.', 'success');
+        });
     }
 
     function toggleColumnHide(columnName) {
@@ -776,20 +794,9 @@
         formData.append('column_name', columnName);
         formData.append('hidden', 'true');
 
-        fetch('{% url "data_prep_column_operation" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_column_operation" %}', formData, 'Column visibility updated.', 'Hide column', function (data) {
+            updatePreview(data.preview);
+        });
     }
 
     function removeColumn(columnName) {
@@ -799,21 +806,10 @@
             formData.append('operation', 'remove');
             formData.append('column_name', columnName);
 
-            fetch('{% url "data_prep_column_operation" %}', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-CSRFToken': csrfToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.ok) {
-                    updatePreview(data.preview);
-                    showFloatingToast('Column removed.', 'success');
-                } else {
-                    showFriendlyError(data.error);
-                }
-            })
-            .catch(() => showFriendlyError('Network error'));
+            runQueuedDataPrepAction('{% url "data_prep_column_operation" %}', formData, 'Column removed.', 'Remove column', function (data) {
+                updatePreview(data.preview);
+                showFloatingToast('Column removed.', 'success');
+            });
         }
     }
 
@@ -833,22 +829,11 @@
         formData.append('operator', document.getElementById('filterOperator').value);
         formData.append('value', document.getElementById('filterValue').value);
 
-        fetch('{% url "data_prep_row_operation" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-                closeModal('rowFilterModal');
-                showFloatingToast('Filter applied.', 'success');
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_row_operation" %}', formData, 'Filter applied.', 'Apply dataset filter', function (data) {
+            updatePreview(data.preview);
+            closeModal('rowFilterModal');
+            showFloatingToast('Filter applied.', 'success');
+        });
     }
 
     function executeExcludeNulls() {
@@ -857,22 +842,11 @@
         formData.append('operation', 'exclude_nulls');
         formData.append('columns', document.getElementById('excludeNullsColumns').value);
 
-        fetch('{% url "data_prep_row_operation" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-                closeModal('excludeNullsModal');
-                showFloatingToast('Null exclusion applied.', 'success');
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_row_operation" %}', formData, 'Null exclusion applied.', 'Exclude null rows', function (data) {
+            updatePreview(data.preview);
+            closeModal('excludeNullsModal');
+            showFloatingToast('Null exclusion applied.', 'success');
+        });
     }
 
     function removeDuplicates() {
@@ -880,21 +854,10 @@
         formData.append('dataset_id', datasetId);
         formData.append('operation', 'remove_duplicates');
 
-        fetch('{% url "data_prep_row_operation" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-                showFloatingToast('Duplicate rows removed.', 'success');
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_row_operation" %}', formData, 'Duplicate rows removed.', 'Remove duplicate rows', function (data) {
+            updatePreview(data.preview);
+            showFloatingToast('Duplicate rows removed.', 'success');
+        });
     }
 
     function performUndoRedo(action) {
@@ -902,23 +865,12 @@
         formData.append('dataset_id', datasetId);
         formData.append('action', action);
 
-        fetch('{% url "data_prep_undo_redo" %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                updatePreview(data.preview);
-                document.getElementById('undoBtn').disabled = !data.can_undo;
-                document.getElementById('redoBtn').disabled = !data.can_redo;
-                showFloatingToast(action === 'undo' ? 'Last action undone.' : 'Action redone.', 'success');
-            } else {
-                showFriendlyError(data.error);
-            }
-        })
-        .catch(() => showFriendlyError('Network error'));
+        runQueuedDataPrepAction('{% url "data_prep_undo_redo" %}', formData, action === 'undo' ? 'Last action undone.' : 'Action redone.', action === 'undo' ? 'Undo data prep change' : 'Redo data prep change', function (data) {
+            updatePreview(data.preview);
+            document.getElementById('undoBtn').disabled = !data.can_undo;
+            document.getElementById('redoBtn').disabled = !data.can_redo;
+            showFloatingToast(action === 'undo' ? 'Last action undone.' : 'Action redone.', 'success');
+        });
     }
 
     function updatePreview(preview) {
@@ -969,5 +921,6 @@
     // Custom template filter for getting dict item
     window.getItem = (obj, key) => obj[key] || '';
 </script>
+<script src="{% static 'Farmers/js/offline_form_queue.js' %}"></script>
 </body>
 </html>

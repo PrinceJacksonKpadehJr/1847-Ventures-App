@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download App | 1847 Ventures</title>
+    <meta name="theme-color" content="#0f341f">
+    <link rel="manifest" href="{% static 'Farmers/pwa/manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'Farmers/pwa/icons/apple-touch-icon-180.png' %}">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top right, #f0f7f3 0%, #ddece3 46%, #f9fcfa 100%);
+            color: #113724;
+            display: grid;
+            place-items: center;
+            padding: 1rem;
+        }
+
+        .card {
+            width: min(560px, 100%);
+            background: #fff;
+            border: 1px solid rgba(17, 55, 36, 0.12);
+            border-radius: 20px;
+            padding: 1.2rem;
+            box-shadow: 0 18px 40px rgba(13, 37, 25, 0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .brand img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        h1 {
+            margin: 0.8rem 0 0.2rem;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.35rem;
+        }
+
+        p {
+            margin: 0.25rem 0;
+            color: #365847;
+        }
+
+        .status-wrap {
+            margin-top: 1rem;
+            border: 1px solid rgba(17, 55, 36, 0.15);
+            border-radius: 14px;
+            background: #f7fbf8;
+            padding: 0.9rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 0.24rem 0.7rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-weight: 800;
+            border: 1px solid transparent;
+        }
+
+        .status-badge.info {
+            background: #e9f4ff;
+            border-color: #88b5dd;
+            color: #24537a;
+        }
+
+        .status-badge.success {
+            background: #eaf9ef;
+            border-color: #5fbf7b;
+            color: #1e7a3c;
+        }
+
+        .status-badge.error {
+            background: #fdeeee;
+            border-color: #e2a2a2;
+            color: #8a2b2b;
+        }
+
+        #status-text {
+            margin-top: 0.55rem;
+            font-size: 0.92rem;
+            color: #2f4a3b;
+        }
+
+        .actions {
+            margin-top: 0.9rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        button,
+        a.button-link {
+            border: 0;
+            border-radius: 999px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 700;
+            padding: 0.58rem 1rem;
+            font-size: 0.87rem;
+        }
+
+        #retry-install {
+            background: #15452c;
+            color: #fff;
+        }
+
+        a.button-link {
+            background: #e6efe9;
+            color: #17462d;
+        }
+
+        .hint {
+            margin-top: 0.8rem;
+            font-size: 0.82rem;
+            color: #4d6859;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="brand">
+            <img src="/media/profile_pictures/1847 Logo.png" alt="1847 Ventures Logo">
+            <strong>1847 Ventures</strong>
+        </div>
+        <h1>Starting App Installation</h1>
+        <p>We are launching the install prompt automatically for this {{ target }} flow.</p>
+
+        <section class="status-wrap" aria-live="polite">
+            <span class="status-badge info" id="status-badge">Preparing</span>
+            <p id="status-text">Checking install availability...</p>
+
+            <div class="actions">
+                <button type="button" id="retry-install">Try Again</button>
+                <a class="button-link" href="{% url 'home' %}">Back to Home</a>
+            </div>
+
+            <p class="hint" id="status-hint">Keep this tab open while the install prompt is loading.</p>
+        </section>
+    </main>
+
+    <script>
+    (function () {
+        'use strict';
+
+        const statusBadge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+        const retryInstall = document.getElementById('retry-install');
+        const statusHint = document.getElementById('status-hint');
+        const isAndroidTarget = '{{ target }}' === 'android';
+        const isAndroidUA = /Android/i.test(navigator.userAgent || '');
+        let deferredPrompt = null;
+
+        function setStatus(type, badge, text, hint) {
+            if (!statusBadge || !statusText) return;
+            statusBadge.className = 'status-badge ' + type;
+            statusBadge.textContent = badge;
+            statusText.textContent = text;
+            if (statusHint) {
+                statusHint.textContent = hint || '';
+            }
+        }
+
+        function registerSW() {
+            if (!('serviceWorker' in navigator)) {
+                return Promise.resolve(null);
+            }
+            return navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {
+                return null;
+            });
+        }
+
+        function attemptInstall() {
+            if (!deferredPrompt) {
+                setStatus(
+                    'error',
+                    'Install Unavailable',
+                    'This browser did not expose the install prompt yet.',
+                    'Open this page in Chrome/Edge, stay for a few seconds, then tap Try Again.'
+                );
+                return;
+            }
+
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function (choiceResult) {
+                if (choiceResult.outcome === 'accepted') {
+                    setStatus('success', 'Install Started', 'Installation started successfully.', 'You can return to Home after install completes.');
+                } else {
+                    setStatus('error', 'Install Cancelled', 'Installation was dismissed before completion.', 'Tap Try Again to re-open the install prompt.');
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', function (event) {
+            event.preventDefault();
+            deferredPrompt = event;
+            setStatus('info', 'Ready', 'Install prompt is ready. Launching now...', '');
+            attemptInstall();
+        });
+
+        window.addEventListener('appinstalled', function () {
+            setStatus('success', 'Installed', 'App installed successfully.', 'You can close this tab and open the app from your device.');
+        });
+
+        if (retryInstall) {
+            retryInstall.addEventListener('click', function () {
+                setStatus('info', 'Retrying', 'Trying to start installation again...', '');
+                attemptInstall();
+            });
+        }
+
+        registerSW().finally(function () {
+            if (isAndroidTarget && !isAndroidUA) {
+                setStatus(
+                    'info',
+                    'Android Flow',
+                    'Android install works best from your phone browser. Open this page on Android to continue.',
+                    'You can copy this URL and open it on Android for direct install prompt.'
+                );
+                return;
+            }
+
+            setTimeout(function () {
+                if (!deferredPrompt) {
+                    setStatus(
+                        'error',
+                        'Install Unavailable',
+                        'Installation cannot start automatically in this browser session.',
+                        'Refresh this page once and tap Try Again.'
+                    );
+                }
+            }, 2500);
+        });
+    })();
+    </script>
+</body>
+</html>

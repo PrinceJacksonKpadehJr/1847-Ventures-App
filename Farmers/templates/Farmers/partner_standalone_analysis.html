@@ -327,7 +327,7 @@ Standalone Data Analysis Template
 
                 <h4 style="margin-top: 18px; margin-bottom: 10px;">Detected Schema</h4>
                 <div class="schema-list">
-                    {% for col in preview_batch.schema %}
+                    {% for col in active_schema %}
                         <div class="schema-item">
                             <div><code>{{ col.column }}</code> → {{ col.type }}</div>
                             <div>Missing: {{ col.missing_count }}</div>

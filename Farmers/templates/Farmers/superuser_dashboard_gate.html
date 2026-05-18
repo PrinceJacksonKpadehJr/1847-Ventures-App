@@ -165,7 +165,7 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ target }}">
             <label for="dashboardPassword">Password</label>
-            <input id="dashboardPassword" name="password" type="password" autocomplete="current-password" required>
+            <input id="dashboardPassword" name="password" type="password" autocomplete="new-password" required>
             <div class="actions">
                 <button type="submit">Verify and Continue</button>
                 <a class="link-btn" href="{% url 'superuser_dashboard_selector' %}">Cancel</a>

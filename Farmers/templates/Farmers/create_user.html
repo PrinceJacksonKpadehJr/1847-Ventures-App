@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -116,7 +117,7 @@
             <label for="id_username">Username</label>
             <input type="text" id="id_username" name="username"
                    value="{{ form.username.value|default:'' }}"
-                   placeholder="Username" required>
+                   placeholder="Username" autocomplete="off" required>
             {% if form.username.errors %}
             <ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
             {% endif %}
@@ -150,5 +151,6 @@
         <a class="back-link" href="{% url 'admin_dashboard' %}">&larr; Back to Dashboard</a>
     </div>
 </div>
+<script src="{% static 'Farmers/js/offline_form_queue.js' %}"></script>
 </body>
 </html>

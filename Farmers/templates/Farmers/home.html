@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>1847 Ventures | Cocoa. Carbon. Communities.</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="{% static 'Farmers/pwa/manifest.json' %}">
+    <meta name="theme-color" content="#0f341f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="1847 Ventures">
+    <link rel="apple-touch-icon" href="{% static 'Farmers/pwa/icons/apple-touch-icon-180.png' %}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="1847 Ventures">
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap");
 
@@ -469,6 +479,356 @@
                 align-items: flex-start;
             }
         }
+
+        /* ── PWA Install Banner ─────────────────────────────────── */
+        #pwa-install-banner {
+            display: none;
+            position: fixed;
+            bottom: 1.2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            width: min(420px, calc(100vw - 2rem));
+            background: #ffffff;
+            border: 1px solid rgba(18, 58, 35, 0.14);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(15, 52, 31, 0.18);
+            padding: 1rem 1.1rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            animation: slideUp 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        #pwa-install-banner.visible {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(24px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .pwa-banner-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid rgba(18, 58, 35, 0.1);
+            flex-shrink: 0;
+        }
+
+        .pwa-banner-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pwa-banner-text strong {
+            display: block;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 0.97rem;
+            color: #0f341f;
+        }
+
+        .pwa-banner-text span {
+            font-size: 0.82rem;
+            color: #5a665d;
+        }
+
+        .pwa-banner-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .btn-pwa-install {
+            background: linear-gradient(135deg, #0f341f, #1b5a34);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.52rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: "Manrope", sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: filter 0.18s ease;
+        }
+
+        .btn-pwa-install:hover { filter: brightness(1.15); }
+
+        .btn-pwa-dismiss {
+            background: none;
+            border: none;
+            color: #5a665d;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-align: center;
+            font-family: "Manrope", sans-serif;
+            padding: 0;
+        }
+
+        .btn-pwa-dismiss:hover { color: #1a211c; }
+
+        /* Nav install button */
+        .btn-install-nav {
+            display: none;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: "Manrope", sans-serif;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .btn-install-nav.visible { display: inline-flex; }
+        .btn-install-nav:hover { background: rgba(255, 255, 255, 0.22); }
+
+        /* Hero install CTA */
+        .btn-download-app {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0f341f;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 999px;
+            padding: 0.75rem 1.4rem;
+            font-size: 0.93rem;
+            font-weight: 700;
+            font-family: "Manrope", sans-serif;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(15, 52, 31, 0.22);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .btn-download-app.visible { display: inline-flex; }
+        .btn-download-app:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(15, 52, 31, 0.3); }
+
+        .hero-cta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1.4rem;
+            flex-wrap: wrap;
+        }
+
+        .install-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 260;
+            background: rgba(8, 22, 14, 0.58);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .install-modal.visible {
+            display: flex;
+        }
+
+        .install-modal-card {
+            width: min(700px, 100%);
+            background: #ffffff;
+            border-radius: 22px;
+            border: 1px solid rgba(18, 58, 35, 0.14);
+            box-shadow: 0 24px 42px rgba(10, 32, 19, 0.28);
+            padding: 1.2rem;
+        }
+
+        .install-modal-head {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .install-modal-head h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #123826;
+        }
+
+        .install-modal-head p {
+            margin: 0.25rem 0 0;
+            color: #486252;
+            font-size: 0.9rem;
+        }
+
+        .install-close {
+            border: 0;
+            background: #eff6f1;
+            color: #214a33;
+            border-radius: 999px;
+            width: 34px;
+            height: 34px;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .install-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .install-choice {
+            border: 1px solid rgba(27, 90, 52, 0.2);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #f9fcfa 0%, #eef7f1 100%);
+            padding: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .install-choice:hover {
+            transform: translateY(-2px);
+            border-color: rgba(27, 90, 52, 0.42);
+            box-shadow: 0 12px 20px rgba(15, 52, 31, 0.12);
+        }
+
+        .install-choice strong {
+            display: block;
+            color: #123d28;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1rem;
+        }
+
+        .install-choice span {
+            display: block;
+            margin-top: 0.35rem;
+            color: #4f6658;
+            font-size: 0.85rem;
+        }
+
+        .install-extra {
+            margin-top: 1rem;
+            border: 1px dashed rgba(27, 90, 52, 0.35);
+            border-radius: 14px;
+            padding: 0.9rem;
+            background: #f7fbf8;
+            display: none;
+        }
+
+        .install-extra.visible {
+            display: block;
+        }
+
+        .install-extra p {
+            margin: 0;
+            color: #304b3b;
+            font-size: 0.88rem;
+        }
+
+        .install-extra-badge {
+            display: none;
+            align-items: center;
+            width: fit-content;
+            margin: 0 0 0.55rem;
+            border-radius: 999px;
+            padding: 0.26rem 0.7rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border: 1px solid transparent;
+        }
+
+        .install-extra-badge.visible {
+            display: inline-flex;
+        }
+
+        .install-extra-badge.success {
+            background: #eaf9ef;
+            border-color: #5fbf7b;
+            color: #1e7a3c;
+        }
+
+        .install-extra-badge.neutral {
+            background: #edf2f5;
+            border-color: #a8b9c5;
+            color: #425d70;
+        }
+
+        .install-extra-badge.info {
+            background: #e9f4ff;
+            border-color: #88b5dd;
+            color: #24537a;
+        }
+
+        .install-extra-badge.error {
+            background: #fdeeee;
+            border-color: #e2a2a2;
+            color: #8a2b2b;
+        }
+
+        .qr-wrap {
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .qr-wrap img {
+            width: 138px;
+            height: 138px;
+            border-radius: 10px;
+            border: 1px solid rgba(18, 58, 35, 0.16);
+            background: #fff;
+        }
+
+        .install-link-row {
+            display: flex;
+            gap: 0.55rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.35rem;
+        }
+
+        .install-link-row input {
+            border: 1px solid #c8d8cf;
+            border-radius: 10px;
+            padding: 0.5rem 0.65rem;
+            width: min(360px, 100%);
+            font-size: 0.84rem;
+            color: #1f2f25;
+            background: #fff;
+        }
+
+        .install-link-row button {
+            border: 0;
+            border-radius: 999px;
+            background: #16482d;
+            color: #fff;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .install-tip {
+            margin-top: 0.45rem;
+            font-size: 0.8rem;
+            color: #4f6658;
+        }
+
+        @media (max-width: 700px) {
+            .install-choice-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -484,7 +844,13 @@
                 <a href="#impact">Impact</a>
                 <a href="#contact">Contact Us</a>
             </nav>
-            <a class="btn-login" href="{% url 'login' %}">Login Portal</a>
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+                <button class="btn-install-nav" id="btn-install-nav" aria-label="Install 1847 Ventures app">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13M7 11l5 5 5-5"/><path d="M3 20h18"/></svg>
+                    <span id="install-nav-label">Download App</span>
+                </button>
+                <a class="btn-login" href="{% url 'login' %}">Login Portal</a>
+            </div>
         </div>
     </header>
 
@@ -514,6 +880,12 @@
                         <strong>5,000 ha</strong>
                         <span>Planned flagship estate footprint</span>
                     </div>
+                </div>
+                <div class="hero-cta-row">
+                    <button class="btn-download-app" id="btn-download-app" aria-label="Download 1847 Ventures app">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13M7 11l5 5 5-5"/><path d="M3 20h18"/></svg>
+                        <span id="install-hero-label">Download App</span>
+                    </button>
                 </div>
             </div>
             <div class="hero-media">
@@ -585,6 +957,8 @@
                 <form method="post" class="contact-form">
                     {% csrf_token %}
 
+                    <div id="contact-runtime-notices" aria-live="polite"></div>
+
                     {% if messages %}
                         {% for msg in messages %}
                             <div class="notice {% if msg.tags %}{{ msg.tags }}{% endif %}">{{ msg }}</div>
@@ -654,6 +1028,642 @@
             updateHeaderState();
             window.addEventListener('scroll', updateHeaderState, { passive: true });
         })();
+    </script>
+
+    <!-- PWA: install banner + service worker -->
+    <div id="pwa-install-banner" role="dialog" aria-label="Install 1847 Ventures app">
+        <img class="pwa-banner-icon" src="{% static 'Farmers/homepage/logo-1847.png' %}" alt="1847 Ventures logo">
+        <div class="pwa-banner-text">
+            <strong>1847 Ventures</strong>
+            <span id="pwa-banner-subtitle">Choose Android or Desktop installation.</span>
+        </div>
+        <div class="pwa-banner-actions">
+            <button class="btn-pwa-install" id="btn-pwa-install">Download App</button>
+            <button class="btn-pwa-dismiss" id="btn-pwa-dismiss">Not now</button>
+        </div>
+    </div>
+
+    <div class="install-modal" id="install-modal" aria-hidden="true">
+        <div class="install-modal-card" role="dialog" aria-modal="true" aria-labelledby="install-modal-title">
+            <div class="install-modal-head">
+                <div>
+                    <h3 id="install-modal-title">Install 1847 Ventures App</h3>
+                    <p id="install-modal-subtitle">Select where you want to install it now.</p>
+                </div>
+                <button class="install-close" id="install-modal-close" aria-label="Close install options">x</button>
+            </div>
+
+            <div class="install-choice-grid">
+                <button class="install-choice" id="install-desktop-option" type="button">
+                    <strong id="install-desktop-title">Desktop App</strong>
+                    <span id="install-desktop-copy">Install directly on this computer browser profile.</span>
+                </button>
+                <button class="install-choice" id="install-android-option" type="button">
+                    <strong>Android App</strong>
+                    <span>Install on this Android phone, or send to phone from desktop.</span>
+                </button>
+            </div>
+
+            <div class="install-extra" id="install-extra-box">
+                <span class="install-extra-badge" id="install-extra-badge"></span>
+                <p id="install-extra-text"></p>
+                <div class="qr-wrap" id="install-qr-wrap" style="display:none;">
+                    <img id="install-qr-image" alt="QR code to open 1847 Ventures install page on phone">
+                    <div>
+                        <div class="install-link-row">
+                            <input id="install-link-input" readonly>
+                            <button type="button" id="copy-install-link">Copy Link</button>
+                        </div>
+                        <p class="install-tip">If your phone is connected to this desktop (USB/Wi-Fi), open this link on the phone browser and tap "Add to Home screen".</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        let deferredPrompt = null;
+        const DISMISSED_KEY = '1847-pwa-dismissed';
+        const INSTALL_STATE_KEY = '1847-pwa-installed';
+        let swRegistration = null;
+        let isApplyingUpdate = false;
+        let isInstalled = false;
+
+        const banner       = document.getElementById('pwa-install-banner');
+        const btnInstall   = document.getElementById('btn-pwa-install');
+        const btnDismiss   = document.getElementById('btn-pwa-dismiss');
+        const btnNav       = document.getElementById('btn-install-nav');
+        const btnHero      = document.getElementById('btn-download-app');
+        const navLabel     = document.getElementById('install-nav-label');
+        const heroLabel    = document.getElementById('install-hero-label');
+        const bannerSubtitle = document.getElementById('pwa-banner-subtitle');
+        const installModal = document.getElementById('install-modal');
+        const installClose = document.getElementById('install-modal-close');
+        const installTitle = document.getElementById('install-modal-title');
+        const installSubtitle = document.getElementById('install-modal-subtitle');
+        const desktopOption = document.getElementById('install-desktop-option');
+        const desktopTitle = document.getElementById('install-desktop-title');
+        const desktopCopy = document.getElementById('install-desktop-copy');
+        const androidOption = document.getElementById('install-android-option');
+        const extraBox = document.getElementById('install-extra-box');
+        const extraBadge = document.getElementById('install-extra-badge');
+        const extraText = document.getElementById('install-extra-text');
+        const qrWrap = document.getElementById('install-qr-wrap');
+        const qrImage = document.getElementById('install-qr-image');
+        const linkInput = document.getElementById('install-link-input');
+        const copyLinkBtn = document.getElementById('copy-install-link');
+        const ua = navigator.userAgent || '';
+        const isAndroid = /Android/i.test(ua);
+
+        function getStoredInstallState() {
+            try {
+                return localStorage.getItem(INSTALL_STATE_KEY) === '1';
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function setStoredInstallState(value) {
+            try {
+                if (value) {
+                    localStorage.setItem(INSTALL_STATE_KEY, '1');
+                } else {
+                    localStorage.removeItem(INSTALL_STATE_KEY);
+                }
+            } catch (error) {
+                // Ignore storage limitations.
+            }
+        }
+
+        function computeInstallState() {
+            const standalone =
+                (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                window.navigator.standalone === true;
+            return standalone || getStoredInstallState();
+        }
+
+        function syncInstallLabels() {
+            const actionLabel = isInstalled ? 'Update App' : 'Download App';
+            if (btnInstall) btnInstall.textContent = actionLabel;
+            if (navLabel) navLabel.textContent = actionLabel;
+            if (heroLabel) heroLabel.textContent = actionLabel;
+            if (bannerSubtitle) {
+                bannerSubtitle.textContent = isInstalled
+                    ? 'Check for new app updates on Desktop or Android.'
+                    : 'Choose Android or Desktop installation.';
+            }
+            if (installTitle) installTitle.textContent = isInstalled ? 'Update 1847 Ventures App' : 'Install 1847 Ventures App';
+            if (installSubtitle) {
+                installSubtitle.textContent = isInstalled
+                    ? 'Choose where you want to check and apply updates.'
+                    : 'Select where you want to install it now.';
+            }
+            if (desktopTitle) desktopTitle.textContent = isInstalled ? 'Update Desktop App' : 'Desktop App';
+            if (desktopCopy) {
+                desktopCopy.textContent = isInstalled
+                    ? 'Check for updates and apply immediately if a new version exists.'
+                    : 'Install directly on this computer browser profile.';
+            }
+        }
+
+        function showInstallUI() {
+            if (banner) banner.classList.add('visible');
+            if (btnNav)  btnNav.classList.add('visible');
+            if (btnHero) btnHero.classList.add('visible');
+        }
+
+        function hideInstallUI() {
+            if (banner) banner.classList.remove('visible');
+        }
+
+        function openInstallModal() {
+            if (!installModal) return;
+            isInstalled = computeInstallState();
+            if (deferredPrompt) {
+                isInstalled = false;
+            }
+            syncInstallLabels();
+            installModal.classList.add('visible');
+            installModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeInstallModal() {
+            if (!installModal) return;
+            installModal.classList.remove('visible');
+            installModal.setAttribute('aria-hidden', 'true');
+        }
+
+        function runPromptInstall() {
+            if (!deferredPrompt) return Promise.resolve(false);
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function (result) {
+                if (result.outcome === 'accepted') {
+                    isInstalled = true;
+                    setStoredInstallState(true);
+                    syncInstallLabels();
+                    hideInstallUI();
+                    if (btnNav)  btnNav.classList.remove('visible');
+                    if (btnHero) btnHero.classList.remove('visible');
+                }
+                deferredPrompt = null;
+            });
+            return Promise.resolve(true);
+        }
+
+        function showExtra(message, tone, badgeLabel) {
+            if (!extraBox || !extraText || !qrWrap || !extraBadge) return;
+            extraBox.classList.add('visible');
+            extraBadge.className = 'install-extra-badge';
+            if (tone) {
+                extraBadge.classList.add('visible', tone);
+                extraBadge.textContent = badgeLabel || (tone === 'success' ? 'Update Found' : tone === 'neutral' ? 'No New Update' : tone === 'info' ? 'Checking' : 'Update Issue');
+            } else {
+                extraBadge.textContent = '';
+            }
+            extraText.textContent = message;
+            qrWrap.style.display = 'none';
+        }
+
+        function showAndroidHandoff(isUpdateFlow) {
+            const installUrl = window.location.origin + '/';
+            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(installUrl);
+
+            if (extraBox) extraBox.classList.add('visible');
+            if (extraBadge) {
+                extraBadge.className = 'install-extra-badge visible info';
+                extraBadge.textContent = isUpdateFlow ? 'Android Update' : 'Android Install';
+            }
+            if (extraText) {
+                extraText.textContent = isUpdateFlow
+                    ? 'Update on Android from desktop: scan this QR code or copy the link, then refresh the app page on your phone.'
+                    : 'Install to Android from desktop: scan this QR code or copy the link to your connected phone.';
+            }
+            if (qrWrap) qrWrap.style.display = 'flex';
+            if (qrImage) qrImage.src = qrUrl;
+            if (linkInput) linkInput.value = installUrl;
+        }
+
+        async function checkForAppUpdate() {
+            if (isApplyingUpdate) {
+                showExtra('Update check is already running.', 'info', 'Checking');
+                return;
+            }
+            if (!('serviceWorker' in navigator)) {
+                showExtra('This browser does not support automatic app updates.', 'error', 'Unsupported');
+                return;
+            }
+
+            isApplyingUpdate = true;
+            showExtra('Checking for app updates...', 'info', 'Checking');
+
+            try {
+                if (!swRegistration) {
+                    swRegistration = await navigator.serviceWorker.getRegistration('/');
+                }
+                if (!swRegistration) {
+                    showExtra('No app service worker found yet. Reinstall once and try update again.', 'error', 'Not Ready');
+                    return;
+                }
+
+                if (swRegistration.waiting) {
+                    showExtra('Update found. Applying now...', 'success', 'Update Found');
+                    swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    return;
+                }
+
+                const updateResultPromise = new Promise(function (resolve) {
+                    let settled = false;
+
+                    function done(value) {
+                        if (settled) return;
+                        settled = true;
+                        resolve(value);
+                    }
+
+                    function watchInstallingWorker(worker) {
+                        if (!worker) return;
+                        worker.addEventListener('statechange', function () {
+                            if (worker.state === 'installed') {
+                                done({ updateFound: !!navigator.serviceWorker.controller });
+                            }
+                        });
+                    }
+
+                    swRegistration.addEventListener('updatefound', function () {
+                        watchInstallingWorker(swRegistration.installing);
+                    }, { once: true });
+
+                    watchInstallingWorker(swRegistration.installing);
+                    setTimeout(function () {
+                        done({ updateFound: false });
+                    }, 4000);
+                });
+
+                await swRegistration.update();
+                const updateResult = await updateResultPromise;
+
+                if (updateResult.updateFound) {
+                    if (swRegistration.waiting) {
+                        showExtra('Update found. Applying now...', 'success', 'Update Found');
+                        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    } else {
+                        showExtra('Update found and downloaded. Reloading app now...', 'success', 'Update Found');
+                        window.location.reload();
+                    }
+                    return;
+                }
+
+                showExtra('No new update is available right now.', 'neutral', 'No New Update');
+            } catch (error) {
+                showExtra('Could not check for updates right now. Please try again.', 'error', 'Check Failed');
+            } finally {
+                isApplyingUpdate = false;
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            isInstalled = false;
+            setStoredInstallState(false);
+            syncInstallLabels();
+
+            // Don't show if user already dismissed
+            if (sessionStorage.getItem(DISMISSED_KEY)) return;
+
+            // Slight delay so the banner doesn't flash immediately on load
+            setTimeout(showInstallUI, 1800);
+        });
+
+        window.addEventListener('appinstalled', function () {
+            isInstalled = true;
+            setStoredInstallState(true);
+            syncInstallLabels();
+            hideInstallUI();
+            if (btnNav)  btnNav.classList.remove('visible');
+            if (btnHero) btnHero.classList.remove('visible');
+            deferredPrompt = null;
+        });
+
+        if (btnInstall)  btnInstall.addEventListener('click', openInstallModal);
+        if (btnNav)      btnNav.addEventListener('click', openInstallModal);
+        if (btnHero)     btnHero.addEventListener('click', openInstallModal);
+
+        if (installClose) {
+            installClose.addEventListener('click', closeInstallModal);
+        }
+
+        if (installModal) {
+            installModal.addEventListener('click', function (event) {
+                if (event.target === installModal) {
+                    closeInstallModal();
+                }
+            });
+        }
+
+        if (desktopOption) {
+            desktopOption.addEventListener('click', function () {
+                if (deferredPrompt) {
+                    runPromptInstall();
+                    closeInstallModal();
+                    return;
+                }
+                if (isInstalled) {
+                    checkForAppUpdate();
+                    return;
+                }
+                window.location.href = '{% url "app_download" %}?target=desktop';
+            });
+        }
+
+        if (androidOption) {
+            androidOption.addEventListener('click', function () {
+                if (deferredPrompt && isAndroid) {
+                    runPromptInstall();
+                    closeInstallModal();
+                    return;
+                }
+                if (isInstalled) {
+                    if (isAndroid) {
+                        checkForAppUpdate();
+                    } else {
+                        showAndroidHandoff(true);
+                    }
+                    return;
+                }
+                window.location.href = '{% url "app_download" %}?target=android';
+            });
+        }
+
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', function () {
+                if (!linkInput || !linkInput.value) return;
+                navigator.clipboard.writeText(linkInput.value).then(function () {
+                    copyLinkBtn.textContent = 'Copied';
+                    setTimeout(function () {
+                        copyLinkBtn.textContent = 'Copy Link';
+                    }, 1200);
+                }).catch(function () {
+                    linkInput.select();
+                    document.execCommand('copy');
+                });
+            });
+        }
+
+        if (btnDismiss) {
+            btnDismiss.addEventListener('click', function () {
+                sessionStorage.setItem(DISMISSED_KEY, '1');
+                hideInstallUI();
+                closeInstallModal();
+            });
+        }
+
+        // Keep install chooser reachable even when browser does not fire beforeinstallprompt.
+        if (!sessionStorage.getItem(DISMISSED_KEY)) {
+            setTimeout(showInstallUI, 1200);
+        }
+
+        isInstalled = computeInstallState();
+        syncInstallLabels();
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+                window.location.reload();
+            });
+
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function (registration) {
+                        swRegistration = registration;
+                    })
+                    .catch(function (err) {
+                        console.warn('SW registration failed:', err);
+                    });
+            });
+        }
+    })();
+    </script>
+
+    <script>
+    (function () {
+        'use strict';
+
+        const contactForm = document.querySelector('.contact-form');
+        const noticeHost = document.getElementById('contact-runtime-notices');
+        const submitButton = contactForm ? contactForm.querySelector('.btn-submit') : null;
+        const queueKey = '1847-offline-contact-queue';
+        let isFlushingQueue = false;
+
+        if (!contactForm || !noticeHost) {
+            return;
+        }
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, function (char) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[char];
+            });
+        }
+
+        function renderNotice(message, type) {
+            if (!message) {
+                noticeHost.innerHTML = '';
+                return;
+            }
+
+            noticeHost.innerHTML = '<div class="notice ' + (type || 'success') + '">' + escapeHtml(message) + '</div>';
+        }
+
+        function readQueue() {
+            try {
+                const rawValue = localStorage.getItem(queueKey);
+                const parsed = rawValue ? JSON.parse(rawValue) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeQueue(queue) {
+            localStorage.setItem(queueKey, JSON.stringify(queue));
+        }
+
+        function setSubmittingState(isSubmitting) {
+            if (!submitButton) {
+                return;
+            }
+
+            submitButton.disabled = isSubmitting;
+            submitButton.textContent = isSubmitting ? 'Saving...' : 'Submit to Admin';
+        }
+
+        function serializeForm() {
+            const formData = new FormData(contactForm);
+            return Array.from(formData.entries()).reduce(function (payload, pair) {
+                payload[pair[0]] = pair[1];
+                return payload;
+            }, {});
+        }
+
+        function queueSubmission(payload) {
+            const queue = readQueue();
+            queue.push({
+                id: Date.now().toString(),
+                createdAt: new Date().toISOString(),
+                payload: payload,
+            });
+            writeQueue(queue);
+            return queue.length;
+        }
+
+        function clearFieldErrors() {
+            Array.from(contactForm.elements).forEach(function (field) {
+                if (field.setCustomValidity) {
+                    field.setCustomValidity('');
+                }
+            });
+        }
+
+        function applyFieldErrors(errors) {
+            clearFieldErrors();
+
+            Object.keys(errors || {}).forEach(function (fieldName) {
+                const field = contactForm.elements.namedItem(fieldName);
+                if (!field || !field.setCustomValidity) {
+                    return;
+                }
+                field.setCustomValidity((errors[fieldName] || []).join(' '));
+            });
+
+            const firstFieldName = Object.keys(errors || {})[0];
+            const firstField = firstFieldName ? contactForm.elements.namedItem(firstFieldName) : null;
+            if (firstField && firstField.reportValidity) {
+                firstField.reportValidity();
+            }
+        }
+
+        function sendSubmission(payload) {
+            const body = new URLSearchParams();
+
+            Object.keys(payload).forEach(function (key) {
+                body.append(key, payload[key]);
+            });
+
+            return fetch(contactForm.getAttribute('action') || window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': payload.csrfmiddlewaretoken || ''
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, message: 'Unexpected server response.' };
+                }).then(function (data) {
+                    return { response: response, data: data };
+                });
+            }).then(function (result) {
+                if (!result.response.ok || !result.data.ok) {
+                    const error = new Error(result.data.message || 'Submission failed.');
+                    error.fieldErrors = result.data.errors || {};
+                    throw error;
+                }
+                return result.data;
+            });
+        }
+
+        function flushQueuedSubmissions() {
+            const queue = readQueue();
+            if (!navigator.onLine || isFlushingQueue || !queue.length) {
+                return Promise.resolve();
+            }
+
+            isFlushingQueue = true;
+            renderNotice('Connection restored. Syncing saved submissions...', 'success');
+
+            return queue.reduce(function (chain, item) {
+                return chain.then(function () {
+                    return sendSubmission(item.payload).then(function () {
+                        const remaining = readQueue().filter(function (queuedItem) {
+                            return queuedItem.id !== item.id;
+                        });
+                        writeQueue(remaining);
+                    });
+                });
+            }, Promise.resolve()).then(function () {
+                const remaining = readQueue().length;
+                if (!remaining) {
+                    renderNotice('Saved offline submissions have been sent successfully.', 'success');
+                }
+            }).catch(function () {
+                const pendingCount = readQueue().length;
+                renderNotice('Still offline or server unavailable. ' + pendingCount + ' submission(s) remain queued.', 'error');
+            }).finally(function () {
+                isFlushingQueue = false;
+            });
+        }
+
+        contactForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            clearFieldErrors();
+
+            if (!contactForm.reportValidity()) {
+                return;
+            }
+
+            const payload = serializeForm();
+            setSubmittingState(true);
+
+            if (!navigator.onLine) {
+                const queuedCount = queueSubmission(payload);
+                contactForm.reset();
+                renderNotice('No network right now. Your request was saved offline and will sync automatically. Pending queue: ' + queuedCount + '.', 'success');
+                setSubmittingState(false);
+                return;
+            }
+
+            sendSubmission(payload).then(function (result) {
+                contactForm.reset();
+                renderNotice(result.message || 'Your request has been submitted to the admin team.', 'success');
+                return flushQueuedSubmissions();
+            }).catch(function (error) {
+                if (error.fieldErrors && Object.keys(error.fieldErrors).length) {
+                    applyFieldErrors(error.fieldErrors);
+                    renderNotice(error.message || 'Please correct the highlighted fields and try again.', 'error');
+                } else {
+                    const queuedCount = queueSubmission(payload);
+                    contactForm.reset();
+                    renderNotice('Network issue detected. Your request was saved offline and will sync automatically. Pending queue: ' + queuedCount + '.', 'success');
+                }
+            }).finally(function () {
+                setSubmittingState(false);
+            });
+        });
+
+        window.addEventListener('online', flushQueuedSubmissions);
+        window.addEventListener('offline', function () {
+            const pendingCount = readQueue().length;
+            renderNotice('You are offline. New submissions will be saved on this device' + (pendingCount ? ' and synced with the ' + pendingCount + ' pending item(s).' : ' and synced automatically once network access returns.') , 'error');
+        });
+
+        if (!navigator.onLine) {
+            renderNotice('You are offline. New submissions will be saved on this device and synced automatically once network access returns.', 'error');
+        } else if (readQueue().length) {
+            renderNotice(readQueue().length + ' saved submission(s) are waiting to sync.', 'success');
+            flushQueuedSubmissions();
+        }
+    })();
     </script>
 </body>
 </html>

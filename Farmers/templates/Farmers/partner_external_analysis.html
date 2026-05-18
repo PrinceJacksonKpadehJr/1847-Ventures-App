@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2287,9 +2288,9 @@
 
                         <h3 style="margin-top: 18px;">Detected schema</h3>
                         <div class="schema-list">
-                            {% for col in preview_batch.schema %}
+                            {% for col in active_schema %}
                                 <div class="schema-item">
-                                    <div><code>{{ col.column }}</code> -> {{ col.type }}</div>
+                                    <div><code>{{ col.column }}</code> → {{ col.type }}</div>
                                     <div>Missing: {{ col.missing_count }}</div>
                                 </div>
                             {% endfor %}
@@ -2381,6 +2382,58 @@
                         </table>
                     </div>
                 </article>
+            {% endif %}
+
+            {% if dataset_analytics %}
+                <div class="universal-viz-panel" id="universalVizPanel" style="margin-top: 16px;">
+                    <div class="analytics-section-header" style="margin-bottom: 8px;">
+                        <h2>Universal visualization switching</h2>
+                        <p>Switch visualization type at any moment with automatic compatibility checks and field mappings.</p>
+                    </div>
+
+                    <div class="chart-readiness" id="chartReadiness" style="display:none;">
+                        <span class="readiness-dot"></span>
+                        <span id="readinessText">Building chart…</span>
+                    </div>
+
+                    <div class="universal-viz-controls">
+                        <label>
+                            Visualization type
+                            <select id="universalVizType" data-tooltip="Choose the type of visualization for your data. Compatible types auto-adjust based on your field selection."></select>
+                        </label>
+                        <label>
+                            Category / X field <span class="help-icon" title="The field to group/bin on X-axis">?</span>
+                            <select id="universalVizCategory" data-tooltip="Categorical or text dimension for horizontal axis or grouping."></select>
+                        </label>
+                        <label>
+                            Measure / Y field <span class="help-icon" title="The numeric value to measure or sum">?</span>
+                            <select id="universalVizMeasure" data-tooltip="Numeric column to aggregate (sum, average, count, etc.)."></select>
+                        </label>
+                        <label>
+                            Time field
+                            <select id="universalVizTime" data-tooltip="Date or timestamp column for temporal analysis."></select>
+                        </label>
+                    </div>
+
+                    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                        <button class="quick-action-btn" id="vizResetBtn" title="Restore default field mapping">↻ Reset</button>
+                        <button class="quick-action-btn" id="vizSwapBtn" title="Swap X and Y for alternative view">⇄ Swap fields</button>
+                        <button class="quick-action-btn" id="vizExportBtn" title="Download chart as PNG">⬇ Download</button>
+                        <span style="margin-left:auto;font-size:0.72rem;color:var(--muted);">
+                            <span class="data-quality-score" id="dqScore" title="Data completeness and consistency">
+                                Quality <div class="dq-bar"><span style="width:85%"></span></div>
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="compatibility-row" id="universalVizCompatible"></div>
+
+                    <div class="universal-viz-stage" id="universalVizStage">
+                        <div class="universal-viz-canvas-wrap">
+                            <canvas id="universalVizCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
             {% endif %}
 
             <article class="panel analysis-pane" style="margin-top: 16px;" id="dashboardBuilder">
@@ -2656,56 +2709,6 @@
                         <span style="color:var(--muted);">Drill path:</span>
                         <span id="drillCrumbs"></span>
                         <button class="drill-reset-btn" id="drillResetBtn">Reset drill</button>
-                    </div>
-                </div>
-
-                <div class="universal-viz-panel" id="universalVizPanel">
-                    <div class="analytics-section-header" style="margin-bottom: 8px;">
-                        <h2>Universal visualization switching</h2>
-                        <p>Switch visualization type at any moment with automatic compatibility checks and field mappings.</p>
-                    </div>
-
-                    <div class="chart-readiness" id="chartReadiness" style="display:none;">
-                        <span class="readiness-dot"></span>
-                        <span id="readinessText">Building chart…</span>
-                    </div>
-
-                    <div class="universal-viz-controls">
-                        <label>
-                            Visualization type
-                            <select id="universalVizType" data-tooltip="Choose the type of visualization for your data. Compatible types auto-adjust based on your field selection."></select>
-                        </label>
-                        <label>
-                            Category / X field <span class="help-icon" title="The field to group/bin on X-axis">?</span>
-                            <select id="universalVizCategory" data-tooltip="Categorical or text dimension for horizontal axis or grouping."></select>
-                        </label>
-                        <label>
-                            Measure / Y field <span class="help-icon" title="The numeric value to measure or sum">?</span>
-                            <select id="universalVizMeasure" data-tooltip="Numeric column to aggregate (sum, average, count, etc.)."></select>
-                        </label>
-                        <label>
-                            Time field
-                            <select id="universalVizTime" data-tooltip="Date or timestamp column for temporal analysis."></select>
-                        </label>
-                    </div>
-
-                    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-                        <button class="quick-action-btn" id="vizResetBtn" title="Restore default field mapping">↻ Reset</button>
-                        <button class="quick-action-btn" id="vizSwapBtn" title="Swap X and Y for alternative view">⇄ Swap fields</button>
-                        <button class="quick-action-btn" id="vizExportBtn" title="Download chart as PNG">⬇ Download</button>
-                        <span style="margin-left:auto;font-size:0.72rem;color:var(--muted);">
-                            <span class="data-quality-score" id="dqScore" title="Data completeness and consistency">
-                                Quality <div class="dq-bar"><span style="width:85%"></span></div>
-                            </span>
-                        </span>
-                    </div>
-
-                    <div class="compatibility-row" id="universalVizCompatible"></div>
-
-                    <div class="universal-viz-stage" id="universalVizStage">
-                        <div class="universal-viz-canvas-wrap">
-                            <canvas id="universalVizCanvas"></canvas>
-                        </div>
                     </div>
                 </div>
 
@@ -4551,12 +4554,15 @@
                 const formData = new FormData();
                 formData.append("dataset_id", previewBatchId);
                 formData.append("state", JSON.stringify(analysisState));
-                fetch('{% url "dataset_analysis_state" %}', {
-                    method: "POST",
-                    body: formData,
+                window.OfflineActionQueue.runFormDataAction({
+                    url: '{% url "dataset_analysis_state" %}',
+                    formData: formData,
                     headers: {
                         "X-CSRFToken": csrfToken,
                     },
+                    label: 'Persist analysis state',
+                    queueMessage: 'Analysis state saved offline and will sync automatically.',
+                    reloadOnSuccess: false,
                 }).catch(() => {
                     // Keep UI responsive even if persistence fails.
                 });
@@ -5516,20 +5522,28 @@ Duplicate ratio: ${(analytics.executive_summary || {}).duplicate_ratio_pct || 0}
             formData.append('dataset_id', datasetId);
             formData.append('confirmed_domain', inferredDomain);
 
-            fetch('{% url "confirm_dataset_domain_classification" %}', {
-                method: 'POST',
-                body: formData,
+            window.OfflineActionQueue.runFormDataAction({
+                url: '{% url "confirm_dataset_domain_classification" %}',
+                formData: formData,
                 headers: {
                     'X-CSRFToken': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
+                },
+                label: 'Confirm dataset domain classification',
+                queueMessage: 'Classification update saved offline and will sync automatically.',
+                reloadOnSuccess: true,
+                onImmediateSuccess: function (result) {
+                    const data = result.json || {};
                     updateDomainClassificationUI(data.confirmed_domain);
                     showCursorToast(`Classification updated to ${normalizeDomainLabel(data.confirmed_domain)}.`, 'success');
-                } else {
+                },
+                onImmediateError: function (error) {
+                    const data = error.result && error.result.json ? error.result.json : {};
                     showCursorToast(friendlyDomainError(data.error), 'error');
+                }
+            })
+            .then((outcome) => {
+                if (outcome && outcome.queued) {
+                    showCursorToast('Classification update queued and will sync when the network returns.', 'success');
                 }
             })
             .catch(() => showCursorToast('Network error while saving classification. Please try again.', 'error'));
@@ -5620,5 +5634,6 @@ Duplicate ratio: ${(analytics.executive_summary || {}).duplicate_ratio_pct || 0}
         window.addEventListener('load', initProfilePhotoEditors);
         window.addEventListener('load', initDashboardBuilder);
     </script>
+    <script src="{% static 'Farmers/js/offline_form_queue.js' %}"></script>
 </body>
 </html>

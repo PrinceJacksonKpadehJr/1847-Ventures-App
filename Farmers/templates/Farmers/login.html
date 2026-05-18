@@ -82,11 +82,18 @@
         <h2 class="portal-title">1847 Ventures - Secure Access Portal</h2>
         <p class="portal-subtitle">Please log in to continue</p>
 
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit">Login</button>
         </form>
+        <script>
+        (function(){
+            document.querySelectorAll('input[name="username"], input[type="password"]').forEach(function(el){
+                el.setAttribute('autocomplete','off');
+            });
+        })();
+        </script>
 
         <p style="margin-top: 14px; font-size: 0.9rem;">
             Can't access your account?
