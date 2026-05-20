@@ -196,3 +196,5 @@ POWER_BI_DATASET_ID = os.getenv("POWER_BI_DATASET_ID", "")
 POWER_BI_SCOPE = os.getenv("POWER_BI_SCOPE", "https://analysis.windows.net/powerbi/api/.default")
 POWER_BI_RESOURCE_URL = os.getenv("POWER_BI_RESOURCE_URL", "https://api.powerbi.com")
 
+ALLOWED_HOST = ['*']
+STATIC_ROOT = BASE_DIR / 'staticfiles'

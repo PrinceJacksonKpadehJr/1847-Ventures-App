@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from collections import defaultdict, Counter
 from datetime import datetime
+import logging
 from django.db.models import Q, Max
 import statistics
 import json
@@ -23,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmerDeletionRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
@@ -33,8 +34,12 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.utils.dateparse import parse_date
+from django.utils.html import escape
 from PIL import Image, ImageOps
 from .forms import FarmerCreateByAgentForm, CreateUserForm, FarmerRegistrationRequestForm, PasswordResetRequestForm, HomeContactForm, FarmAssessmentSheet1Form, FarmAssessmentSheet2Form, FarmAssessmentSheet3Form, InvestorDatasetUploadForm, FarmerActivitySubmissionForm
 from .import_pipeline import parse_and_clean_dataset, DatasetImportError
@@ -111,6 +116,83 @@ SUPERUSER_SCOPE_PREFIXES = {
     "django_admin": ("/admin/",),
 }
 
+
+def _is_valid_contact_reply_email(email):
+    candidate = (email or "").strip().lower()
+    if not candidate:
+        return False
+    if any(ch in candidate for ch in ("\r", "\n", "\t")):
+        return False
+    try:
+        validate_email(candidate)
+    except DjangoValidationError:
+        return False
+    return True
+
+
+def _build_contact_reply_mailto(email, guest_name="there"):
+    sanitized_email = (email or "").strip().lower()
+    guest_display_name = (guest_name or "there").strip() or "there"
+    query = parse.urlencode(
+        {
+            "subject": "Re: Your Contact Us Request to 1847 Ventures",
+            "body": (
+                f"Hello {guest_display_name},\n\n"
+                "Thank you for contacting 1847 Ventures.\n"
+                "We received your message and wanted to follow up.\n\n"
+                "Best regards,\n"
+                "1847 Ventures Team"
+            ),
+        },
+        quote_via=parse.quote,
+    )
+    return f"mailto:{sanitized_email}?{query}"
+
+
+def _extract_contact_identity_from_notification(message):
+    message_text = message or ""
+    email_match = re.search(r"Email:\s*([^\s]+)", message_text, flags=re.IGNORECASE)
+    name_match = re.search(r"Name:\s*(.+?)\s*(?:\n|$)", message_text, flags=re.IGNORECASE)
+    email = (email_match.group(1) if email_match else "").strip()
+    name = (name_match.group(1) if name_match else "there").strip() or "there"
+    return email, name
+
+
+def _resolve_pending_activity_from_notification(message):
+    message_text = message or ""
+    match = re.search(
+        r"Field agent\s+(?P<agent>.+?)\s+verified activity for farmer\s+(?P<farmer>[^:]+):\s+(?P<activity>.+?)\.",
+        message_text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return None
+
+    agent_username = (match.group("agent") or "").strip()
+    farmer_username = (match.group("farmer") or "").strip()
+    activity_label = (match.group("activity") or "").strip().lower()
+
+    if not farmer_username:
+        return None
+
+    display_to_code = {
+        str(display).strip().lower(): code
+        for code, display in FarmActivity.ACTIVITY_CHOICES
+    }
+    activity_code = display_to_code.get(activity_label)
+
+    queryset = FarmActivity.objects.filter(
+        farmer__username__iexact=farmer_username,
+        verification_status="verified",
+        admin_approval_status="pending",
+    )
+    if agent_username:
+        queryset = queryset.filter(verified_by__username__iexact=agent_username)
+    if activity_code:
+        queryset = queryset.filter(activity_type=activity_code)
+
+    return queryset.order_by("-verified_at", "-created_at").first()
+
 ENTERPRISE_WORKSPACE_PAGES = [
     {"id": "investor-dashboard", "label": "Investor Dashboard"},
     {"id": "external-dataset-analysis", "label": "External Dataset Analysis"},
@@ -152,6 +234,8 @@ VISUALIZATION_CATALOG = [
     "kpi_cards", "pivot_table", "maps", "treemap", "waterfall_chart", "funnel_chart", "decomposition_tree",
     "radar_chart", "sankey_diagram", "box_plot", "correlation_matrix", "timeline_chart",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def _clamp(value, low=0, high=100):
@@ -1442,23 +1526,40 @@ def home(request):
                 messages.error(request, "No active admin is available to receive your request right now.")
             else:
                 payload = form.cleaned_data
+                guest_email = (payload.get("email") or "").strip().lower()
+                if not _is_valid_contact_reply_email(guest_email):
+                    if is_ajax_request:
+                        return JsonResponse(
+                            {
+                                "ok": False,
+                                "message": "Please provide a valid email address so we can respond to your request.",
+                                "errors": {"email": ["Enter a valid email address."]},
+                            },
+                            status=400,
+                        )
+                    form.add_error("email", "Enter a valid email address.")
+                    return render(request, "Farmers/home.html", {"contact_form": form})
+
                 ContactSubmission.objects.create(
                     name=payload["name"],
-                    email=payload["email"],
+                    email=guest_email,
                     phone=payload["phone"],
                     nationel=payload["nationel"],
                     current_resident=payload["current_resident"],
                     reason_for_contact=payload["reason_for_contact"],
                 )
 
+                reply_mailto = _build_contact_reply_mailto(guest_email, payload.get("name"))
+
                 notification_message = (
                     "New homepage Contact Us request received.\n"
                     f"Name: {payload['name']}\n"
-                    f"Email: {payload['email']}\n"
+                    f"Email: {guest_email}\n"
                     f"Phone: {payload['phone']}\n"
                     f"Nationel: {payload['nationel']}\n"
                     f"Current Resident: {payload['current_resident']}\n"
-                    f"Reason: {payload['reason_for_contact']}"
+                    f"Reason: {payload['reason_for_contact']}\n"
+                    f"Reply directly: {reply_mailto}"
                 )
                 AdminNotification.objects.bulk_create([
                     AdminNotification(
@@ -1473,13 +1574,27 @@ def home(request):
                     admin_users.exclude(email="").exclude(email__isnull=True).values_list("email", flat=True)
                 )
                 if admin_emails:
-                    send_mail(
+                    html_message = f"""
+                        <div style=\"font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#1f2d24;\">
+                          <h2 style=\"margin:0 0 12px;color:#1d5d3f;\">New Contact Us Submission</h2>
+                          <p style=\"margin:0 0 10px;\">A guest submitted the public Contact Us form.</p>
+                          <p style=\"margin:4px 0;\"><strong>Name:</strong> {escape(payload['name'])}</p>
+                          <p style=\"margin:4px 0;\"><strong>Email:</strong> {escape(guest_email)}</p>
+                          <p style=\"margin:4px 0;\"><strong>Phone:</strong> {escape(payload['phone'])}</p>
+                          <p style=\"margin:4px 0;\"><strong>Nationel:</strong> {escape(payload['nationel'])}</p>
+                          <p style=\"margin:4px 0;\"><strong>Current Resident:</strong> {escape(payload['current_resident'])}</p>
+                          <p style=\"margin:10px 0 14px;\"><strong>Reason:</strong><br>{escape(payload['reason_for_contact']).replace(chr(10), '<br>')}</p>
+                          <a href=\"{escape(reply_mailto)}\" style=\"display:inline-block;padding:10px 14px;border-radius:8px;background:#1d5d3f;color:#ffffff;text-decoration:none;font-weight:600;\">Reply to Guest</a>
+                        </div>
+                    """
+                    email_message = EmailMultiAlternatives(
                         subject="New Contact Us Submission - 1847 Ventures",
-                        message=notification_message,
+                        body=notification_message,
                         from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                        recipient_list=admin_emails,
-                        fail_silently=True,
+                        to=admin_emails,
                     )
+                    email_message.attach_alternative(html_message, "text/html")
+                    email_message.send(fail_silently=True)
 
                 if is_ajax_request:
                     return JsonResponse(
@@ -1837,16 +1952,49 @@ def submit_farmer_activity(request):
     activity.admin_approval_status = "pending"
     activity.save()
 
-    Message.objects.create(
-        sender=request.user,
-        receiver=created_by_agent,
-        content=(
-            f"Farmer activity submitted by '{request.user.username}'. "
-            f"Please verify: {activity.get_activity_type_display()} on {activity.date}."
-        ),
+    delivery_text = (
+        f"Farmer activity submitted by '{request.user.username}'. "
+        f"Please verify: {activity.get_activity_type_display()} on {activity.date}."
     )
 
-    messages.success(request, "Activity submitted. Your field agent must verify it before admin review.")
+    message_delivered = False
+    try:
+        Message.objects.create(
+            sender=request.user,
+            receiver=created_by_agent,
+            content=delivery_text,
+        )
+        message_delivered = True
+    except IntegrityError:
+        logger.exception(
+            "Could not create activity verification message for farmer_id=%s agent_id=%s activity_id=%s",
+            request.user.pk,
+            created_by_agent.pk,
+            activity.pk,
+        )
+        try:
+            Notification.objects.create(
+                recipient=created_by_agent,
+                notification_type="message",
+                title=f"New activity from {request.user.username}",
+                message=delivery_text,
+            )
+        except Exception:
+            logger.exception(
+                "Fallback notification also failed for farmer_id=%s agent_id=%s activity_id=%s",
+                request.user.pk,
+                created_by_agent.pk,
+                activity.pk,
+            )
+
+    if message_delivered:
+        messages.success(request, "Activity submitted. Your field agent must verify it before admin review.")
+    else:
+        messages.success(request, "Activity submitted successfully.")
+        messages.warning(
+            request,
+            "Your activity was saved, but direct message delivery to your field agent is currently unavailable.",
+        )
     return redirect("farmer_dashboard")
 
 
@@ -4007,6 +4155,24 @@ def admin_dashboard(request):
         recipient=request.user
     ).order_by('-created_at')[:20]
 
+    notification_cards = []
+    for notification in notifications:
+        card = {
+            "notification": notification,
+            "approve_activity_url": None,
+            "reply_mailto": None,
+        }
+
+        pending_activity = _resolve_pending_activity_from_notification(notification.message)
+        if pending_activity:
+            card["approve_activity_url"] = reverse("approve_farmer_activity", args=[pending_activity.pk])
+
+        email, guest_name = _extract_contact_identity_from_notification(notification.message)
+        if _is_valid_contact_reply_email(email):
+            card["reply_mailto"] = _build_contact_reply_mailto(email, guest_name)
+
+        notification_cards.append(card)
+
     pending_activity_approvals = FarmActivity.objects.filter(
         verification_status="verified",
         admin_approval_status="pending",
@@ -4044,6 +4210,7 @@ def admin_dashboard(request):
         "admin_profile": admin_profile,
         "pending_farmers": pending_farmers,
         "notifications": notifications,
+        "notification_cards": notification_cards,
         "pending_activity_approvals": pending_activity_approvals,
         "unread_count": unread_count,
         "unread_messages_count": Message.objects.filter(receiver=request.user, is_read=False).count(),

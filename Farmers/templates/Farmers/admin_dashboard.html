@@ -1086,15 +1086,25 @@
             </div>
         </div>
 
-        {% if notifications %}
+        {% if notification_cards %}
         <ul class="notif-list">
-            {% for notif in notifications %}
+            {% for card in notification_cards %}
+            {% with notif=card.notification %}
             <li class="notif-item {% if not notif.is_read %}unread{% endif %}">
                 <div class="notif-dot {% if notif.is_read %}read{% endif %}"></div>
                 <div class="notif-body">
                     <div class="notif-msg">{{ notif.message }}</div>
                     <div class="notif-meta">
                         <span class="notif-time">{{ notif.created_at|date:"M d, Y · H:i" }}</span>
+                        {% if card.approve_activity_url %}
+                        <form method="post" action="{{ card.approve_activity_url }}" style="display:inline;">
+                            {% csrf_token %}
+                            <button class="action-btn btn-sm btn-green" type="submit">Approve</button>
+                        </form>
+                        {% endif %}
+                        {% if card.reply_mailto %}
+                        <a class="action-btn btn-sm btn-blue" href="{{ card.reply_mailto }}">Reply</a>
+                        {% endif %}
                         {% if not notif.is_read %}
                         <a class="action-btn btn-sm"
                            style="background:#eef2ef; color:#2c5f38; font-weight:600;"
@@ -1103,6 +1113,7 @@
                     </div>
                 </div>
             </li>
+            {% endwith %}
             {% endfor %}
         </ul>
         {% else %}

@@ -9,14 +9,19 @@ from django.core import mail
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
+from django.db import IntegrityError
 
 from .models import (
     Farmer,
     UserProfile,
+    AdminNotification,
     PasswordResetRequest,
     Farm,
+    FarmActivity,
     Harvest,
     Investment,
+    Message,
+    Notification,
     FarmAssessmentSheet1,
     FarmAssessmentSheet2,
     FarmAssessmentSheet3,
@@ -318,6 +323,7 @@ class FarmAssessmentSheetFormTests(TestCase):
         self.assertEqual(form.cleaned_data["fertilizer_bag_range"], "none")
         self.assertEqual(form.cleaned_data["fertilizer_application"], "")
 
+
     def test_sheet3_requires_farmer_and_farm_photos(self):
         form = FarmAssessmentSheet3Form(
             data={
@@ -370,6 +376,57 @@ class FarmAssessmentSheetFormTests(TestCase):
         self.assertTrue(form.is_valid())
         assessment = form.save(commit=False)
         self.assertTrue(assessment.photos_complete)
+
+
+class FarmerActivitySubmissionTests(TestCase):
+    def setUp(self):
+        self.client = Client(HTTP_HOST="localhost")
+        self.agent = Farmer.objects.create_user(
+            username="agent_user",
+            email="agent@example.com",
+            password="pass12345",
+        )
+        self.agent.profile.role = "field_agent"
+        self.agent.profile.is_approved = True
+        self.agent.profile.save(update_fields=["role", "is_approved"])
+
+        self.farmer = Farmer.objects.create_user(
+            username="farmer_user",
+            email="farmer@example.com",
+            password="pass12345",
+        )
+        self.farmer.profile.role = "farmer"
+        self.farmer.profile.is_approved = True
+        self.farmer.profile.created_by_agent = self.agent
+        self.farmer.profile.save(update_fields=["role", "is_approved", "created_by_agent"])
+
+    @patch("Farmers.views.Message.objects.create", side_effect=IntegrityError("FOREIGN KEY constraint failed"))
+    def test_submit_activity_gracefully_handles_message_integrity_error(self, _mock_message_create):
+        self.client.force_login(self.farmer)
+
+        response = self.client.post(
+            reverse("submit_farmer_activity"),
+            {
+                "activity_type": "planting",
+                "date": "2026-05-20",
+                "additional_trees_added": "0",
+                "inputs_used": "Seedlings",
+                "quantity": "5",
+                "notes": "Regression test",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("farmer_dashboard"))
+        self.assertEqual(FarmActivity.objects.filter(farmer=self.farmer).count(), 1)
+        self.assertEqual(Message.objects.filter(sender=self.farmer, receiver=self.agent).count(), 0)
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=self.agent,
+                notification_type="message",
+                title__contains="New activity from",
+            ).exists()
+        )
 
 
 class CreateFarmerViewTests(TestCase):
@@ -1069,6 +1126,57 @@ class CreateUserSenderEmailTests(TestCase):
         self.assertEqual(mail.outbox[0].from_email, self.admin.email)
 
 
+class ContactReplyLinkValidationTests(TestCase):
+    def test_contact_reply_email_validation_rejects_header_injection(self):
+        from Farmers.views import _is_valid_contact_reply_email
+
+        self.assertFalse(_is_valid_contact_reply_email("guest@example.com\nBcc:evil@example.com"))
+
+    def test_contact_reply_mailto_builder_targets_guest_email(self):
+        from Farmers.views import _build_contact_reply_mailto
+
+        mailto_url = _build_contact_reply_mailto("Guest@Example.com", "Guest User")
+        self.assertTrue(mailto_url.startswith("mailto:guest@example.com?"))
+        self.assertIn("Re%3A%20Your%20Contact%20Us%20Request%20to%201847%20Ventures", mailto_url)
+        self.assertIn("Guest%20User", mailto_url)
+
+
+class HomeContactSubmissionReplyEmailTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = Farmer.objects.create_user(
+            username="contact_admin",
+            email="contact-admin@example.com",
+            password="adminpass",
+        )
+        self.admin.profile.role = "admin"
+        self.admin.profile.is_approved = True
+        self.admin.profile.save(update_fields=["role", "is_approved"])
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_home_contact_submission_email_contains_reply_link(self):
+        response = self.client.post(
+            reverse("home"),
+            {
+                "name": "Public Guest",
+                "email": "guest-public@example.com",
+                "phone": "+231 77 000 0000",
+                "nationel": "Liberian",
+                "current_resident": "Liberia",
+                "reason_for_contact": "I would like more details about the program.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertIn("contact-admin@example.com", sent.to)
+        self.assertIn("mailto:guest-public@example.com", sent.body)
+        self.assertTrue(sent.alternatives)
+        self.assertIn("Reply to Guest", sent.alternatives[0][0])
+        self.assertIn("mailto:guest-public@example.com", sent.alternatives[0][0])
+
+
 class DataPrepTests(TestCase):
     """Tests for data preparation workspace and column/row operations."""
 
@@ -1493,6 +1601,91 @@ class FarmerDashboardAccessTests(TestCase):
         self.client.force_login(self.investor)
         response = self.client.get(self.url)
         self.assertRedirects(response, reverse("partner_dashboard"))
+
+
+class AdminDashboardNotificationActionTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = Farmer.objects.create_user(
+            username="admin_actions",
+            email="admin.actions@example.com",
+            password="adminpass",
+            is_active=True,
+        )
+        self.admin.profile.role = "admin"
+        self.admin.profile.is_approved = True
+        self.admin.profile.save(update_fields=["role", "is_approved"])
+
+        self.agent = Farmer.objects.create_user(
+            username="jackson",
+            email="jackson.agent@example.com",
+            password="agentpass",
+            is_active=True,
+        )
+        self.agent.profile.role = "field_agent"
+        self.agent.profile.is_approved = True
+        self.agent.profile.save(update_fields=["role", "is_approved"])
+
+        self.farmer = Farmer.objects.create_user(
+            username="YGalo",
+            email="ygalo@example.com",
+            password="farmerpass",
+            is_active=True,
+        )
+        self.farmer.profile.role = "farmer"
+        self.farmer.profile.is_approved = True
+        self.farmer.profile.created_by_agent = self.agent
+        self.farmer.profile.save(update_fields=["role", "is_approved", "created_by_agent"])
+
+    def test_activity_notification_shows_approve_button(self):
+        activity = FarmActivity.objects.create(
+            farmer=self.farmer,
+            activity_type="harvesting",
+            date=timezone.now().date(),
+            verification_status="verified",
+            admin_approval_status="pending",
+            verified_by=self.agent,
+            verified_at=timezone.now(),
+        )
+
+        AdminNotification.objects.create(
+            recipient=self.admin,
+            notification_type="info",
+            message=(
+                "Field agent jackson verified activity for farmer "
+                "YGalo: Harvesting."
+            ),
+            related_farmer=self.farmer,
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("admin_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("approve_farmer_activity", args=[activity.pk]))
+        self.assertContains(response, "Approve")
+
+    def test_contact_notification_shows_reply_button(self):
+        AdminNotification.objects.create(
+            recipient=self.admin,
+            notification_type="info",
+            message=(
+                "New homepage Contact Us request received.\n"
+                "Name: Prince Jackson Kpadeh, Jr.\n"
+                "Email: jacksonkpadehjr@gmail.com\n"
+                "Phone: 0531257922\n"
+                "Nationel: Liberian\n"
+                "Current Resident: Accra, Ghana\n"
+                "Reason: I have a cocoa farm."
+            ),
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("admin_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "mailto:jacksonkpadehjr@gmail.com?")
+        self.assertContains(response, "Reply")
 
 
 class LoginSignalTests(TestCase):

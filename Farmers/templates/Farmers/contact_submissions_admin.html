@@ -153,6 +153,18 @@
       font-weight: 600;
     }
 
+    .reply-link {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1d5d3f, #123827);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
     @media (max-width: 980px) {
       .container {
         margin: 18px auto;
@@ -263,6 +275,7 @@
               <th>Nationel</th>
               <th>Current Resident</th>
               <th>Reason for Contact</th>
+              <th>Reply</th>
             </tr>
           </thead>
           <tbody>
@@ -275,6 +288,16 @@
               <td>{{ row.nationel }}</td>
               <td>{{ row.current_resident }}</td>
               <td>{{ row.reason_for_contact }}</td>
+              <td>
+                {% if row.email %}
+                  <a
+                    class="reply-link"
+                    href="mailto:{{ row.email|urlencode }}?subject={{ 'Re: Your Contact Us Request to 1847 Ventures'|urlencode }}&body={{ 'Hello '|add:row.name|add:',%0D%0A%0D%0AThank you for contacting 1847 Ventures.%0D%0A%0D%0ABest regards,%0D%0A1847 Ventures Team'|urlencode }}"
+                  >Reply</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
