@@ -1,16 +1,20 @@
-from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in
-from django.core.exceptions import PermissionDenied
+from django.dispatch import receiver
+from django.contrib import messages
+from django.contrib.auth import logout
 
 @receiver(user_logged_in)
-def block_unapproved_users(sender, user, request, **kwargs):
-    if hasattr(user, "profile") and not user.profile.is_approved:
-        raise PermissionDenied("Account pending admin approval.")
+def block_unapproved_users(sender, request, user, **kwargs):
+    # Superusers bypass approval
+    if user.is_superuser:
+        return
 
-from django.contrib.auth.signals import user_logged_in
-from django.dispatch import receiver
-from django.shortcuts import redirect
-from django.contrib import messages
+    if hasattr(user, "profile") and not user.profile.is_approved:
+        logout(request)
+        messages.error(
+            request,
+            "Your account is pending approval. Please wait for admin confirmation."
+        )
 
 @receiver(user_logged_in)
 def block_unapproved_users(sender, request, user, **kwargs):
@@ -18,9 +22,5 @@ def block_unapproved_users(sender, request, user, **kwargs):
         return
 
     if hasattr(user, "profile") and not user.profile.is_approved:
-        from django.contrib.auth import logout
         logout(request)
-        messages.error(
-            request,
-            "Your account is pending approval. Please wait for admin confirmation."
-        )
+        messages.error(request, "Your account is pending approval. Please wait for admin confirmation.")

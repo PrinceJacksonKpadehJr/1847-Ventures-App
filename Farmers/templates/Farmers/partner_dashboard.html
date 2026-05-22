@@ -1,8 +1,136 @@
-@login_required
+<!--@login_required
 def partner_dashboard(request):
     if request.user.profile.role != 'investor':
         return HttpResponseForbidden("Access Denied")
-    return render(request, "Farmers/partner_dashboard.html")
+    return render(request, "Farmers/partner_dashboard.html") -->
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Partner (Investor) Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f6f8; margin:0; }
+    header { background:#0f3d2e; color:white; padding:16px 20px; }
+    .container { max-width: 1100px; margin: 18px auto; padding: 0 16px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:16px; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 2fr 1fr; } }
+    .card { background:white; border-radius:10px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+    .muted { color:#666; font-size: 0.95rem; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid #eee; }
+    th { font-size:.9rem; color:#333; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef6ff; color:#0b5ed7; font-size:.85rem; }
+    .pill.ok { background:#e9f7ef; color:#1e7e34; }
+    .pill.bad { background:#fdecea; color:#b02a37; }
+    .actions a { display:inline-block; margin-right:10px; text-decoration:none; color:#0b5ed7; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <div>
+        <h2 style="margin:0;">Partner Dashboard</h2>
+        <div class="muted" style="color:#d9f3ea;">
+          Logged in as <strong>{{ request.user.username }}</strong>
+          {% if request.user.profile %}
+            — role: <span class="pill">{{ request.user.profile.role }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="actions">
+        <a href="{% url 'login' %}" style="color:#d9f3ea;">Switch account</a>
+        <a href="/admin/" style="color:#d9f3ea;">Admin</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <!-- LEFT: Portfolio / Investments -->
+      <div class="card">
+        <h3 style="margin-top:0;">My Investments</h3>
+        <p class="muted">Your portfolio history and expected returns.</p>
+
+        {% if investments %}
+          <table>
+            <thead>
+              <tr>
+                <th>Farm</th>
+                <th>Amount</th>
+                <th>Expected Return %</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inv in investments %}
+                <tr>
+                  <td>
+                    <strong>{{ inv.farm.name }}</strong><br/>
+                    <span class="muted">{{ inv.farm.location }}</span>
+                  </td>
+                  <td>{{ inv.amount }}</td>
+                  <td>{{ inv.expected_return_percentage }}%</td>
+                  <td>{{ inv.invested_at|date:"Y-m-d" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div style="margin-top:12px;">
+            <strong>Total invested:</strong> {{ total_invested }}
+          </div>
+        {% else %}
+          <div class="muted">No investments yet.</div>
+        {% endif %}
+      </div>
+
+      <!-- RIGHT: Announcements + Quick Info -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="card">
+          <h3 style="margin-top:0;">Account Status</h3>
+          {% if request.user.profile %}
+            <div>
+              Role:
+              <span class="pill">{{ request.user.profile.role }}</span>
+            </div>
+            <div style="margin-top:8px;">
+              Approval:
+              {% if request.user.profile.is_approved %}
+                <span class="pill ok">Approved</span>
+              {% else %}
+                <span class="pill bad">Not approved</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="muted">No profile found for this account.</div>
+          {% endif %}
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Announcements</h3>
+          {% if announcements %}
+            <ul style="padding-left:18px; margin:0;">
+              {% for a in announcements %}
+                <li style="margin-bottom:10px;">
+                  <strong>{{ a.title }}</strong><br/>
+                  <span class="muted">{{ a.content|truncatechars:140 }}</span><br/>
+                  <span class="muted">{{ a.created_at|date:"Y-m-d H:i" }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="muted">No announcements right now.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
 
 
 

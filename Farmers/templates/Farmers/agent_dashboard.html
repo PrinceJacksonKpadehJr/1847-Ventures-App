@@ -3,3 +3,66 @@ def agent_dashboard(request):
     if request.user.profile.role != 'field_agent':
         return HttpResponseForbidden("Access Denied")
     return render(request, "Farmers/agent_dashboard.html")
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Field Agent Dashboard</title>
+  <style>
+    /* (Use your styles or reference static/css if available) */
+    .card { background: #fff; border-radius: 8px; padding: 1em; margin-bottom: 1em;}
+    .errorlist { color: #b02a37; }
+    .success { color: #155724; background: #d4edda; padding: 5px;}
+    .error { color: #721c24; background: #f8d7da; padding: 5px;}
+  </style>
+</head>
+<body>
+  <h2>Field Agent Dashboard</h2>
+  {% if messages %}
+    {% for m in messages %}
+      <div class="{% if m.tags %}{{ m.tags }}{% endif %}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
+    <h3>Register New Farmer</h3>
+    <form method="post">
+      {% csrf_token %}
+      {{ farmer_form.as_p }}
+      <button name="create_farmer" type="submit">Register Farmer</button>
+    </form>
+    <p><strong>Note:</strong> Each farmer must have a <b>unique email address</b>. They will set their password after admin approval.</p>
+  </div>
+
+  <div class="card">
+    <h3>Farm Registration/Report</h3>
+    <form method="post">
+      {% csrf_token %}
+      {{ report_form.as_p }}
+      <button name="create_report" type="submit">Submit Farm Report</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Recently Registered Farmers</h3>
+    <ul>
+      {% for prof in recent_farmers %}
+        <li>{{ prof.user.username }} — {{ prof.email }} {% if not prof.is_approved %}(pending approval){% endif %}</li>
+      {% empty %}
+        <li>No farmers registered yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Recent Farm Reports</h3>
+    <ul>
+      {% for report in recent_reports %}
+        <li>{{ report.farmer.username }} | {{ report.crop_type }} @ {{ report.farm_location }} (planted: {{ report.date_planted }})</li>
+      {% empty %}
+        <li>No farm reports yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>

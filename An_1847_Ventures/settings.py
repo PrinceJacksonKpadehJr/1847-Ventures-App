@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'Farmers.apps.FarmersConfig',
 ]
+AUTH_USER_MODEL = "Farmers.Farmer"
 
 
 MIDDLEWARE = [
