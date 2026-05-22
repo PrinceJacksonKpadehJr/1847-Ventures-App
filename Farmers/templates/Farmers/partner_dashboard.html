@@ -962,11 +962,7 @@
         <div class="navbar-user">
             Logged in as {{ request.user.username }}
             <a href="{% url 'inbox' %}" style="position:relative;">💬 Messages{% if unread_notifications_count %}<span style="position:absolute;top:-6px;right:-8px;background:#e07c00;color:white;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ unread_notifications_count }}</span>{% endif %}</a>
-            <a href="{% url 'logout' %}">Logout</a>
-        </div>
-    </div>
-
-    <div class="sidebar-overlay" id="partnerSidebarOverlay" onclick="closeSidebar()"></div>
+            <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="sidebar-link" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;width:100%;text-align:left;">Logout</button></form></div>
     <aside class="sidebar-panel" id="partnerSidebar">
         <div class="sidebar-header">
             <h3>Partner Menu</h3>
@@ -1027,11 +1023,7 @@
             <a class="sidebar-link" href="#" onclick="if(window.__partnerActivateView) window.__partnerActivateView('admin-data-governance'); closeSidebar(); return false;">Admin &amp; Data Governance</a>
             <a class="sidebar-link" href="{% url 'partner_external_dataset_intelligence' %}">Open External Dataset Intelligence</a>
             <a class="sidebar-link" href="{% url 'partner_field_agent_data_center' %}">Open Field Agent Data Center</a>
-            <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
-        </div>
-    </aside>
-
-    <div class="workspace-container">
+            <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="sidebar-link" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;width:100%;text-align:left;">Logout</button></form>
         <aside class="workspace-sidebar" id="workspaceSidebar">
             <nav>
                 <div class="workspace-nav-group">

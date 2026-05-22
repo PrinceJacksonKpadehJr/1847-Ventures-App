@@ -497,7 +497,7 @@
         <button class="sidebar-btn" id="showWorkspaceBtn" type="button" onclick="showPanel('workspace')">MY PROFILE</button>
         <a class="sidebar-link" href="{% url 'inbox' %}">Messages{% if unread_notifications_count %} ({{ unread_notifications_count }}){% endif %}</a>
         {% if request.user.is_superuser %}<a class="sidebar-link" href="{% url 'superuser_dashboard_selector' %}">Switch Dashboard</a>{% endif %}
-        <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="sidebar-link" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;width:100%;text-align:left;">Logout</button></form>
     </aside>
 
     <main class="content">

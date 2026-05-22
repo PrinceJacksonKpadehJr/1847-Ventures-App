@@ -562,9 +562,7 @@
     {% elif role == "admin" %}
       <a href="{% url 'admin_dashboard' %}" class="back-btn">← Dashboard</a>
     {% endif %}
-    <a href="{% url 'logout' %}">Logout</a>
-  </div>
-</nav>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;">Logout</button></form>
 
 <!-- Layout -->
 <div class="layout">

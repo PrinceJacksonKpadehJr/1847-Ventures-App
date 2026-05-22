@@ -235,13 +235,7 @@
     <strong>1847 Ventures — Register Farmer</strong>
     <div>
         Logged in as {{ request.user.username }}
-        <a href="{% url 'logout' %}">Logout</a>
-    </div>
-</div>
-
-<div class="container">
-    <div class="intro">
-        <h2>See → Ask → Select Intake Form</h2>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;">Logout</button></form>
         <p>Use observation, simple questions, and category options. Avoid calculations and technical terms.</p>
     </div>
 

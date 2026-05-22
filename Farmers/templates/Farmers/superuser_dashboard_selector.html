@@ -205,7 +205,7 @@
 
         <div class="actions">
             <a class="action primary" href="{% url 'superuser_dashboard_gate' %}?next={% url 'admin_dashboard' %}">Open Admin Dashboard</a>
-            <a class="action secondary" href="{% url 'logout' %}">Logout</a>
+            <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="action secondary" style="cursor:pointer;">Logout</button></form>
         </div>
     </main>
 </body>

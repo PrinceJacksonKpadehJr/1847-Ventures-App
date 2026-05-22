@@ -287,7 +287,7 @@ Standalone Data Analysis Template
                 <span>Welcome,</span>
                 <strong>{{ request.user.username }}</strong>
             </div>
-            <a class="logout" href="{% url 'logout' %}">Logout</a>
+            <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="logout" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;">Logout</button></form>
         </div>
     </nav>
 

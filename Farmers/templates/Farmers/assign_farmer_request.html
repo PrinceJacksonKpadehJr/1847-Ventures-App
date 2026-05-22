@@ -97,12 +97,7 @@
     <strong>1847 Ventures — Assign Farmer Registration</strong>
     <div>
         Logged in as {{ request.user.username }}
-        <a href="{% url 'logout' %}">Logout</a>
-    </div>
-</div>
-
-<div class="container">
-    <h2>Assign Farmer Registration to Agent</h2>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;">Logout</button></form>
 
     <div class="notice">
         <strong>Note:</strong> Admins cannot directly create farmer accounts.

@@ -246,7 +246,7 @@
     <h1>1847 Ventures Admin | Contact Submissions</h1>
     <div class="top-actions">
       <a href="{% url 'admin_dashboard' %}" class="btn btn-light">Back to Dashboard</a>
-      <a href="{% url 'logout' %}" class="btn btn-login">Logout</a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="btn btn-login" style="cursor:pointer;">Logout</button></form>
     </div>
   </header>
 

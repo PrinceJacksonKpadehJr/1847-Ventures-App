@@ -687,7 +687,7 @@
         <a class="sidebar-link" href="{% url 'create_user' %}?role=field_agent">Create Field Agent</a>
         <a class="sidebar-link" href="{% url 'assign_farmer_request' %}">Assign Farmer Registration</a>
         <a class="sidebar-link" href="{% url 'contact_submissions_admin' %}">Contact Submissions</a>
-        <a class="sidebar-link" href="{% url 'logout' %}">Logout</a>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" class="sidebar-link" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;width:100%;text-align:left;">Logout</button></form>
     </div>
 </aside>
 
@@ -971,11 +971,11 @@
                         <td>
                             <div class="td-actions">
                                 <a class="action-btn btn-sm btn-blue" href="{% url 'review_farmer' activity.farmer.pk %}">Review Profile</a>
-                                <form method="post" action="{% url 'approve_farmer_activity' activity.pk %}">
+                                <form method="post" action="{% url 'approve_farmer_activity' activity.pk %}" data-offline-queue="false">
                                     {% csrf_token %}
                                     <button class="action-btn btn-sm btn-green" type="submit">Approve</button>
                                 </form>
-                                <form method="post" action="{% url 'reject_farmer_activity_approval' activity.pk %}">
+                                <form method="post" action="{% url 'reject_farmer_activity_approval' activity.pk %}" data-offline-queue="false">
                                     {% csrf_token %}
                                     <input type="text" name="admin_note" placeholder="Reason" style="margin-bottom:5px; width:140px;">
                                     <button class="action-btn btn-sm btn-red" type="submit">Reject</button>
