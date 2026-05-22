@@ -91,6 +91,11 @@
     <div>
         Logged in as {{ request.user.username }}
         <form method="post" action="{% url 'logout' %}" style="margin:0;" data-offline-queue="false">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;">Logout</button></form>
+    </div>
+</div>
+
+<div class="container">
+    <h2>Create New User</h2>
 
     <div class="card">
         <form method="POST">
