@@ -63,7 +63,6 @@ def make_agent_farmer_form_data(**overrides):
         "location_confirmed": "yes",
         "land_ownership": "own",
         "farm_size_category": "small",
-        "cocoa_tree_age": "young",
         "has_shade_trees": "none",
         "shade_tree_types": "",
         "uses_fertilizer": "no",
@@ -73,8 +72,9 @@ def make_agent_farmer_form_data(**overrides):
         "received_training": "yes",
         "plants_trees": "yes",
         "practices_agroforestry": "no",
-        "last_harvest_bags": "0-5",
-        "harvest_compared_to_last_year": "same",
+        "harvest_y1_bags": "0-5",
+        "harvest_y2_bags": "",
+        "harvest_y3_bags": "",
     }
     data.update(overrides)
     return data

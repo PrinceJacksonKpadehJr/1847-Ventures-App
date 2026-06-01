@@ -1504,7 +1504,11 @@ def dashboard(request):
 def service_worker(request):
     """Serve the PWA service worker at /sw.js (root scope required)."""
     content = render(request, "Farmers/sw.js").content
-    return HttpResponse(content, content_type="application/javascript")
+    response = HttpResponse(content, content_type="application/javascript")
+    # Avoid stale service worker code after deploys.
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Service-Worker-Allowed"] = "/"
+    return response
 
 
 def home(request):
@@ -1513,8 +1517,10 @@ def home(request):
     if request.method == "POST":
         form = HomeContactForm(request.POST)
         if form.is_valid():
-            admin_users = Farmer.objects.filter(profile__role="admin", is_active=True)
-            if not admin_users.exists():
+            admin_users = list(
+                Farmer.objects.filter(profile__role="admin", is_active=True).only("id", "email")
+            )
+            if not admin_users:
                 if is_ajax_request:
                     return JsonResponse(
                         {
@@ -1570,9 +1576,7 @@ def home(request):
                     for admin_user in admin_users
                 ])
 
-                admin_emails = list(
-                    admin_users.exclude(email="").exclude(email__isnull=True).values_list("email", flat=True)
-                )
+                admin_emails = [admin_user.email for admin_user in admin_users if admin_user.email]
                 if admin_emails:
                     html_message = f"""
                         <div style=\"font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#1f2d24;\">
@@ -4108,7 +4112,7 @@ def _send_deletion_otp_email(admin_user, farmer, otp_code):
     if not admin_user.email:
         return False, "Admin account has no email configured."
 
-    sender_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    sender_email = request.user.email or getattr(settings, "DEFAULT_FROM_EMAIL", None)
     try:
         send_mail(
             subject="1847 Ventures Farmer Deletion OTP",
@@ -4454,7 +4458,7 @@ def generate_password_reset_link(request, user_id):
     reset_path = reverse("password_reset_confirm", kwargs={"uidb64": uidb64, "token": token})
     reset_link = request.build_absolute_uri(reset_path)
 
-    sender_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    sender_email = request.user.email or getattr(settings, "DEFAULT_FROM_EMAIL", None)
     email_sent = True
     email_error = ""
     try:
@@ -4529,7 +4533,7 @@ def create_user(request):
             profile.must_change_password = True
             profile.save()
 
-            sender_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+            sender_email = request.user.email or getattr(settings, "DEFAULT_FROM_EMAIL", None)
             email_sent = True
             email_error = ""
             try:

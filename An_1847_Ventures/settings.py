@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'Farmers.middleware.RequestPerformanceMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -137,6 +138,7 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'Farmers' / 'static']
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -162,6 +164,11 @@ CACHES = {
         "TIMEOUT": 300,
     }
 }
+
+# Opt-in performance diagnostics (safe defaults: disabled).
+PERF_MONITORING_ENABLED = os.getenv("PERF_MONITORING_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+PERF_REQUEST_WARN_MS = float(os.getenv("PERF_REQUEST_WARN_MS", "600"))
+PERF_DB_WARN_MS = float(os.getenv("PERF_DB_WARN_MS", "250"))
 
 
 # Email configuration
@@ -198,3 +205,7 @@ POWER_BI_RESOURCE_URL = os.getenv("POWER_BI_RESOURCE_URL", "https://api.powerbi.
 
 ALLOWED_HOST = ['*']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Fingerprinted filenames improve client-side cache hit rates in production.
+if not DEBUG:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'

@@ -4,5 +4,7 @@
   "liveServer.settings.ignoreFiles": [
     "**/*.py"
   ],
-  "workbench.browser.openLocalhostLinks": false
+  "workbench.browser.openLocalhostLinks": false,
+  "python.defaultInterpreterPath": "${workspaceFolder}/../Scripts/python.exe",
+  "python.terminal.activateEnvironment": true
 }

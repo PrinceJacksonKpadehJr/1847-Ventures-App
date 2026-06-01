@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
+from django.conf.urls.static import static
 from django.views.static import serve
 import os
 
@@ -32,14 +33,10 @@ urlpatterns = [
     path('api/farmers/', include('Farmers.urls')),
 ]
 
-# Serve media, static, and app image files unconditionally so they work
-# whether DEBUG is True or False (dev runserver without collectstatic).
-_media_root = settings.MEDIA_ROOT
-_static_root = os.path.join(settings.BASE_DIR, 'Farmers', 'static')
-_farmers_images_root = os.path.join(settings.BASE_DIR, 'Farmers', 'Images')
-
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': _media_root}),
-    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': _static_root}),
-    path('Farmers/Images/<path:path>', serve, {'document_root': _farmers_images_root}),
-]
+if settings.DEBUG:
+    _farmers_images_root = os.path.join(settings.BASE_DIR, 'Farmers', 'Images')
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=os.path.join(settings.BASE_DIR, 'Farmers', 'static'))
+    urlpatterns += [
+        path('Farmers/Images/<path:path>', serve, {'document_root': _farmers_images_root}),
+    ]
