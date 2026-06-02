@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cfe9ff"/>
+      <stop offset="100%" stop-color="#eef9ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" fill="url(#sky)"/>
+  <rect y="120" width="320" height="60" fill="#8ec07d"/>
+  <rect x="25" y="90" width="120" height="55" rx="8" fill="#7dab69"/>
+  <circle cx="55" cy="85" r="16" fill="#4f8f4f"/>
+  <circle cx="95" cy="80" r="18" fill="#4f8f4f"/>
+  <text x="160" y="35" font-size="20" fill="#2f5e2f" font-family="Arial">Small Farm</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <rect width="320" height="180" fill="#f0faff"/>
+  <rect y="120" width="320" height="60" fill="#9dd184"/>
+  <rect x="150" y="70" width="20" height="60" fill="#7a5033"/>
+  <circle cx="160" cy="58" r="26" fill="#4f944f"/>
+  <circle cx="133" cy="66" r="16" fill="#4f944f"/>
+  <circle cx="187" cy="66" r="16" fill="#4f944f"/>
+  <text x="18" y="32" font-size="24" fill="#2f5e2f" font-family="Arial">Mature Trees</text>
+</svg>
