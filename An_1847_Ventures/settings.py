@@ -19,7 +19,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
+
+import dj_database_url
 
 
 def _load_local_env(env_path):
@@ -43,18 +46,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 _load_local_env(BASE_DIR / ".env")
 
 
+def _get_bool_env(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _get_list_env(name, default=""):
+    return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-38lfjos=1)73j!useqdr33$vb0*jsk@+2%h&ko^^4l_fda5=)m'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-38lfjos=1)73j!useqdr33$vb0*jsk@+2%h&ko^^4l_fda5=)m')
 
 # Set DJANGO_DEBUG=true in .env (or environment) to enable the Django debug error page.
 # Defaults to False so production-style error pages are shown by default.
-DEBUG = os.getenv("DJANGO_DEBUG", "false").strip().lower() in {"1", "true", "yes", "on"}
+DEBUG = _get_bool_env("DJANGO_DEBUG", default=False)
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-    if host.strip()
-]
+IS_RENDER = bool(os.getenv("RENDER"))
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+IS_TESTING = "test" in sys.argv
+
+ALLOWED_HOSTS = _get_list_env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = _get_list_env("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 
 
 # Application definition
@@ -73,6 +95,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'Farmers.middleware.RequestPerformanceMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -105,10 +128,11 @@ WSGI_APPLICATION = 'An_1847_Ventures.wsgi.application'
 
 # Database (SQLite for development)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "600")),
+        conn_health_checks=True,
+    )
 }
 
 
@@ -138,7 +162,7 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'Farmers' / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -166,7 +190,7 @@ CACHES = {
 }
 
 # Opt-in performance diagnostics (safe defaults: disabled).
-PERF_MONITORING_ENABLED = os.getenv("PERF_MONITORING_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+PERF_MONITORING_ENABLED = _get_bool_env("PERF_MONITORING_ENABLED", default=False)
 PERF_REQUEST_WARN_MS = float(os.getenv("PERF_REQUEST_WARN_MS", "600"))
 PERF_DB_WARN_MS = float(os.getenv("PERF_DB_WARN_MS", "250"))
 
@@ -183,7 +207,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "20"))
 
 # Explicit local opt-in for console backend.
-if os.getenv("EMAIL_FORCE_CONSOLE", "false").lower() == "true":
+if _get_bool_env("EMAIL_FORCE_CONSOLE", default=False):
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 AUTH_USER_MODEL = 'Farmers.Farmer'
@@ -203,9 +227,27 @@ POWER_BI_DATASET_ID = os.getenv("POWER_BI_DATASET_ID", "")
 POWER_BI_SCOPE = os.getenv("POWER_BI_SCOPE", "https://analysis.windows.net/powerbi/api/.default")
 POWER_BI_RESOURCE_URL = os.getenv("POWER_BI_RESOURCE_URL", "https://api.powerbi.com")
 
-ALLOWED_HOST = ['*']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
-# Fingerprinted filenames improve client-side cache hit rates in production.
-if not DEBUG:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+SECURE_SSL_REDIRECT = _get_bool_env("DJANGO_SECURE_SSL_REDIRECT", default=IS_RENDER and not DEBUG and not IS_TESTING)
+SESSION_COOKIE_SECURE = _get_bool_env("DJANGO_SESSION_COOKIE_SECURE", default=IS_RENDER and not DEBUG and not IS_TESTING)
+CSRF_COOKIE_SECURE = _get_bool_env("DJANGO_CSRF_COOKIE_SECURE", default=IS_RENDER and not DEBUG and not IS_TESTING)
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "31536000" if IS_RENDER and not DEBUG and not IS_TESTING else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _get_bool_env("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=IS_RENDER and not DEBUG and not IS_TESTING)
+SECURE_HSTS_PRELOAD = _get_bool_env("DJANGO_SECURE_HSTS_PRELOAD", default=False)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG and not IS_TESTING
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
