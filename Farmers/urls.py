@@ -7,6 +7,7 @@ from .views import (
     inbox,
     broadcast,
     mark_message_read,
+    delete_message,
     farmer_dashboard,
     submit_farmer_activity,
     agent_dashboard,
@@ -60,6 +61,9 @@ from .views import (
     partner_api_dataset_ingest,
     superuser_dashboard_selector,
     superuser_dashboard_gate,
+    report_farm_to_admin,
+    review_farm_report,
+    partner_farm_detail,
 )
 
 router = DefaultRouter()
@@ -78,6 +82,8 @@ urlpatterns = [
     path('agent/activities/<int:activity_id>/verify/', verify_farmer_activity, name='verify_farmer_activity'),
     path('agent/activities/<int:activity_id>/reject/', reject_farmer_activity_verification, name='reject_farmer_activity_verification'),
     path('partner/dashboard/', partner_dashboard, name='partner_dashboard'),
+    path('partner/farms/<int:farm_id>/', partner_farm_detail, name='partner_farm_detail'),
+    path('partner/farms/<int:farm_id>/report/', report_farm_to_admin, name='report_farm_to_admin'),
     path('partner/external-analysis/', partner_external_analysis, name='partner_external_analysis'),
     path('partner/external-dataset-intelligence/', partner_external_dataset_intelligence, name='partner_external_dataset_intelligence'),
     path('partner/field-agent-data-center/', partner_field_agent_data_center, name='partner_field_agent_data_center'),
@@ -102,6 +108,7 @@ urlpatterns = [
     path('partner/farmer-deletions/<int:deletion_request_id>/approve/', partner_approve_farmer_deletion, name='partner_approve_farmer_deletion'),
     path('partner/farmer-deletions/<int:deletion_request_id>/reject/', partner_reject_farmer_deletion, name='partner_reject_farmer_deletion'),
     path('admin/dashboard/', admin_dashboard, name='admin_dashboard'),
+    path('admin/farm-reports/<int:report_id>/review/', review_farm_report, name='review_farm_report'),
     path('admin/activities/<int:activity_id>/approve/', approve_farmer_activity, name='approve_farmer_activity'),
     path('admin/activities/<int:activity_id>/reject/', reject_farmer_activity_approval, name='reject_farmer_activity_approval'),
     path('force-password-change/', force_password_change, name='force_password_change'),
@@ -133,6 +140,7 @@ urlpatterns = [
     path('messages/inbox/', inbox, name='inbox'),
     path('messages/broadcast/', broadcast, name='broadcast'),
     path('messages/<int:message_id>/read/', mark_message_read, name='mark_message_read'),
+    path('messages/<int:message_id>/delete/', delete_message, name='delete_message'),
 
     # API routes
     path('', include(router.urls)),

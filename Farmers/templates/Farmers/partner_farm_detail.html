@@ -1,0 +1,366 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ farm.name }} — Farm Summary | 1847 Ventures</title>
+    <style>
+        :root {
+            --primary: #1f6a43;
+            --ink: #0f4a2b;
+            --muted: #5a7369;
+            --line: #dce4df;
+            --bg-light: #f8faf7;
+            --success: #1f6a43;
+            --warning: #f4a460;
+            --danger: #d32f2f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: white; border-bottom: 1px solid var(--line);
+            display: flex; align-items: center; padding: 0 24px;
+            z-index: 100; box-shadow: 0 2px 8px rgba(15,74,43,.08);
+            gap: 16px;
+        }
+        .navbar-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); }
+        .navbar-sep { color: var(--line); font-size: 1.2rem; }
+        .navbar-title { font-size: 1rem; color: var(--ink); font-weight: 600; }
+        .navbar-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+        .navbar-actions a { color: var(--primary); font-size: .9rem; text-decoration: none; font-weight: 600; }
+        .page-wrap { max-width: 1100px; margin: 80px auto 40px; padding: 0 24px; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px; font-size: .9rem;
+            color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: 24px;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .farm-header {
+            background: white; border: 1px solid var(--line); border-radius: 12px;
+            padding: 24px 28px; margin-bottom: 24px;
+            display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+        }
+        .farm-header-main { flex: 1; min-width: 240px; }
+        .farm-title { font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+        .farm-meta { font-size: .9rem; color: var(--muted); }
+        .farm-meta span { margin-right: 16px; }
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: .78rem; font-weight: 600; margin-left: 8px;
+        }
+        .badge-verified { background: #e7f5ec; color: #1f6a43; }
+        .badge-review { background: #fff3e0; color: #b05a00; }
+        .badge-risk { background: #fdecea; color: #c0392b; }
+        .score-cluster { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+        .score-card {
+            background: var(--bg-light); border: 1px solid var(--line);
+            border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 110px;
+        }
+        .score-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+        .score-value { font-size: 1.6rem; font-weight: 700; color: var(--ink); line-height: 1.2; }
+        .score-value.good { color: var(--success); }
+        .score-value.warning { color: #b05a00; }
+        .score-value.danger { color: var(--danger); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+        @media (max-width: 760px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        .panel {
+            background: white; border: 1px solid var(--line); border-radius: 10px;
+            padding: 20px; margin-bottom: 0;
+        }
+        .panel-title {
+            font-size: .85rem; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px;
+            padding-bottom: 10px; border-bottom: 1px solid var(--line);
+        }
+        .kv-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid #f0f4f2; font-size: .9rem; }
+        .kv-row:last-child { border-bottom: none; }
+        .kv-key { color: var(--muted); }
+        .kv-val { font-weight: 600; color: var(--ink); text-align: right; }
+        .kv-val.pos { color: var(--success); }
+        .kv-val.neg { color: var(--danger); }
+        table.detail-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        table.detail-table th { padding: 8px 12px; text-align: left; font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); border-bottom: 2px solid var(--line); background: var(--bg-light); }
+        table.detail-table td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        table.detail-table tr:hover td { background: rgba(31,106,67,.03); }
+        .activity-tag {
+            display: inline-block; padding: 2px 9px; border-radius: 20px;
+            font-size: .78rem; font-weight: 600; background: #e7f5ec; color: #1f6a43;
+        }
+        .empty-state { text-align: center; padding: 2rem; color: var(--muted); font-size: .9rem; }
+        .section-heading { margin-bottom: 16px; }
+        .section-heading h2 { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+        .section-heading p { font-size: .88rem; color: var(--muted); margin-top: 2px; }
+        .report-btn {
+            display: inline-block; padding: .4rem 1rem; border: 1px solid #c0392b;
+            color: #c0392b; background: white; border-radius: 5px; font-size: .85rem;
+            font-weight: 600; cursor: pointer; text-decoration: none;
+        }
+        .report-btn:hover { background: #fdecea; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <span class="navbar-brand">1847 Ventures</span>
+    <span class="navbar-sep">/</span>
+    <span class="navbar-title">{{ farm.name }}</span>
+    <div class="navbar-actions">
+        {% if unread_notifications_count %}
+        <span style="background:#c0392b;color:#fff;border-radius:20px;padding:2px 8px;font-size:.78rem;font-weight:700;">{{ unread_notifications_count }} new</span>
+        {% endif %}
+        <a href="{% url 'partner_dashboard' %}">← Partner Dashboard</a>
+    </div>
+</nav>
+
+<div class="page-wrap">
+    <a class="back-link" href="{% url 'partner_dashboard' %}?view=farm-portfolio-intelligence">← Back to Farm Portfolio</a>
+
+    <!-- Farm Header -->
+    <div class="farm-header">
+        <div class="farm-header-main">
+            <div class="farm-title">
+                {{ farm.name }}
+                <span class="badge {% if verification_state == 'Verified' %}badge-verified{% else %}badge-review{% endif %}">
+                    {{ verification_state }}
+                </span>
+                {% if is_high_risk %}<span class="badge badge-risk">High Risk</span>{% endif %}
+            </div>
+            <div class="farm-meta">
+                <span>👤 <strong>{{ farmer_name }}</strong></span>
+                <span>📍 {{ region }}</span>
+                {% if sheet2 %}<span>📐 {{ sheet2.farm_size_category|default:"Unknown"|title }} farm</span>{% endif %}
+                {% if registering_agent %}<span>🤝 Registered by {{ registering_agent }}</span>{% endif %}
+                {% if pending_activities_count %}<span style="color:#b05a00;">⏳ {{ pending_activities_count }} pending activit{{ pending_activities_count|pluralize:"y,ies" }}</span>{% endif %}
+            </div>
+            <div class="score-cluster">
+                <div class="score-card">
+                    <div class="score-label">Yield / ha</div>
+                    <div class="score-value {% if yield_per_hectare >= 550 %}good{% elif yield_per_hectare >= 350 %}warning{% else %}danger{% endif %}">{{ yield_per_hectare }} <small style="font-size:.9rem;">kg</small></div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Risk Score</div>
+                    <div class="score-value {% if risk_score < 40 %}good{% elif risk_score < 65 %}warning{% else %}danger{% endif %}">{{ risk_score }}</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">ESG Score</div>
+                    <div class="score-value {% if esg_score >= 75 %}good{% elif esg_score >= 55 %}warning{% else %}danger{% endif %}">{{ esg_score }}</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Carbon Balance</div>
+                    <div class="score-value {% if carbon_balance <= 0 %}good{% elif carbon_balance <= 250 %}warning{% else %}danger{% endif %}">{{ carbon_balance }} <small style="font-size:.75rem;">kg CO₂e</small></div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Traceability</div>
+                    <div class="score-value {% if traceability_state == 'Complete' %}good{% else %}warning{% endif %}" style="font-size:1rem;padding-top:4px;">{{ traceability_state }}</div>
+                </div>
+            </div>
+        </div>
+        {% if farm.id %}
+        <div>
+            <button class="report-btn" onclick="document.getElementById('report-modal').style.display='flex'">⚠ Report to Admin</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Financial & Carbon Grid -->
+    <div class="grid-2">
+        <div class="panel">
+            <div class="panel-title">Financial Summary</div>
+            <div class="kv-row"><span class="kv-key">Farm Size</span><span class="kv-val">{{ hectares }} ha</span></div>
+            <div class="kv-row"><span class="kv-key">Total Yield</span><span class="kv-val">{{ yield_kg }} kg</span></div>
+            <div class="kv-row"><span class="kv-key">Cocoa Revenue</span><span class="kv-val">${{ revenue|floatformat:2 }}</span></div>
+            <div class="kv-row"><span class="kv-key">Operating Cost</span><span class="kv-val">${{ operating_cost|floatformat:2 }}</span></div>
+            <div class="kv-row"><span class="kv-key">Net Income</span>
+                <span class="kv-val {% if net_income >= 0 %}pos{% else %}neg{% endif %}">
+                    ${{ net_income|floatformat:2 }}
+                </span>
+            </div>
+            <div class="kv-row"><span class="kv-key">Capital Invested</span><span class="kv-val">${{ invested_amount|floatformat:2 }}</span></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Carbon &amp; Emissions</div>
+            <div class="kv-row"><span class="kv-key">Total Emissions</span><span class="kv-val">{{ emissions }} kg CO₂e</span></div>
+            <div class="kv-row"><span class="kv-key">Carbon Removals</span><span class="kv-val {% if removals > 0 %}pos{% endif %}">{{ removals }} kg CO₂e</span></div>
+            <div class="kv-row"><span class="kv-key">Net Carbon Balance</span>
+                <span class="kv-val {% if carbon_balance <= 0 %}pos{% else %}neg{% endif %}">{{ carbon_balance }} kg CO₂e</span>
+            </div>
+            <div class="kv-row"><span class="kv-key">Emissions Intensity</span><span class="kv-val">{{ emissions_intensity }} kg/kg</span></div>
+            {% if sheet2 %}
+            <div class="kv-row"><span class="kv-key">Burns Farm Waste</span><span class="kv-val {% if sheet2.burns_farm_waste == 'never' %}pos{% elif sheet2.burns_farm_waste == 'often' %}neg{% endif %}">{{ sheet2.burns_farm_waste|default:"unknown"|capfirst }}</span></div>
+            <div class="kv-row"><span class="kv-key">Agroforestry</span><span class="kv-val {% if sheet2.practices_agroforestry == 'yes' %}pos{% endif %}">{{ sheet2.practices_agroforestry|default:"no"|capfirst }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Farm Practices -->
+    {% if sheet1 or sheet2 or sheet3 %}
+    <div class="grid-3" style="margin-bottom:24px;">
+        {% if sheet1 %}
+        <div class="panel">
+            <div class="panel-title">Location &amp; Ownership</div>
+            <div class="kv-row"><span class="kv-key">Region</span><span class="kv-val">{{ sheet1.location_name|default:"—" }}</span></div>
+            <div class="kv-row"><span class="kv-key">GPS Captured</span><span class="kv-val {% if sheet1.gps_captured %}pos{% else %}neg{% endif %}">{% if sheet1.gps_captured %}Yes{% else %}No{% endif %}</span></div>
+            <div class="kv-row"><span class="kv-key">Land Ownership</span><span class="kv-val">{{ sheet1.land_ownership|default:"—"|capfirst }}</span></div>
+            <div class="kv-row"><span class="kv-key">Group Member</span><span class="kv-val {% if sheet1.belongs_to_group == 'yes' %}pos{% endif %}">{{ sheet1.belongs_to_group|default:"no"|capfirst }}</span></div>
+            <div class="kv-row"><span class="kv-key">Household Size</span><span class="kv-val">{{ sheet1.household_size|default:"—" }}</span></div>
+        </div>
+        {% endif %}
+        {% if sheet2 %}
+        <div class="panel">
+            <div class="panel-title">Farm Practices</div>
+            <div class="kv-row"><span class="kv-key">Farm Size Category</span><span class="kv-val">{{ sheet2.farm_size_category|default:"—"|title }}</span></div>
+            <div class="kv-row"><span class="kv-key">Year Planted</span><span class="kv-val">{{ sheet2.year_planted|default:"—" }}</span></div>
+            <div class="kv-row"><span class="kv-key">Shade Trees</span><span class="kv-val">{{ sheet2.has_shade_trees|default:"—"|capfirst }}</span></div>
+            <div class="kv-row"><span class="kv-key">Uses Fertilizer</span><span class="kv-val">{{ sheet2.uses_fertilizer|default:"no"|capfirst }}</span></div>
+            <div class="kv-row"><span class="kv-key">Training Received</span><span class="kv-val {% if sheet2.received_training == 'yes' %}pos{% endif %}">{{ sheet2.received_training|default:"no"|capfirst }}</span></div>
+        </div>
+        {% endif %}
+        {% if sheet3 %}
+        <div class="panel">
+            <div class="panel-title">Verification &amp; Photos</div>
+            <div class="kv-row"><span class="kv-key">Data Validated</span><span class="kv-val {% if sheet3.data_validated %}pos{% else %}neg{% endif %}">{% if sheet3.data_validated %}Yes{% else %}No{% endif %}</span></div>
+            <div class="kv-row"><span class="kv-key">Photos Complete</span><span class="kv-val {% if sheet3.photos_complete %}pos{% else %}neg{% endif %}">{% if sheet3.photos_complete %}Yes{% else %}No{% endif %}</span></div>
+            {% if sheet3.validation_notes %}<div class="kv-row"><span class="kv-key">Notes</span><span class="kv-val" style="font-weight:400;max-width:60%;text-align:right;">{{ sheet3.validation_notes|truncatewords:12 }}</span></div>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Harvest History -->
+    <div class="panel" style="margin-bottom:24px;">
+        <div class="section-heading">
+            <h2>Harvest History</h2>
+            <p>All recorded harvest events for this farm.</p>
+        </div>
+        {% if yearly_harvests %}
+        <div style="overflow-x:auto;">
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Date</th>
+                        <th>Tons Produced</th>
+                        <th>Quality Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in yearly_harvests %}
+                    <tr>
+                        <td>{{ h.year }}</td>
+                        <td>{{ h.date|date:"M j, Y" }}</td>
+                        <td>{{ h.tons_produced|default:"—" }}</td>
+                        <td>{{ h.quality_grade|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No harvest records on file for this farm.</p>
+        {% endif %}
+    </div>
+
+    <!-- Approved Activities -->
+    <div class="panel" style="margin-bottom:24px;">
+        <div class="section-heading">
+            <h2>Approved Farm Activities</h2>
+            <p>Admin-approved activities that have been factored into the risk and ESG scores above.</p>
+        </div>
+        {% if approved_activities %}
+        <div style="overflow-x:auto;">
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Activity</th>
+                        <th>Date</th>
+                        <th>Details</th>
+                        <th>Admin Notes</th>
+                        <th>Approved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for act in approved_activities %}
+                    <tr>
+                        <td><span class="activity-tag">{{ act.activity_type|title|cut:"_" }}</span></td>
+                        <td>{{ act.date|date:"M j, Y" }}</td>
+                        <td>
+                            {% if act.additional_trees_added %}<small>Trees added: {{ act.additional_trees_added }}</small><br>{% endif %}
+                            {% if act.inputs_used %}<small>{{ act.inputs_used|truncatewords:8 }}</small>{% endif %}
+                            {% if act.notes %}<small style="color:#888;">{{ act.notes|truncatewords:10 }}</small>{% endif %}
+                        </td>
+                        <td>{{ act.admin_review_notes|default:"—"|truncatewords:12 }}</td>
+                        <td>{{ act.admin_reviewed_at|date:"M j, Y"|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No admin-approved activities recorded for this farm yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Investments -->
+    {% if investments %}
+    <div class="panel" style="margin-bottom:24px;">
+        <div class="section-heading">
+            <h2>Investment Records</h2>
+            <p>Capital deployed to this farm by investors.</p>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Investor</th>
+                        <th>Amount (USD)</th>
+                        <th>Expected Return (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in investments %}
+                    <tr>
+                        <td>{{ inv.investor.get_full_name|default:inv.investor.username }}</td>
+                        <td>${{ inv.amount|floatformat:2 }}</td>
+                        <td>{{ inv.expected_return_percentage|default:"—" }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div><!-- /page-wrap -->
+
+<!-- Report Modal -->
+<div id="report-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:2rem; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,.2);">
+        <h3 style="margin-top:0;">Report Farm to Admin</h3>
+        <p style="color:#555; margin-bottom:1rem;">Farm: <strong>{{ farm.name }}</strong></p>
+        <form method="post" action="{% url 'report_farm_to_admin' farm.id %}">
+            {% csrf_token %}
+            <label for="report-reason" style="display:block; margin-bottom:.4rem; font-weight:600;">Reason for report</label>
+            <textarea id="report-reason" name="reason" rows="4" style="width:100%; box-sizing:border-box; padding:.6rem; border:1px solid #ccc; border-radius:4px; resize:vertical;" placeholder="Describe the concern or issue…"></textarea>
+            <div style="display:flex; gap:.75rem; margin-top:1rem; justify-content:flex-end;">
+                <button type="button" style="padding:.4rem 1rem; border:1px solid var(--line); background:white; border-radius:4px; cursor:pointer;" onclick="document.getElementById('report-modal').style.display='none'">Cancel</button>
+                <button type="submit" style="background:#c0392b; color:#fff; border:none; padding:.45rem 1rem; border-radius:4px; cursor:pointer; font-weight:600;">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.getElementById('report-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+</script>
+
+</body>
+</html>

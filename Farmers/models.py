@@ -313,6 +313,7 @@ class Message(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    deleted_by_receiver = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"
@@ -526,6 +527,44 @@ class FarmerDeletionRequest(models.Model):
 
     def __str__(self):
         return f"Deletion request: {self.farmer.username} ({self.status})"
+
+
+class FarmReport(models.Model):
+    """A partner-submitted report flagging a farm for admin review."""
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("reviewed", "Reviewed"),
+        ("dismissed", "Dismissed"),
+    ]
+
+    farm = models.ForeignKey(
+        Farm,
+        on_delete=models.CASCADE,
+        related_name="reports",
+    )
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="farm_reports_submitted",
+    )
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    admin_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="farm_reports_reviewed",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Report on {self.farm.name} by {self.reported_by.username} ({self.status})"
 
 
 class InvestorDatasetImport(models.Model):

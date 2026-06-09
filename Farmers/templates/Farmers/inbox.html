@@ -263,6 +263,32 @@
     line-height: 1.45;
     word-break: break-word;
   }
+  .msg-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .msg-row.mine { align-items: flex-end; }
+  .msg-row.theirs { align-items: flex-start; }
+  .msg-actions {
+    display: none;
+  }
+  .msg-row:hover .msg-actions {
+    display: block;
+  }
+  .msg-delete-btn {
+    background: transparent;
+    border: 1px solid #d6dbe2;
+    color: #7a2b2b;
+    border-radius: 6px;
+    font-size: .72rem;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  .msg-delete-btn:hover {
+    background: #fff4f4;
+    border-color: #e3b0b0;
+  }
   .msg-bubble.mine {
     background: #2c7a3a;
     color: white;
@@ -541,6 +567,9 @@
       width: 100%;
       justify-content: center;
     }
+    .msg-actions {
+      display: block;
+    }
   }
 </style>
 </head>
@@ -589,7 +618,7 @@
         {% if total_unread %}<span class="unread-badge" style="margin-left:4px;">{{ total_unread }}</span>{% endif %}
       </button>
       <button class="tab-btn" onclick="switchTab('notifs', this)">Notifications
-        {% if total_unread_notifications %}<span class="unread-badge" style="margin-left:4px;">{{ total_unread_notifications }}</span>{% endif %}
+        {% if total_unread_notifications %}<span id="notif-badge" class="unread-badge" style="margin-left:4px;">{{ total_unread_notifications }}</span>{% endif %}
       </button>
       <button class="tab-btn" onclick="switchTab('anns', this)">Announcements
         {% if announcements %}<span style="margin-left:4px;font-size:.72rem;color:#888;">({{ announcements|length }})</span>{% endif %}
@@ -623,18 +652,18 @@
 
     <!-- Notifications tab -->
     <div id="tab-notifs" class="tab-panel">
-      <div class="ann-list">
+      <div class="ann-list" id="notification-list">
         {% if notifications %}
           {% for notif in notifications %}
-          <div style="padding:12px 20px;border-bottom:1px solid #f0f2f5;background:{% if not notif.is_read %}#fffbf0{% else %}white{% endif %};cursor:pointer;"
-            onclick="queueNotificationRead('{% url 'mark_notification_read' notif.id %}'); return false;">
+          <div class="notif-item" style="padding:12px 20px;border-bottom:1px solid #f0f2f5;background:{% if not notif.is_read %}#fffbf0{% else %}white{% endif %};cursor:pointer;"
+            onclick="handleNotificationClick(this, '{% url 'mark_notification_read' notif.id %}', '{% if notif.notification_type == 'message' and notif.related_message %}?with={{ notif.related_message.sender_id }}{% elif notif.notification_type == 'announcement' and notif.related_announcement %}?ann={{ notif.related_announcement_id }}{% endif %}'); return false;">
             <div style="font-size:.88rem;font-weight:600;color:#1a1a2e;">{{ notif.title }}</div>
             <div style="font-size:.78rem;color:#777;margin-top:2px;">{{ notif.message|truncatechars:60 }}</div>
             <div style="font-size:.72rem;color:#aaa;margin-top:3px;">{{ notif.created_at|date:"M d, g:i A" }}</div>
           </div>
           {% endfor %}
         {% else %}
-          <div class="empty-state">No notifications.</div>
+          <div class="empty-state" id="no-notifications-state">No notifications.</div>
         {% endif %}
       </div>
     </div>
@@ -672,15 +701,28 @@
         <span class="thread-username">{{ selected_user.get_full_name|default:selected_user.username }}</span>
         <span class="thread-role-badge">{{ selected_user.profile.role|default:"user"|title }}</span>
       </div>
+      {% if selected_user.email %}
+      <a href="mailto:{{ selected_user.email }}?subject=Re%3A%201847%20Ventures%20Message&body=Hello%20{{ selected_user.get_full_name|default:selected_user.username|urlencode }}%2C%0A%0A"
+         style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#1d5d3f; color:#fff; border-radius:6px; text-decoration:none; font-size:0.82rem; font-weight:600;"
+         title="Reply via email to {{ selected_user.email }}">
+        ✉ Reply via Email
+      </a>
+      {% endif %}
     </div>
     <!-- Thread messages -->
     <div class="thread-body" id="thread-body">
       {% if thread %}
         {% for msg in thread %}
-        <div>
+        <div class="msg-row {% if msg.sender == request.user %}mine{% else %}theirs{% endif %}">
           <div class="msg-bubble {% if msg.sender == request.user %}mine{% else %}theirs{% endif %}">
             {{ msg.content }}
             <span class="msg-time">{{ msg.created_at|date:"M d · H:i" }}</span>
+          </div>
+          <div class="msg-actions">
+            <form method="post" action="{% url 'delete_message' msg.id %}" data-offline-queue="false" onsubmit="return confirm('Delete this message? This removes it from the conversation.');">
+              {% csrf_token %}
+              <button type="submit" class="msg-delete-btn">Delete</button>
+            </form>
           </div>
         </div>
         {% endfor %}
@@ -797,27 +839,78 @@ function goToConversation() {
   window.location.href = '?with=' + sel.value;
 }
 
-function queueNotificationRead(url) {
-  if (!window.OfflineActionQueue) {
+function decrementNotifBadge() {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  const current = parseInt(badge.textContent, 10);
+  if (isNaN(current)) return;
+  if (current <= 1) {
+    badge.remove();
+  } else {
+    badge.textContent = current - 1;
+  }
+}
+
+function hideNotificationItem(itemEl) {
+  if (!itemEl) return;
+  decrementNotifBadge();
+  itemEl.remove();
+  const list = document.getElementById('notification-list');
+  if (!list) return;
+  const remaining = list.querySelectorAll('.notif-item').length;
+  if (remaining === 0 && !document.getElementById('no-notifications-state')) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.id = 'no-notifications-state';
+    empty.textContent = 'No notifications.';
+    list.appendChild(empty);
+  }
+}
+
+function fallbackMarkNotificationRead(url) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    credentials: 'same-origin'
+  });
+}
+
+function handleNotificationClick(itemEl, url, targetUrl) {
+  const goToTarget = function () {
+    if (targetUrl) {
+      window.location.href = targetUrl;
+      return;
+    }
+    hideNotificationItem(itemEl);
+  };
+
+  if (window.OfflineActionQueue) {
+    window.OfflineActionQueue.runAction({
+      url: url,
+      method: 'POST',
+      payloadType: 'none',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      label: 'Mark notification as read',
+      queueMessage: 'Notification update saved offline and will sync automatically.',
+      reloadOnSuccess: false,
+      onImmediateSuccess: goToTarget
+    }).then(function (outcome) {
+      if (outcome && outcome.queued) {
+        goToTarget();
+      }
+    });
     return;
   }
 
-  window.OfflineActionQueue.runAction({
-    url: url,
-    method: 'POST',
-    payloadType: 'none',
-    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-    label: 'Mark notification as read',
-    queueMessage: 'Notification update saved offline and will sync automatically.',
-    reloadOnSuccess: true,
-    onImmediateSuccess: function () {
-      window.location.reload();
-    }
-  }).then(function (outcome) {
-    if (outcome && outcome.queued) {
-      window.location.reload();
-    }
-  });
+  fallbackMarkNotificationRead(url)
+    .then(function () { goToTarget(); })
+    .catch(function () {
+      // Keep current behavior non-blocking even if network fails.
+      goToTarget();
+    });
 }
 
 // If there's an active announcement tab item, switch to it

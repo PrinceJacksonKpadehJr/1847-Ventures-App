@@ -1124,6 +1124,186 @@
                     </div>
                 </section>
 
+                <!-- ── Farmer Records & Health Overview ───────────────── -->
+                <section class="section workspace-block" id="farm-health-overview" data-views="investor-dashboard">
+                    <div class="section-heading">
+                        <h2>Farmer Records &amp; Farm Health</h2>
+                        <p>Summary of all registered farmers, owners' profiles, and farm performance status.</p>
+                    </div>
+                    <div class="section-content">
+
+                        <!-- Summary counts -->
+                        <div class="metric-grid" style="margin-bottom:1.5rem;">
+                            <article class="metric-card">
+                                <div class="metric-label">Total Farms</div>
+                                <div class="metric-value">{{ overview.farm_count }}</div>
+                                <div class="metric-detail">In portfolio</div>
+                            </article>
+                            <article class="metric-card">
+                                <div class="metric-label">Doing Well</div>
+                                <div class="metric-value" style="color:var(--color-success,#2a7a45);">{{ farms_doing_well|length }}</div>
+                                <div class="metric-detail">Risk score &lt; 40</div>
+                            </article>
+                            <article class="metric-card">
+                                <div class="metric-label">At Risk</div>
+                                <div class="metric-value" style="color:var(--color-danger,#c0392b);">{{ farms_at_risk|length }}</div>
+                                <div class="metric-detail">Risk score ≥ 65</div>
+                            </article>
+                            <article class="metric-card">
+                                <div class="metric-label">Avg ESG</div>
+                                <div class="metric-value">{{ overview.esg_compliance }}</div>
+                                <div class="metric-detail">/ 100 compliance</div>
+                            </article>
+                        </div>
+
+                        <!-- Farmer profiles table -->
+                        <h3 style="margin-bottom:.5rem;">Farmer Owner Profiles</h3>
+                        <div style="overflow-x:auto; margin-bottom:2rem;">
+                            <table class="dataset-grid-table" style="min-width:700px;">
+                                <thead>
+                                    <tr>
+                                        <th>Farmer</th>
+                                        <th>Farm</th>
+                                        <th>Region</th>
+                                        <th>Phone</th>
+                                        <th>Registered By</th>
+                                        <th>Risk</th>
+                                        <th>ESG</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in farm_rows %}
+                                    <tr>
+                                        <td>
+                                            {% if row.profile_photo %}
+                                                <img src="{{ row.profile_photo }}" alt="" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;margin-right:6px;">
+                                            {% endif %}
+                                            {{ row.farmer_name }}
+                                            {% if row.farmer_email %}<br><small style="color:#888;">{{ row.farmer_email }}</small>{% endif %}
+                                        </td>
+                                        <td>{{ row.farm_name }}</td>
+                                        <td>{{ row.region }}</td>
+                                        <td>{{ row.farmer_phone|default:"—" }}</td>
+                                        <td>{{ row.registering_agent|default:"—" }}</td>
+                                        <td>
+                                            <span style="color:{% if row.is_high_risk %}#c0392b{% elif row.risk_score < 40 %}#2a7a45{% else %}#e67e22{% endif %}; font-weight:600;">
+                                                {{ row.risk_score }}
+                                            </span>
+                                        </td>
+                                        <td>{{ row.esg_score }}</td>
+                                        <td>
+                                            {% if row.farm_id %}
+                                            <a href="{% url 'partner_farm_detail' row.farm_id %}" class="btn-sm" style="background:var(--primary);color:#fff;text-decoration:none;padding:.35rem .75rem;border-radius:4px;font-size:.8rem;">View Details</a>
+                                            <button class="btn-sm btn-outline"
+                                                onclick="openReportModal('{{ row.farm_id }}', '{{ row.farm_name|escapejs }}')"
+                                                title="Report this farm to admin">⚠ Report</button>
+                                            {% else %}—{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="8" style="text-align:center;padding:1rem;">No farmer records found.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Farms doing well -->
+                        {% if farms_doing_well %}
+                        <h3 style="color:var(--color-success,#2a7a45); margin-bottom:.5rem;">✅ Farms Doing Well (risk &lt; 40)</h3>
+                        <div style="display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:2rem;">
+                            {% for row in farms_doing_well %}
+                            <div class="panel" style="min-width:200px; flex:1; max-width:260px; border-left:4px solid #2a7a45;">
+                                <strong>{{ row.farm_name }}</strong>
+                                <p style="margin:.25rem 0 0; font-size:.85rem; color:#555;">{{ row.farmer_name }}</p>
+                                <p style="margin:.2rem 0; font-size:.8rem;">Risk: <strong style="color:#2a7a45;">{{ row.risk_score }}</strong> &nbsp;|&nbsp; ESG: <strong>{{ row.esg_score }}</strong></p>
+                                <p style="font-size:.8rem; color:#777;">{{ row.region }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Farms at risk -->
+                        {% if farms_at_risk %}
+                        <h3 style="color:var(--color-danger,#c0392b); margin-bottom:.5rem;">⚠️ Farms at Risk (risk ≥ 65)</h3>
+                        <div style="display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:2rem;">
+                            {% for row in farms_at_risk %}
+                            <div class="panel" style="min-width:200px; flex:1; max-width:260px; border-left:4px solid #c0392b;">
+                                <strong>{{ row.farm_name }}</strong>
+                                <p style="margin:.25rem 0 0; font-size:.85rem; color:#555;">{{ row.farmer_name }}</p>
+                                <p style="margin:.2rem 0; font-size:.8rem;">Risk: <strong style="color:#c0392b;">{{ row.risk_score }}</strong> &nbsp;|&nbsp; ESG: <strong>{{ row.esg_score }}</strong></p>
+                                <p style="font-size:.8rem; color:#777;">{{ row.region }}</p>
+                                {% if row.farm_id %}
+                                <button class="btn-sm btn-outline" style="margin-top:.5rem; color:#c0392b; border-color:#c0392b;"
+                                    onclick="openReportModal('{{ row.farm_id }}', '{{ row.farm_name|escapejs }}')"
+                                    >⚠ Report to Admin</button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- My submitted reports -->
+                        {% if my_farm_reports %}
+                        <h3 style="margin-bottom:.5rem;">My Submitted Reports</h3>
+                        <div style="overflow-x:auto;">
+                            <table class="dataset-grid-table" style="min-width:500px;">
+                                <thead>
+                                    <tr><th>Farm</th><th>Reason</th><th>Status</th><th>Date</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for rpt in my_farm_reports %}
+                                    <tr>
+                                        <td>{{ rpt.farm.name }}</td>
+                                        <td>{{ rpt.reason|truncatewords:12 }}</td>
+                                        <td>
+                                            <span style="text-transform:capitalize; font-weight:600;
+                                                color:{% if rpt.status == 'pending' %}#e67e22{% elif rpt.status == 'reviewed' %}#2a7a45{% else %}#888{% endif %};">
+                                                {{ rpt.status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ rpt.created_at|date:"M j, Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <!-- Report Farm Modal -->
+                <div id="report-farm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+                    <div style="background:#fff; border-radius:8px; padding:2rem; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,.2);">
+                        <h3 style="margin-top:0;">Report Farm to Admin</h3>
+                        <p style="color:#555; margin-bottom:1rem;">Farm: <strong id="report-farm-name"></strong></p>
+                        <form id="report-farm-form" method="post" action="">
+                            {% csrf_token %}
+                            <label for="report-reason" style="display:block; margin-bottom:.4rem; font-weight:600;">Reason for report</label>
+                            <textarea id="report-reason" name="reason" rows="4" style="width:100%; box-sizing:border-box; padding:.6rem; border:1px solid #ccc; border-radius:4px; resize:vertical;" placeholder="Describe the concern or issue with this farm…"></textarea>
+                            <div style="display:flex; gap:.75rem; margin-top:1rem; justify-content:flex-end;">
+                                <button type="button" class="btn-sm btn-outline" onclick="closeReportModal()">Cancel</button>
+                                <button type="submit" class="btn-sm" style="background:#c0392b; color:#fff; border:none; padding:.45rem 1rem; border-radius:4px; cursor:pointer;">Submit Report</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <script>
+                function openReportModal(farmId, farmName) {
+                    document.getElementById('report-farm-name').textContent = farmName;
+                    document.getElementById('report-farm-form').action = "{% url 'report_farm_to_admin' 0 %}".replace('/0/', '/' + farmId + '/');
+                    var modal = document.getElementById('report-farm-modal');
+                    modal.style.display = 'flex';
+                }
+                function closeReportModal() {
+                    document.getElementById('report-farm-modal').style.display = 'none';
+                    document.getElementById('report-reason').value = '';
+                }
+                document.getElementById('report-farm-modal').addEventListener('click', function(e) {
+                    if (e.target === this) closeReportModal();
+                });
+                </script>
+
                 <!-- Farm Portfolio Table -->
                 <section class="section workspace-block" id="farm-portfolio" data-views="farm-portfolio-intelligence">
                     <div class="section-heading">
@@ -1143,6 +1323,7 @@
                                         <th>Yield/ha</th>
                                         <th>Risk</th>
                                         <th>ESG</th>
+                                        <th>Details</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1154,9 +1335,18 @@
                                             <td>{{ row.year_planted|default:"—" }}</td>
                                             <td>{{ row.time_year }}</td>
                                             <td>{{ row.yield_per_hectare }}</td>
-                                            <td>{{ row.risk_score }}</td>
+                                            <td>
+                                                <span style="color:{% if row.is_high_risk %}#c0392b{% elif row.risk_score < 40 %}#2a7a45{% else %}#e67e22{% endif %};font-weight:600;">{{ row.risk_score }}</span>
+                                            </td>
                                             <td>{{ row.esg_score }}</td>
+                                            <td>
+                                                {% if row.farm_id %}
+                                                <a href="{% url 'partner_farm_detail' row.farm_id %}" style="color:var(--primary);font-weight:600;font-size:.85rem;">View →</a>
+                                                {% else %}—{% endif %}
+                                            </td>
                                         </tr>
+                                    {% empty %}
+                                        <tr><td colspan="9" style="text-align:center;padding:1rem;color:#888;">No farms found.</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>

@@ -5518,37 +5518,35 @@ Duplicate ratio: ${(analytics.executive_summary || {}).duplicate_ratio_pct || 0}
         }
 
         function confirmDomainClassification(datasetId, inferredDomain) {
-            const formData = new FormData();
-            formData.append('dataset_id', datasetId);
-            formData.append('confirmed_domain', inferredDomain);
             const tokenEl = document.getElementById('partnerExternalCsrfToken');
             const token = tokenEl ? JSON.parse(tokenEl.textContent || '""') : '';
 
-            window.OfflineActionQueue.runFormDataAction({
-                url: '{% url "confirm_dataset_domain_classification" %}',
-                formData: formData,
+            const formData = new FormData();
+            formData.append('dataset_id', datasetId);
+            formData.append('confirmed_domain', inferredDomain);
+
+            fetch('{% url "confirm_dataset_domain_classification" %}', {
+                method: 'POST',
                 headers: {
-                    'X-CSRFToken': token
+                    'X-CSRFToken': token,
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                label: 'Confirm dataset domain classification',
-                queueMessage: 'Classification update saved offline and will sync automatically.',
-                reloadOnSuccess: true,
-                onImmediateSuccess: function (result) {
-                    const data = result.json || {};
-                    updateDomainClassificationUI(data.confirmed_domain);
-                    showCursorToast(`Classification updated to ${normalizeDomainLabel(data.confirmed_domain)}.`, 'success');
-                },
-                onImmediateError: function (error) {
-                    const data = error.result && error.result.json ? error.result.json : {};
-                    showCursorToast(friendlyDomainError(data.error), 'error');
-                }
+                body: formData,
+                credentials: 'same-origin'
             })
-            .then((outcome) => {
-                if (outcome && outcome.queued) {
-                    showCursorToast('Classification update queued and will sync when the network returns.', 'success');
-                }
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    if (data.ok) {
+                        updateDomainClassificationUI(data.confirmed_domain);
+                        showCursorToast('Classification updated to ' + normalizeDomainLabel(data.confirmed_domain) + '.', 'success');
+                    } else {
+                        showCursorToast(friendlyDomainError(data.error), 'error');
+                    }
+                });
             })
-            .catch(() => showCursorToast('Network error while saving classification. Please try again.', 'error'));
+            .catch(function() {
+                showCursorToast('Network error while saving classification. Please try again.', 'error');
+            });
         }
 
         function showDomainOverrideModal(datasetId) {

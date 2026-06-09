@@ -25,7 +25,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db import transaction, IntegrityError
-from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmerDeletionRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3
+from Farmers.models import UserProfile, AdminNotification, ContactSubmission, FarmerRegistrationRequest, PasswordResetRequest, FarmerDeletionRequest, FarmAssessmentSheet1, FarmAssessmentSheet2, FarmAssessmentSheet3, FarmReport
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -250,6 +250,18 @@ def _safe_divide(numerator, denominator):
 
 def _build_cache_key(prefix, *parts):
     return "|".join([prefix, *[str(part) for part in parts]])
+
+
+_PARTNER_DASH_VERSION_KEY = "partner_dashboard_activities_version"
+
+
+def _get_partner_dashboard_version():
+    return cache.get(_PARTNER_DASH_VERSION_KEY, 0)
+
+
+def _bump_partner_dashboard_version():
+    v = _get_partner_dashboard_version()
+    cache.set(_PARTNER_DASH_VERSION_KEY, v + 1, 86400)
 
 
 def _schema_column_names(schema):
@@ -692,7 +704,7 @@ def _farm_carbon_metrics(sheet1, sheet2, sheet3, harvest_kg):
     return emissions, removals, intensity, balance
 
 
-def _farm_risk_and_esg(sheet1, sheet2, sheet3):
+def _farm_risk_and_esg(sheet1, sheet2, sheet3, approved_activities=None):
     risk = 18
     esg = 45
 
@@ -741,6 +753,26 @@ def _farm_risk_and_esg(sheet1, sheet2, sheet3):
         if sheet3.validation_notes:
             risk += 12
 
+    # Factor in approved farm activities
+    for act in (approved_activities or []):
+        at = act["activity_type"] if isinstance(act, dict) else act.activity_type
+        if at == "additional_trees":
+            esg += 8
+            risk -= 5
+        elif at == "habit_change":
+            esg += 6
+            risk -= 4
+        elif at == "pruning":
+            esg += 3
+        elif at == "planting":
+            esg += 4
+        elif at == "tool_change":
+            esg += 3
+        elif at == "harvesting":
+            esg += 2
+        elif at == "spraying":
+            risk += 3
+
     risk = _clamp(risk)
     esg = _clamp(esg - int(risk * 0.18))
     return risk, esg
@@ -773,6 +805,14 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
         .exclude(id__in=farmer_ids_with_farms)
     )
     scope_label = "Shared investor team portfolio"
+
+    # Pre-fetch all approved activities grouped by farmer id
+    _approved_acts_qs = FarmActivity.objects.filter(
+        admin_approval_status="approved"
+    ).values("farmer_id", "activity_type", "additional_trees_added")
+    _acts_by_farmer: dict = defaultdict(list)
+    for _act in _approved_acts_qs:
+        _acts_by_farmer[_act["farmer_id"]].append(_act)
 
     all_regions_set = {
         _portfolio_region(farm, getattr(farm.owner, "assessment_sheet1", None))
@@ -808,9 +848,10 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
             continue
 
         harvests = list(farm.harvests.all().order_by("date_of_harvest"))
+        _owner_approved_acts = _acts_by_farmer.get(owner.id, [])
         hectares, harvest_kg, revenue, operating_cost, net_income = _farm_financials(farm, sheet2, harvests)
         emissions, removals, emissions_intensity, carbon_balance = _farm_carbon_metrics(sheet1, sheet2, sheet3, harvest_kg)
-        risk_score, esg_score = _farm_risk_and_esg(sheet1, sheet2, sheet3)
+        risk_score, esg_score = _farm_risk_and_esg(sheet1, sheet2, sheet3, _owner_approved_acts)
         latest_year = harvests[-1].date_of_harvest.year if harvests else timezone.now().year
 
         trend_rollup[latest_year]["yield_kg"] += harvest_kg
@@ -829,9 +870,18 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
         if selected_certification and certification != selected_certification:
             continue
 
+        profile = getattr(owner, "profile", None)
+        registering_agent = None
+        if profile and profile.created_by_agent:
+            registering_agent = profile.created_by_agent.get_full_name() or profile.created_by_agent.username
         row = {
+            "farm_id": farm.id,
             "farm_name": farm.name,
             "farmer_name": getattr(sheet1, "full_name", owner.get_full_name() or owner.username),
+            "farmer_email": owner.email,
+            "farmer_phone": getattr(profile, "phone_number", "") or "",
+            "profile_photo": profile.profile_photo.url if profile and profile.profile_photo else None,
+            "registering_agent": registering_agent,
             "region": region,
             "farm_size": farm_size.title() if farm_size != "unknown" else "Unknown",
             "farm_size_code": farm_size,
@@ -893,7 +943,8 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
         if selected_size and farm_size != selected_size:
             continue
 
-        risk_score, esg_score = _farm_risk_and_esg(sheet1, sheet2, sheet3)
+        _owner_approved_acts = _acts_by_farmer.get(owner.id, [])
+        risk_score, esg_score = _farm_risk_and_esg(sheet1, sheet2, sheet3, _owner_approved_acts)
         emissions, removals, emissions_intensity, carbon_balance = _farm_carbon_metrics(sheet1, sheet2, sheet3, 0)
         verification_state = "Verified" if sheet3 and sheet3.data_validated else "Review"
         traceability_state = "Complete" if sheet1 and sheet1.gps_captured and sheet3 and sheet3.photos_complete else "Partial"
@@ -902,9 +953,18 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
         if selected_certification and certification != selected_certification:
             continue
 
+        profile = getattr(owner, "profile", None)
+        registering_agent = None
+        if profile and profile.created_by_agent:
+            registering_agent = profile.created_by_agent.get_full_name() or profile.created_by_agent.username
         row = {
+            "farm_id": None,
             "farm_name": "No farm linked",
             "farmer_name": getattr(sheet1, "full_name", owner.get_full_name() or owner.username),
+            "farmer_email": owner.email,
+            "farmer_phone": getattr(profile, "phone_number", "") or "",
+            "profile_photo": profile.profile_photo.url if profile and profile.profile_photo else None,
+            "registering_agent": registering_agent,
             "region": region,
             "farm_size": farm_size.title() if farm_size != "unknown" else "Unknown",
             "farm_size_code": farm_size,
@@ -1029,10 +1089,15 @@ def _build_partner_dashboard_context(user, selected_region="", selected_size="",
         },
     ]
 
+    farms_doing_well = [r for r in farm_rows if r["risk_score"] < 40 and r["farm_id"] is not None][:10]
+    farms_at_risk = [r for r in farm_rows if r["risk_score"] >= 65 and r["farm_id"] is not None][:10]
+
     return {
         "overview": overview,
         "metric_cards": metric_cards,
         "farm_rows": farm_rows,
+        "farms_doing_well": farms_doing_well,
+        "farms_at_risk": farms_at_risk,
         "region_cards": region_cards,
         "trend_rows": trend_rows,
         "top_opportunities": top_opportunities,
@@ -1208,7 +1273,10 @@ class MessageViewSet(viewsets.ModelViewSet):
             return Message.objects.all()
 
         if user.role in ['field_agent', 'farmer']:
-            return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
+            return Message.objects.filter(sender=user) | Message.objects.filter(
+                receiver=user,
+                deleted_by_receiver=False,
+            )
 
         return Message.objects.none()
 
@@ -1352,7 +1420,10 @@ def inbox(request):
 
     # ---- conversation sidebar ----
     sent_ids = Message.objects.filter(sender=user).values_list("receiver_id", flat=True).distinct()
-    recv_ids = Message.objects.filter(receiver=user).values_list("sender_id", flat=True).distinct()
+    recv_ids = Message.objects.filter(
+        receiver=user,
+        deleted_by_receiver=False,
+    ).values_list("sender_id", flat=True).distinct()
     convo_ids = set(list(sent_ids) + list(recv_ids))
 
     conversations = []
@@ -1361,12 +1432,18 @@ def inbox(request):
             other = Farmer.objects.get(pk=uid)
             last_msg = (
                 Message.objects.filter(
-                    Q(sender=user, receiver=other) | Q(sender=other, receiver=user)
+                    Q(sender=user, receiver=other)
+                    | Q(sender=other, receiver=user, deleted_by_receiver=False)
                 )
                 .order_by("-created_at")
                 .first()
             )
-            unread = Message.objects.filter(sender=other, receiver=user, is_read=False).count()
+            unread = Message.objects.filter(
+                sender=other,
+                receiver=user,
+                is_read=False,
+                deleted_by_receiver=False,
+            ).count()
             conversations.append({"user": other, "last_message": last_msg, "unread": unread})
         except Farmer.DoesNotExist:
             pass
@@ -1389,14 +1466,27 @@ def inbox(request):
             candidate = Farmer.objects.get(pk=with_id)
             if _can_message(user, role, candidate):
                 selected_user = candidate
-                # mark incoming as read
+                # mark incoming messages and their notifications as read
                 Message.objects.filter(
-                    sender=selected_user, receiver=user, is_read=False
+                    sender=selected_user,
+                    receiver=user,
+                    is_read=False,
+                    deleted_by_receiver=False,
+                ).update(is_read=True)
+                Notification.objects.filter(
+                    recipient=user,
+                    notification_type="message",
+                    related_message__sender=selected_user,
+                    is_read=False,
                 ).update(is_read=True)
                 thread = list(
                     Message.objects.filter(
                         Q(sender=user, receiver=selected_user)
-                        | Q(sender=selected_user, receiver=user)
+                        | Q(
+                            sender=selected_user,
+                            receiver=user,
+                            deleted_by_receiver=False,
+                        )
                     ).order_by("created_at")
                 )
         except Farmer.DoesNotExist:
@@ -1425,8 +1515,12 @@ def inbox(request):
     compose_targets = list(_get_compose_targets(user, role).values("id", "username", "first_name", "last_name"))
     can_broadcast = role in ("field_agent", "admin")
 
-    total_unread = Message.objects.filter(receiver=user, is_read=False).count()
-    notifications = Notification.objects.filter(recipient=user).order_by('-created_at')[:50]
+    total_unread = Message.objects.filter(
+        receiver=user,
+        is_read=False,
+        deleted_by_receiver=False,
+    ).count()
+    notifications = Notification.objects.filter(recipient=user, is_read=False).order_by('-created_at')[:50]
     total_unread_notifications = Notification.objects.filter(recipient=user, is_read=False).count()
 
     return render(request, "Farmers/inbox.html", {
@@ -1487,6 +1581,49 @@ def mark_message_read(request, message_id):
     if request.method == "POST":
         Message.objects.filter(pk=message_id, receiver=request.user).update(is_read=True)
     return JsonResponse({"ok": True})
+
+
+@login_required
+def delete_message(request, message_id):
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+
+    msg = get_object_or_404(Message, pk=message_id)
+    if request.user.id not in (msg.sender_id, msg.receiver_id):
+        return HttpResponseForbidden("You do not have permission to delete this message.")
+
+    other_user_id = msg.receiver_id if msg.sender_id == request.user.id else msg.sender_id
+    message_preview = (msg.content or "")[:80]
+
+    _log_dataset_audit(
+        actor=request.user,
+        action="delete",
+        details={
+            "entity": "message",
+            "message_id": msg.id,
+            "sender_id": msg.sender_id,
+            "receiver_id": msg.receiver_id,
+            "deleted_by": request.user.username,
+            "scope": "global" if request.user.id == msg.sender_id else "receiver_local",
+            "preview": message_preview,
+        },
+    )
+
+    if request.user.id == msg.sender_id:
+        msg.delete()
+        messages.success(request, "Message deleted for everyone.")
+    else:
+        msg.deleted_by_receiver = True
+        msg.save(update_fields=["deleted_by_receiver"])
+        Notification.objects.filter(
+            recipient=request.user,
+            notification_type="message",
+            related_message=msg,
+            is_read=False,
+        ).update(is_read=True)
+        messages.success(request, "Message removed from your inbox.")
+
+    return redirect(f"{reverse('inbox')}?with={other_user_id}")
 
 
 @login_required
@@ -2335,6 +2472,7 @@ def partner_dashboard(request):
         selected_region,
         selected_size,
         selected_certification,
+        _get_partner_dashboard_version(),
     )
     context = cache.get(cache_key)
     if context is None:
@@ -2372,8 +2510,102 @@ def partner_dashboard(request):
     context["pending_farmer_deletion_requests"] = FarmerDeletionRequest.objects.filter(
         status="pending_partner_approval"
     ).select_related("farmer", "requested_by")[:40]
+    context["my_farm_reports"] = FarmReport.objects.filter(
+        reported_by=request.user
+    ).select_related("farm").order_by("-created_at")[:20]
 
     return render(request, "Farmers/partner_dashboard.html", context)
+
+
+@login_required
+def partner_farm_detail(request, farm_id):
+    """Individual farm summary for the partner/investor view."""
+    if not _user_has_role(request.user, {"investor", "analyst"}):
+        return HttpResponseForbidden("Access Denied")
+
+    farm = get_object_or_404(
+        Farm.objects.select_related("owner", "owner__profile").prefetch_related("harvests"),
+        pk=farm_id,
+    )
+    owner = farm.owner
+    sheet1 = getattr(owner, "assessment_sheet1", None)
+    sheet2 = getattr(owner, "assessment_sheet2", None)
+    sheet3 = getattr(owner, "assessment_sheet3", None)
+    profile = getattr(owner, "profile", None)
+
+    harvests = list(farm.harvests.all().order_by("date_of_harvest"))
+    approved_activities = list(
+        FarmActivity.objects.filter(farmer=owner, admin_approval_status="approved")
+        .order_by("-date")
+        .values(
+            "activity_type", "date", "additional_trees_added",
+            "inputs_used", "notes", "admin_review_notes", "admin_reviewed_at",
+        )
+    )
+
+    hectares, harvest_kg, revenue, operating_cost, net_income = _farm_financials(farm, sheet2, harvests)
+    emissions, removals, emissions_intensity, carbon_balance = _farm_carbon_metrics(sheet1, sheet2, sheet3, harvest_kg)
+    risk_score, esg_score = _farm_risk_and_esg(sheet1, sheet2, sheet3, approved_activities)
+
+    region = _portfolio_region(farm, sheet1)
+    investments = list(Investment.objects.filter(farm=farm).select_related("investor"))
+    invested_amount = sum(float(item.amount or 0) for item in investments)
+
+    # Build per-year harvest summary
+    yearly_harvests = []
+    for h in harvests:
+        yearly_harvests.append({
+            "year": h.date_of_harvest.year,
+            "date": h.date_of_harvest,
+            "tons_produced": h.tons_produced,
+            "quality_grade": h.quality_grade,
+        })
+
+    registering_agent = None
+    if profile and profile.created_by_agent:
+        registering_agent = profile.created_by_agent.get_full_name() or profile.created_by_agent.username
+
+    context = {
+        "farm": farm,
+        "owner": owner,
+        "profile": profile,
+        "sheet1": sheet1,
+        "sheet2": sheet2,
+        "sheet3": sheet3,
+        "region": region,
+        "farmer_name": getattr(sheet1, "full_name", owner.get_full_name() or owner.username),
+        "registering_agent": registering_agent,
+        "hectares": round(hectares, 1),
+        "yield_kg": round(harvest_kg, 0),
+        "yield_per_hectare": round(_safe_divide(harvest_kg, hectares), 1),
+        "revenue": round(revenue, 2),
+        "operating_cost": round(operating_cost, 2),
+        "net_income": round(net_income, 2),
+        "emissions": round(emissions, 1),
+        "removals": round(removals, 1),
+        "carbon_balance": round(carbon_balance, 1),
+        "emissions_intensity": round(emissions_intensity, 3),
+        "risk_score": risk_score,
+        "esg_score": esg_score,
+        "is_high_risk": risk_score >= 65,
+        "verification_state": "Verified" if sheet3 and sheet3.data_validated else "Review",
+        "traceability_state": (
+            "Complete"
+            if sheet1 and sheet1.gps_captured and sheet3 and sheet3.photos_complete
+            else "Partial"
+        ),
+        "invested_amount": round(invested_amount, 2),
+        "investments": investments,
+        "yearly_harvests": yearly_harvests,
+        "approved_activities": approved_activities,
+        "pending_activities_count": FarmActivity.objects.filter(
+            farmer=owner, admin_approval_status="pending"
+        ).count(),
+        "unread_notifications_count": Notification.objects.filter(
+            recipient=request.user, is_read=False
+        ).count(),
+    }
+    return render(request, "Farmers/partner_farm_detail.html", context)
 
 
 def _build_dataset_analytics(schema, rows_qs, precomputed_stats=None):
@@ -4141,6 +4373,40 @@ def _open_deletion_request_for_admin(farmer, admin_user):
 
 
 @login_required
+def report_farm_to_admin(request, farm_id):
+    """Partner submits a report on a farm for admin review."""
+    if not _user_has_role(request.user, {"investor", "analyst"}):
+        return HttpResponseForbidden("Access Denied")
+    farm = get_object_or_404(Farm, pk=farm_id)
+    if request.method == "POST":
+        reason = request.POST.get("reason", "").strip()
+        if not reason:
+            messages.error(request, "Please provide a reason for reporting this farm.")
+            return redirect(f"{reverse('partner_dashboard')}?view=investor-dashboard")
+        report = FarmReport.objects.create(
+            farm=farm,
+            reported_by=request.user,
+            reason=reason,
+        )
+        admin_users = Farmer.objects.filter(profile__role="admin", is_active=True)
+        AdminNotification.objects.bulk_create([
+            AdminNotification(
+                recipient=admin_user,
+                notification_type="new_farmer",
+                message=(
+                    f"Farm report submitted by {request.user.get_full_name() or request.user.username}: "
+                    f"Farm '{farm.name}' — {reason[:150]}"
+                ),
+                related_farmer=farm.owner,
+            )
+            for admin_user in admin_users
+        ])
+        messages.success(request, f"Farm '{farm.name}' has been reported to the admin for review.")
+        return redirect(f"{reverse('partner_dashboard')}?view=investor-dashboard")
+    return HttpResponseForbidden("Invalid request method")
+
+
+@login_required
 def admin_dashboard(request):
     denied = _require_admin(request)
     if denied:
@@ -4170,10 +4436,16 @@ def admin_dashboard(request):
         pending_activity = _resolve_pending_activity_from_notification(notification.message)
         if pending_activity:
             card["approve_activity_url"] = reverse("approve_farmer_activity", args=[pending_activity.pk])
+            if pending_activity.farmer.email:
+                card["reply_mailto"] = _build_contact_reply_mailto(
+                    pending_activity.farmer.email,
+                    pending_activity.farmer.get_full_name() or pending_activity.farmer.username,
+                )
 
-        email, guest_name = _extract_contact_identity_from_notification(notification.message)
-        if _is_valid_contact_reply_email(email):
-            card["reply_mailto"] = _build_contact_reply_mailto(email, guest_name)
+        if not card["reply_mailto"]:
+            email, guest_name = _extract_contact_identity_from_notification(notification.message)
+            if _is_valid_contact_reply_email(email):
+                card["reply_mailto"] = _build_contact_reply_mailto(email, guest_name)
 
         notification_cards.append(card)
 
@@ -4210,6 +4482,9 @@ def admin_dashboard(request):
     unread_notifications_count = Notification.objects.filter(
         recipient=request.user, is_read=False
     ).count()
+    pending_farm_reports = FarmReport.objects.filter(
+        status="pending"
+    ).select_related("farm", "reported_by", "farm__owner", "farm__owner__profile").order_by("-created_at")[:50]
     return render(request, "Farmers/admin_dashboard.html", {
         "admin_profile": admin_profile,
         "pending_farmers": pending_farmers,
@@ -4223,7 +4498,27 @@ def admin_dashboard(request):
         "pending_reset_request_user_ids": pending_reset_request_user_ids,
         "users_by_category": users_by_category,
         "stats": stats,
+        "pending_farm_reports": pending_farm_reports,
     })
+
+
+@login_required
+def review_farm_report(request, report_id):
+    """Admin marks a partner-submitted farm report as reviewed or dismissed."""
+    denied = _require_admin(request)
+    if denied:
+        return denied
+    if request.method != "POST":
+        return HttpResponseForbidden("Invalid request method")
+    report = get_object_or_404(FarmReport, pk=report_id)
+    action = request.POST.get("action", "reviewed")
+    if action in ("reviewed", "dismissed"):
+        report.status = action
+        report.reviewed_by = request.user
+        report.reviewed_at = timezone.now()
+        report.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+        messages.success(request, f"Report on '{report.farm.name}' marked as {action}.")
+    return redirect("admin_dashboard")
 
 
 @login_required
@@ -4252,6 +4547,9 @@ def approve_farmer_activity(request, activity_id):
         "admin_review_notes",
         "updated_at",
     ])
+
+    # Invalidate cached partner dashboards so the approval is reflected immediately
+    _bump_partner_dashboard_version()
 
     Message.objects.create(
         sender=request.user,

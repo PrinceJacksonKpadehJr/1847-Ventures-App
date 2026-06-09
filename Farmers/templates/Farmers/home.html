@@ -849,7 +849,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13M7 11l5 5 5-5"/><path d="M3 20h18"/></svg>
                     <span id="install-nav-label">Download App</span>
                 </button>
-                <a class="btn-login" href="{% url 'login' %}">Login Portal</a>
+                <a class="btn-login" href="{% url 'login' %}">Login</a>
             </div>
         </div>
     </header>
@@ -1008,7 +1008,21 @@
                 <h3>Already part of the platform?</h3>
                 <p>Access your dashboard to continue field operations, partner reporting, or portfolio management.</p>
             </div>
-            <a class="btn-login" href="{% url 'login' %}">Login</a>
+            {% if request.user.is_authenticated %}
+                {% if request.user.is_superuser %}
+                    <a class="btn-login" href="{% url 'superuser_dashboard_selector' %}">Go to Dashboard</a>
+                {% elif request.user.profile.role == 'admin' %}
+                    <a class="btn-login" href="{% url 'admin_dashboard' %}">Go to Dashboard</a>
+                {% elif request.user.profile.role == 'field_agent' %}
+                    <a class="btn-login" href="{% url 'agent_dashboard' %}">Go to Dashboard</a>
+                {% elif request.user.profile.role == 'investor' or request.user.profile.role == 'analyst' %}
+                    <a class="btn-login" href="{% url 'partner_dashboard' %}">Go to Dashboard</a>
+                {% else %}
+                    <a class="btn-login" href="{% url 'farmer_dashboard' %}">Go to Dashboard</a>
+                {% endif %}
+            {% else %}
+                <a class="btn-login" href="{% url 'login' %}">Login</a>
+            {% endif %}
         </section>
     </main>
 

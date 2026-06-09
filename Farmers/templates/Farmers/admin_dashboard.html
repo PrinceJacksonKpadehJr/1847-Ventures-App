@@ -1097,7 +1097,7 @@
                     <div class="notif-meta">
                         <span class="notif-time">{{ notif.created_at|date:"M d, Y · H:i" }}</span>
                         {% if card.approve_activity_url %}
-                        <form method="post" action="{{ card.approve_activity_url }}" style="display:inline;">
+                        <form method="post" action="{{ card.approve_activity_url }}" style="display:inline;" data-offline-queue="false">
                             {% csrf_token %}
                             <button class="action-btn btn-sm btn-green" type="submit">Approve</button>
                         </form>
@@ -1120,6 +1120,78 @@
         <div class="empty-state">
             <div class="empty-icon">📭</div>
             <p>No notifications yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Partner Farm Reports -->
+    <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">⚠️</span>
+                Partner Farm Reports
+                {% if pending_farm_reports %}
+                <span class="badge-count">{{ pending_farm_reports|length }} pending</span>
+                {% endif %}
+            </div>
+            <div class="card-subtitle">Farms flagged by partners for admin review</div>
+        </div>
+
+        {% if pending_farm_reports %}
+        <div style="overflow-x:auto; padding:1rem;">
+            <table style="width:100%; border-collapse:collapse; font-size:.9rem;">
+                <thead>
+                    <tr style="border-bottom:2px solid #e5e7eb; text-align:left;">
+                        <th style="padding:.5rem .75rem;">Farm</th>
+                        <th style="padding:.5rem .75rem;">Farmer / Owner</th>
+                        <th style="padding:.5rem .75rem;">Field Agent</th>
+                        <th style="padding:.5rem .75rem;">Reported By</th>
+                        <th style="padding:.5rem .75rem;">Reason</th>
+                        <th style="padding:.5rem .75rem;">Date</th>
+                        <th style="padding:.5rem .75rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rpt in pending_farm_reports %}
+                    {% with owner=rpt.farm.owner %}
+                    <tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:.5rem .75rem; font-weight:600;">{{ rpt.farm.name }}</td>
+                        <td style="padding:.5rem .75rem;">
+                            {{ owner.get_full_name|default:owner.username }}
+                            {% if owner.email %}<br><small style="color:#888;">{{ owner.email }}</small>{% endif %}
+                        </td>
+                        <td style="padding:.5rem .75rem;">
+                            {% with profile=owner.profile %}
+                            {% if profile and profile.created_by_agent %}
+                                {{ profile.created_by_agent.get_full_name|default:profile.created_by_agent.username }}
+                            {% else %}—{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td style="padding:.5rem .75rem;">{{ rpt.reported_by.get_full_name|default:rpt.reported_by.username }}</td>
+                        <td style="padding:.5rem .75rem; max-width:220px;">{{ rpt.reason|truncatewords:15 }}</td>
+                        <td style="padding:.5rem .75rem; white-space:nowrap;">{{ rpt.created_at|date:"M j, Y" }}</td>
+                        <td style="padding:.5rem .75rem;">
+                            <form method="post" action="{% url 'review_farm_report' rpt.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reviewed">
+                                <button type="submit" class="action-btn btn-sm btn-green">Mark Reviewed</button>
+                            </form>
+                            <form method="post" action="{% url 'review_farm_report' rpt.pk %}" style="display:inline; margin-left:.25rem;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="dismissed">
+                                <button type="submit" class="action-btn btn-sm" style="background:#eee; color:#555;">Dismiss</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <p>No pending farm reports.</p>
         </div>
         {% endif %}
     </div>
